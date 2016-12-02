@@ -1,0 +1,85 @@
+!===========================================================
+! This module contains some utility functions
+!
+! NOTE: The assumption of a calorically perfect gas is 
+!       made in the below conversions to and from 
+!       conservative and primitive variable vectors.
+!===========================================================
+
+module utils
+  implicit none
+  private
+  public :: w_to_u, u_to_w, reflect, nvec
+
+  contains
+
+    !------------------------------------------------------
+    ! Function for converting a vector of primitive 
+    ! variables to a vector of conserved variables.  
+    ! Assuming a calorically perfect gas.
+    !------------------------------------------------------
+    function w_to_u(w,g) result(u)
+      implicit none
+      double precision, intent(in) :: w(3),g
+      double precision             :: u(3)
+      u(1) = w(1)
+      u(2) = w(1)*w(2)
+      u(3) = w(3)/(g-1.0d0)+0.5d0*w(1)*w(2)**2
+    end function w_to_u
+    
+    !------------------------------------------------------
+    ! Function for converting from vector of conserved 
+    ! variables to a vector of primitive variables.
+    ! Assuming a calorically perfect gas.
+    !------------------------------------------------------
+    function u_to_w(u,g) result(w)
+      implicit none
+      double precision, intent(in) :: u(3),g
+      double precision             :: w(3)
+      w(1) = u(1)
+      w(2) = u(2)/u(1)
+      w(3) = (g-1.0d0)*(u(3)-0.5d0*u(2)**2/u(1))
+    end function u_to_w
+
+    !------------------------------------------------------
+    ! Function for reflecting a vector about another vector
+    ! pt1 and pt2 create a line about which pt3 is to be
+    ! reflected
+    !------------------------------------------------------
+    function reflect(pt1,pt2,pt3) result(ptref)
+      implicit none
+      double precision, intent(in)  :: pt1(2)
+      double precision, intent(in)  :: pt2(2)
+      double precision, intent(in)  :: pt3(2)
+      double precision              :: ptref(2)
+      double precision,dimension(2) :: u,v,x
+
+      ! Creating vectors
+      u = pt3-pt1
+      v = pt2-pt1
+
+      ! Calculations
+      x = u - (dot_product(u,v)/(norm2(v)**2))*v
+      ptref = u - 2.0d0*x + pt1
+
+    end function reflect
+
+    !------------------------------------------------------
+    ! Function for computing a normal vector given 
+    ! components of a vector
+    !------------------------------------------------------
+    function nvec(xc,yc) result(nhat)
+      implicit none
+      double precision, intent(in) :: xc      ! x-component
+      double precision, intent(in) :: yc      ! y-component
+      double precision             :: mag     ! magnitude of vector
+      double precision             :: nhat(2) 
+
+      ! Computing magnitude of vector
+      mag = sqrt(xc*xc + yc*yc)
+      nhat(1) = xc/mag
+      nhat(2) = yc/mag
+
+    end function nvec
+
+end module utils
