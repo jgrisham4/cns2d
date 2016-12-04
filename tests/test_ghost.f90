@@ -1,5 +1,5 @@
 program test_ghost
-  use class_mesh, only : mesh, read_from_file, write_to_tec, preprocess
+  use mesh_class, only : mesh, read_from_file, write_to_tec, preprocess
   implicit none
   character (len=30) :: mesh_file,tec_file
   integer            :: i,j

@@ -1,14 +1,14 @@
 program test_cgns
 
   use cgns
-  double precision :: x(3,3), y(3,3)
+  double precision :: x(4,4), y(4,4)
   integer(kind=4) :: isize(2,3)
   character (len=30) :: basename,zonename
   integer :: imax,jmax
 
   ! Creating grid points for this simple example
-  imax = 3
-  jmax = 3
+  imax = 4
+  jmax = 4
   do j=1,jmax
     do i=1,imax
       x(i,j) = dble(i-1)

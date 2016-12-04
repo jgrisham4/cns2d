@@ -2,7 +2,7 @@
 ! This module contains the definition for the mesh class.
 !===========================================================
 
-module class_mesh
+module mesh_class
   use cgns
   use utils, only : reflect, nvec
   implicit none
@@ -10,12 +10,12 @@ module class_mesh
   public :: mesh,read_from_file,write_to_tec,preprocess
 
   !---------------------------------------------------------
-  ! Interface class definition
+  ! Edge class definition
   !---------------------------------------------------------
-  type inter
+  type edge
     double precision :: length  ! length of interface
     double precision :: flux(4) ! value of the flux at the interface
-  end type inter
+  end type edge
 
   !---------------------------------------------------------
   ! Element class definition
@@ -28,7 +28,7 @@ module class_mesh
     double precision :: dydxi    ! dy/dxi
     double precision :: dxdeta   ! dx/deta
     double precision :: dydeta   ! dy/deta
-    double precision :: jac      ! Jacobian determinant
+    double precision :: detJ      ! Jacobian determinant
     double precision :: u(4)     ! Vector of conserved variables
     double precision :: u0(4)    ! Vector of conserved variables at previous timestep
     double precision :: w(4)     ! Vector of primitive variables
@@ -39,13 +39,12 @@ module class_mesh
   ! Mesh class definition 
   !---------------------------------------------------------
   type mesh
-    integer                       :: num_points,num_elements
-    integer                       :: imax,jmax
-    integer                       :: nelemi,nelemj
-    double precision              :: dx
-    double precision, allocatable :: x(:,:),y(:,:)
-    type(element), allocatable    :: elem(:,:)
-    type(inter), allocatable      :: interfaces(:,:)
+    integer                       :: imax,jmax      ! Number of nodes in i and j
+    integer                       :: nelemi,nelemj  ! Number of elements in i and j
+    double precision, allocatable :: x(:,:),y(:,:)  ! Node coordinates
+    type(element), allocatable    :: elem(:,:)      ! Array of element objects
+    type(edge), allocatable       :: edges_h(:,:)   ! Horizontal edges
+    type(edge), allocatable       :: edges_v(:,:)   ! Vertical edges
   end type mesh
 
   contains 
@@ -173,19 +172,14 @@ module class_mesh
         print *, "Error: can't allocate memory for elem."
         stop
       end if
-      allocate(this%interfaces(this%imax,this%jmax),stat=aerr)
+      allocate(this%edges_h(this%nelemi,this%jmax),stat=aerr)
       if (aerr.ne.0) then
-        print *, "Error: can't allocate memory for interfaces."
+        print *, "Error: can't allocate memory for edges_h."
         stop
       end if
-      !allocate(this%xc(-1:(this%imax-1)+2,-1:(this%jmax-1)+2),stat=aerr)
-      !if (aerr.ne.0) then
-      !  print *, "Error: can't allocate memory for xc."
-      !  stop
-      !end if
-      allocate(this%yc(-1:(this%imax-1)+2,-1:(this%jmax-1)+2),stat=aerr)
+      allocate(this%edges_v(this%imax,this%nelemj),stat=aerr)
       if (aerr.ne.0) then
-        print *, "Error: can't allocate memory for yc."
+        print *, "Error: can't allocate memory for edges_v."
         stop
       end if
 
@@ -379,8 +373,8 @@ module class_mesh
       this%y(-1,this%jmax+2) = this%y(1,this%jmax+2)
 
       ! Computing geometric quantities PARALLELIZE
-      do j=1,this%jmax-1
-        do i=1,this%imax-1
+      do j=1,this%nelemj
+        do i=1,this%nelemi
 
           ! Getting coordinates of the nodes that belong to this element
           x1 = this%x(i,j)
@@ -401,6 +395,9 @@ module class_mesh
           ! Computing centroids of elements
           this%elem(i,j)%xc = 0.25d0*(x1+x2+x3+x4)
           this%elem(i,j)%yc = 0.25d0*(y1+y2+y3+y4)
+          
+          ! Computing cell area
+          this%elem(i,j)%area = 0.5d0*((x1-x3)*(y2-y4)+(x4-x2)*(y1-y3))
 
         end do
       end do
@@ -420,26 +417,52 @@ module class_mesh
       do j=1,this%nelemj
 
         ! left side
+        i = 1
+        this%elem(i,j)%dxdxi = 0.5d0*(-3.0d0*this%elem(i,j)%xc + 4.0d0*this%elem(i+1,j)%xc - this%elem(i+2,j)%xc)
+        this%elem(i,j)%dydxi = 0.5d0*(-3.0d0*this%elem(i,j)%yc + 4.0d0*this%elem(i+1,j)%yc - this%elem(i+2,j)%yc)
 
         ! right size
+        i = this%nelemi
+        this%elem(i,j)%dxdxi = 0.5d0*(3.0d0*this%elem(i,j)%xc - 4.0d0*this%elem(i-1,j)%xc + this%elem(i-2,j)%xc)
+        this%elem(i,j)%dydxi = 0.5d0*(3.0d0*this%elem(i,j)%yc - 4.0d0*this%elem(i-1,j)%yc + this%elem(i-2,j)%yc)
 
+        ! Interior on vertical boundaries
         if (j.ne.1.and.j.ne.this%nelemj) then
 
           ! left side
+          i = 1
+          this%elem(i,j)%dxdeta = 0.5d0*(this%elem(i,j+1)%xc - this%elem(i,j-1)%xc)
+          this%elem(i,j)%dydeta = 0.5d0*(this%elem(i,j+1)%yc - this%elem(i,j-1)%yc)
 
           ! right side
+          i = this%nelemi
+          this%elem(i,j)%dxdeta = 0.5d0*(this%elem(i,j+1)%xc - this%elem(i,j-1)%xc)
+          this%elem(i,j)%dydeta = 0.5d0*(this%elem(i,j+1)%yc - this%elem(i,j-1)%yc)
+          
 
         else if (j.eq.1) then
 
           ! southwest corner
+          i = 1
+          this%elem(i,j)%dxdeta = 0.5d0*(-3.0d0*this%elem(i,j)%xc + 4.0d0*this%elem(i,j+1)%xc - this%elem(i,j+2)%xc)
+          this%elem(i,j)%dydeta = 0.5d0*(-3.0d0*this%elem(i,j)%yc + 4.0d0*this%elem(i,j+1)%yc - this%elem(i,j+2)%yc)
 
           ! southeast corner
+          i = this%nelemi
+          this%elem(i,j)%dxdeta = 0.5d0*(-3.0d0*this%elem(i,j)%xc + 4.0d0*this%elem(i,j+1)%xc - this%elem(i,j+2)%xc)
+          this%elem(i,j)%dydeta = 0.5d0*(-3.0d0*this%elem(i,j)%yc + 4.0d0*this%elem(i,j+1)%yc - this%elem(i,j+2)%yc)
 
         else
 
           ! northwest corner
+          i = 1
+          this%elem(i,j)%dxdeta = 0.5d0*(3.0d0*this%elem(i,j)%xc - 4.0d0*this%elem(i,j-1)%xc + this%elem(i,j-2)%xc)
+          this%elem(i,j)%dydeta = 0.5d0*(3.0d0*this%elem(i,j)%yc - 4.0d0*this%elem(i,j-1)%yc + this%elem(i,j-2)%yc)
           
           ! northeast corner
+          i = this%nelemi
+          this%elem(i,j)%dxdeta = 0.5d0*(3.0d0*this%elem(i,j)%xc - 4.0d0*this%elem(i,j-1)%xc + this%elem(i,j-2)%xc)
+          this%elem(i,j)%dydeta = 0.5d0*(3.0d0*this%elem(i,j)%yc - 4.0d0*this%elem(i,j-1)%yc + this%elem(i,j-2)%yc)
 
         end if
 
@@ -447,23 +470,65 @@ module class_mesh
       end do
       
       ! Computing metrics on the horizontal boundaries
+      ! PARALLELIZE
       do i=2,this%nelemi-1
       
         ! top
+        j = this%nelemj
+        this%elem(i,j)%dxdxi  = 0.5d0*(this%elem(i+1,j)%xc - this%elem(i-1,j)%xc)
+        this%elem(i,j)%dydxi  = 0.5d0*(this%elem(i+1,j)%yc - this%elem(i-1,j)%yc)
+        this%elem(i,j)%dxdeta = 0.5d0*(3.0d0*this%elem(i,j)%xc - 4.0d0*this%elem(i,j-1)%xc + this%elem(i,j-2)%xc)
+        this%elem(i,j)%dydeta = 0.5d0*(3.0d0*this%elem(i,j)%yc - 4.0d0*this%elem(i,j-1)%yc + this%elem(i,j-2)%yc)
 
         ! bottom
+        j = 1
+        this%elem(i,j)%dxdxi  = 0.5d0*(this%elem(i+1,j)%xc - this%elem(i-1,j)%xc)
+        this%elem(i,j)%dydxi  = 0.5d0*(this%elem(i+1,j)%yc - this%elem(i-1,j)%yc)
+        this%elem(i,j)%dxdeta = 0.5d0*(-3.0d0*this%elem(i,j)%xc + 4.0d0*this%elem(i,j+1)%xc - this%elem(i,j+2)%xc)
+        this%elem(i,j)%dydeta = 0.5d0*(-3.0d0*this%elem(i,j)%yc + 4.0d0*this%elem(i,j+1)%yc - this%elem(i,j+2)%yc)
 
       end do
 
       ! Computing Jacobian determinant for all interior elements
       do j=1,this%nelemj
         do i=1,this%nelemi
+          this%elem(i,j)%detJ = this%elem(i,j)%dxdxi*this%elem(i,j)%dydeta - this%elem(i,j)%dxdeta*this%elem(i,j)%dydxi
+        end do
+      end do
+
+      ! Finding lengths of all the edges
+      ! Horizontal edges
+      do j=1,this%jmax
+        do i=1,this%nelemi
+          
+          ! Getting node locations
+          x1 = this%x(i,j)
+          y1 = this%y(i,j)
+          x2 = this%x(i+1,j)
+          y2 = this%y(i+1,j)
+
+          ! Computing distance between the two nodes
+          this%edges_h(i,j)%length = sqrt((x2-x1)**2 + (y2-y1)**2)
 
         end do
       end do
 
-      ! Creating interfaces
+      ! Vertical edges
+      do j=1,this%nelemj
+        do i=1,this%imax
+
+          ! Getting node locations
+          x1 = this%x(i,j)
+          y1 = this%y(i,j)
+          x2 = this%x(i,j+1)
+          y2 = this%y(i,j+1)
+
+          ! Computing distance between the two nodes
+          this%edges_v(i,j)%length = sqrt((x2-x1)**2 + (y2-y1)**2)
+
+        end do
+      end do
 
     end subroutine preprocess
 
-end module class_mesh
+end module mesh_class

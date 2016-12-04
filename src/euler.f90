@@ -3,10 +3,10 @@
 ! equations using a second-order accurate finite volume 
 ! method.
 !===========================================================
-module class_solver
+module euler
   use class_mesh, only : mesh
   use utils,      only : u_to_w, w_to_u
-  use limiters,   only : minmod, vanleer
+  use limiters,   only : minmod, vanleer, venkatakrishnan
   use flux,       only : inviscid_flux
   use riemann,    only : Roe
   implicit none
@@ -17,13 +17,13 @@ module class_solver
   ! Class for solver
   !*********************************************************
   type solver
-    integer                       :: ntsteps      ! Number of time steps
-    integer                       :: nelem        ! Number of elements
-    double precision              :: dt           ! Time step
-    double precision              :: g            ! Ratio of specific heats
-    type(mesh)                    :: grid         ! Mesh object
-    type(elem_data), allocatable  :: elem(:)      ! Element data
-    double precision, allocatable :: w_history(:,:,:)! w solution hist
+    integer                       :: ntsteps            ! Number of time steps
+    integer                       :: nelem              ! Number of elements
+    double precision              :: dt                 ! Time step
+    double precision              :: g                  ! Ratio of specific heats
+    type(mesh)                    :: grid               ! Mesh object
+    type(elem_data), allocatable  :: elem(:)            ! Element data
+    double precision, allocatable :: w_history(:,:,:,:) ! w solution hist
   end type solver
 
   contains 
@@ -31,6 +31,9 @@ module class_solver
     !---------------------------------------------------------
     ! Subroutine which initializes solution, i.e., allocates 
     ! memory and sets up some important variables
+    ! 
+    ! NOTE: The initial guess should include the values at
+    ! the ghost cells... I think
     !---------------------------------------------------------
     subroutine initialize(this,m,nt,delta_t,gam,w0) 
       implicit none
@@ -38,48 +41,38 @@ module class_solver
       type(mesh),       intent(in)              :: m
       integer,          intent(in)              :: nt
       double precision, intent(in)              :: delta_t,gam
-      double precision, intent(in), allocatable :: w0(:,:)
-      double precision, allocatable             :: u0(:,:)
+      double precision, intent(in), allocatable :: w0(:,:,:)
+      double precision, allocatable             :: u0(:,:,:)
       integer                                   :: allocate_err,i
 
       ! Assigning members of the solver class
       this%grid    = m
       this%ntsteps = nt
       this%dt      = delta_t
-      this%nelem   = m%num_elements+2  ! includes ghost cells
       this%g       = gam
 
-      ! Allocating memory for element data (including ghost cells
-      ! at i=0 and i=num_cells+1)
-      allocate(this%elem(0:this%grid%num_elements+1),stat=allocate_err)
-      if (allocate_err.ne.0) then
-        print *, "Error: Can't allocate memory for this%elem."
-        stop
-      end if
-
       ! Allocating memory for solution history
-      allocate(this%w_history(this%grid%num_elements,nt+1,3),stat=allocate_err)
+      allocate(this%w_history(this%grid%nelemi,this%grid%nelemj,nt+1,4),stat=allocate_err)
       if (allocate_err.ne.0) then
         print *, "Error: Can't allocate memory for this%w_history."
         stop
       end if
 
-      ! Populating element data
-      do i=1,this%grid%num_elements
-        this%elem(i)%xc = this%grid%xc(i)
-      end do
-
-      ! Converting initial condition to conserved variables
+      ! Converting initial condition to conserved variables 
+      ! (includes ghost cells)
       allocate(u0,mold=w0)
-      do i=0,this%grid%num_elements+1
-        u0(:,i) = w_to_u(w0(:,i),gam)
+      do j=-1,this%grid%nelemj+2
+        do i=-1,this%grid%nelemi+2
+          u0(i,j,:) = w_to_u(w0(i,j,:),gam)
+        end do
       end do
 
       ! Filling data into elem structures
-      do i=0,this%nelem-1
-        !this%elem(i)%u0 = u0(:,i)
-        this%elem(i)%u  = u0(:,i)
-        this%elem(i)%w  = w0(:,i)
+      do j=-1,this%grid%nelemj+2
+        do i=-1,this%nelem+2
+          this%elem(i,j)%u  = u0(i,j,:)
+          this%elem(i,j)%w  = w0(i,j,:)
+        end do
       end do
 
       print *, "Done initializing solver."
@@ -123,20 +116,30 @@ module class_solver
     !---------------------------------------------------------
     subroutine update(this)
       implicit none
-      type(solver), intent(inout)  :: this
-      double precision             :: dwL(3),dwR(3)
-      double precision             :: wL(3),wR(3)
-      double precision             :: delta(3)
-      double precision             :: r(3)
-      integer                      :: i,j,k,err
-      double precision,allocatable :: f_interface(:,:)
+      type(solver), intent(inout)   :: this
+      double precision              :: dwL(3),dwR(3)
+      double precision              :: wL(3),wR(3)
+      double precision              :: delta(3)
+      double precision              :: r(3)
+      integer                       :: i,j,k,err
+      double precision, allocatable :: u(:,:,:)
+      double precision, allocatable :: gradU(:,:,:)
+      !double precision,allocatable :: f_interface(:,:)
 
-      ! Allocating memory for interface fluxes
-      allocate(f_interface(3,this%nelem-1),stat=err)
+      ! Allocating memory for gradient of state at cell centers
+      allocate(gradU(this%grid%nelemi,this%grid%nelemj,8),stat=err)
       if (err.ne.0) then
-        print *, "Error: Can't allocate memory for interface fluxes."
+        print *, "Error: Can't allocate memory for gradU in update."
         stop
       end if
+      allocate(u(this%grid%nelemi,this%grid%nelemj,4),stat=err)
+      if (err.ne.0) then
+        print *, "Error: Can't allocate memory for u in update."
+        stop
+      end if 
+
+      ! Computing gradients of the state in each cell for use 
+      ! in piecewise linear reconstruction
 
       ! Reconstructing states on left and right sides of each 
       ! interior cell (CORRECT)

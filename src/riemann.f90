@@ -36,23 +36,23 @@
 !* 
 !* Katate Masatsuka, February 2009. http://www.cfdbooks.com
 !*****************************************************************************
- function Roe(uL, uR, nx, ny)
- real :: uL(4), uR(4) !  Input: conservative variables rho*[1, u, v, E]
- real :: nx, ny       !  Input: face normal vector, [nx, ny] (Left-to-Right)
- real :: Roe(4)       ! Output: Roe flux function (upwind)
+ function roe(uL, uR, nx, ny)
+ double precision :: uL(4), uR(4) !  Input: conservative variables rho*[1, u, v, E]
+ double precision :: nx, ny       !  Input: face normal vector, [nx, ny] (Left-to-Right)
+ double precision :: roe(4)       ! Output: Roe flux function (upwind)
 !Local constants
- real :: gamma                          ! Ratio of specific heat.
- real :: zero, fifth, half, one, two    ! Numbers
+ double precision :: gamma                          ! Ratio of specific heat.
+ double precision :: zero, fifth, half, one, two    ! Numbers
 !Local variables
- real :: tx, ty                         ! Tangent vector (perpendicular to the face normal)
- real :: vxL, vxR, vyL, vyR             ! Velocity components.
- real :: rhoL, rhoR, pL, pR             ! Primitive variables.
- real :: vnL, vnR, vtL, vtR             ! Normal and tangent velocities
- real :: aL, aR, HL, HR                 ! Speeds of sound.
- real :: RT,rho,vx,vy,H,a,vn, vt        ! Roe-averages
- real :: drho,dvx,dvy,dvn,dvt,dp,dV(4)  ! Wave strenghs
- real :: ws(4),dws(4), Rv(4,4)          ! Wave speeds and right-eigevectors
- real :: fL(4), fR(4), diss(4)          ! Fluxes and dissipation term
+ double precision :: tx, ty                         ! Tangent vector (perpendicular to the face normal)
+ double precision :: vxL, vxR, vyL, vyR             ! Velocity components.
+ double precision :: rhoL, rhoR, pL, pR             ! Primitive variables.
+ double precision :: vnL, vnR, vtL, vtR             ! Normal and tangent velocities
+ double precision :: aL, aR, HL, HR                 ! Speeds of sound.
+ double precision :: RT,rho,vx,vy,H,a,vn, vt        ! Roe-averages
+ double precision :: drho,dvx,dvy,dvn,dvt,dp,dV(4)  ! Wave strenghs
+ double precision :: ws(4),dws(4), Rv(4,4)          ! Wave speeds and right-eigevectors
+ double precision :: fL(4), fR(4), diss(4)          ! Fluxes and dissipation term
  integer :: i, j
 
 !Constants.
@@ -162,9 +162,9 @@
   fR(3) = rhoR*vnR * vyR + pR*ny
   fR(4) = rhoR*vnR *  HR
 
-  Roe = half * (fL + fR - diss)
+  roe = half * (fL + fR - diss)
 
- end function Roe
+ end function roe
 
 !*****************************************************************************
 !* -- Rotated-Roe-HLL Flux Function ---
@@ -185,29 +185,29 @@
 !* Katate Masatsuka, February 2010. http://www.cfdbooks.com
 !*****************************************************************************
  function Rotated_RHLL(uL, uR, nx, ny)
- real :: uL(4), uR(4)    !  Input: conservative variables rho*[1, u, v, E]
- real :: nx, ny          !  Input: face normal vector, [nx, ny] (Left-to-Right)
- real :: Rotated_RHLL(4) ! Output: Rotated_RHLL flux function.
+ double precision :: uL(4), uR(4)    !  Input: conservative variables rho*[1, u, v, E]
+ double precision :: nx, ny          !  Input: face normal vector, [nx, ny] (Left-to-Right)
+ double precision :: Rotated_RHLL(4) ! Output: Rotated_RHLL flux function.
 !Local constants
- real :: gamma                          ! Ratio of specific heat.
- real :: zero, fifth, half, one, two    ! Numbers
- real :: eps                            ! 
+ double precision :: gamma                          ! Ratio of specific heat.
+ double precision :: zero, fifth, half, one, two    ! Numbers
+ double precision :: eps                            ! 
 !Local variables
- real :: nx1, ny1, nx2, ny2             ! Rotated normals, n1 and n2
- real :: tx, ty                         ! Tangent vector (taken as n1)
- real :: alpha1, alpha2                 ! Projections of the new normals
- real :: vxL, vxR, vyL, vyR             ! Velocity components.
- real :: rhoL, rhoR, pL, pR             ! Primitive variables.
- real :: vnL, vnR, vtL, vtR             ! Normal and tagent velocities
- real :: aL, aR, HL, HR                 ! Speeds of sound and total enthalpy
- real :: RT,rho,vx,vy,H,a               ! Roe-averages
- real :: vn, vt                         ! Normal and tagent velocities(Roe-average)
- real :: drho,dvx,dvy,dvn,dvt,dp,dV(4)  ! Wave strenghs
- real :: abs_dq                         ! Magnitude of the velocity difference
- real :: abs_ws(4),ws(4),dws(4), Rv(4,4)! Wave speeds and right-eigevectors
- real :: SRp,SLm                        ! Wave speeds for the HLL part
- real :: fL(4), fR(4), diss(4)          ! Fluxes ad dissipation term
- real :: temp
+ double precision :: nx1, ny1, nx2, ny2             ! Rotated normals, n1 and n2
+ double precision :: tx, ty                         ! Tangent vector (taken as n1)
+ double precision :: alpha1, alpha2                 ! Projections of the new normals
+ double precision :: vxL, vxR, vyL, vyR             ! Velocity components.
+ double precision :: rhoL, rhoR, pL, pR             ! Primitive variables.
+ double precision :: vnL, vnR, vtL, vtR             ! Normal and tagent velocities
+ double precision :: aL, aR, HL, HR                 ! Speeds of sound and total enthalpy
+ double precision :: RT,rho,vx,vy,H,a               ! Roe-averages
+ double precision :: vn, vt                         ! Normal and tagent velocities(Roe-average)
+ double precision :: drho,dvx,dvy,dvn,dvt,dp,dV(4)  ! Wave strenghs
+ double precision :: abs_dq                         ! Magnitude of the velocity difference
+ double precision :: abs_ws(4),ws(4),dws(4), Rv(4,4)! Wave speeds and right-eigevectors
+ double precision :: SRp,SLm                        ! Wave speeds for the HLL part
+ double precision :: fL(4), fR(4), diss(4)          ! Fluxes ad dissipation term
+ double precision :: temp
  integer :: i, j
 
 !Constants.

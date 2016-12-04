@@ -20,11 +20,12 @@ module utils
     !------------------------------------------------------
     function w_to_u(w,g) result(u)
       implicit none
-      double precision, intent(in) :: w(3),g
-      double precision             :: u(3)
+      double precision, intent(in) :: w(4),g
+      double precision             :: u(4)
       u(1) = w(1)
       u(2) = w(1)*w(2)
-      u(3) = w(3)/(g-1.0d0)+0.5d0*w(1)*w(2)**2
+      u(3) = w(1)*w(3)
+      u(4) = w(4)/(g-1.0d0)+0.5d0*w(1)*(w(2)**2 + w(3)**2)
     end function w_to_u
     
     !------------------------------------------------------
@@ -34,11 +35,12 @@ module utils
     !------------------------------------------------------
     function u_to_w(u,g) result(w)
       implicit none
-      double precision, intent(in) :: u(3),g
-      double precision             :: w(3)
+      double precision, intent(in) :: u(4),g
+      double precision             :: w(4)
       w(1) = u(1)
       w(2) = u(2)/u(1)
-      w(3) = (g-1.0d0)*(u(3)-0.5d0*u(2)**2/u(1))
+      w(3) = u(3)/u(1)
+      w(4) = (g-1.0d0)*(u(4)-0.5d0*w(1)*(w(2)**2 + w(3)**2))
     end function u_to_w
 
     !------------------------------------------------------
