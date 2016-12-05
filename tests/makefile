@@ -6,7 +6,7 @@ LIBS=-leuler2d -lcgns
 TST_FILES = $(wildcard *.f90)
 SRC_FILES = $(wildcard ../src/*.f90)
 OBJ_FILES = $(SRC_FILES:.f90=.o)
-TARGETS = test_mesh test_cgns test_reflection test_ghost
+TARGETS = test_mesh test_cgns test_reflection test_ghost square_grid
 
 all : lib $(TARGETS)
 
@@ -26,6 +26,9 @@ test_reflection : test_reflection.o ../lib/$(LIBNAME)
 	$(FC) $(FCFLAGS) -o $@ $< $(LFLAGS) $(LIBS)
 
 test_ghost : test_ghost.o ../lib/$(LIBNAME)
+	$(FC) $(FCFLAGS) -o $@ $< $(LFLAGS) $(LIBS)
+
+square_grid : square_grid.o 
 	$(FC) $(FCFLAGS) -o $@ $< $(LFLAGS) $(LIBS)
 
 clean :

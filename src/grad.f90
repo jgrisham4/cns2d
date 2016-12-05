@@ -14,6 +14,8 @@ module grad
   private
   public :: compute_gradient
 
+  contains
+
   !--------------------------------------------------------
   ! Subroutine for computing the gradient 
   ! Assuming that the variable we want to find the 
@@ -23,7 +25,7 @@ module grad
   subroutine compute_gradient(grid,var,gradVar)
     implicit none
     type(mesh), intent(in)                       :: grid
-    double precision, allocatable. intent(in)    :: var(:,:,:)
+    double precision, allocatable, intent(in)    :: var(:,:,:)
     double precision, allocatable, intent(inout) :: gradVar(:,:,:)
     double precision, dimension(4)               :: dvardx,dvardy
     double precision, dimension(4)               :: dvardxi,dvardeta
@@ -103,6 +105,6 @@ module grad
 
     end do
 
-  end subroutine gradient
+  end subroutine compute_gradient
 
 end module grad

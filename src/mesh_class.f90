@@ -127,6 +127,9 @@ module mesh_class
         end do
       end do
 
+      ! Printing some info
+      print *, "Done reading mesh from ", file_name
+
     end subroutine read_from_file
 
     !-------------------------------------------------------

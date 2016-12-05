@@ -7,8 +7,10 @@ program test_mesh
   type(mesh) :: grid
 
   ! Defining inputs
-  mesh_file = "simple.cgns"
-  tec_file  = "simple.tec"
+  !mesh_file = "simple.cgns"
+  !tec_file  = "simple.tec"
+  mesh_file = "square.cgns"
+  tec_file  = "square.tec"
   
   ! Reading mesh
   call read_from_file(grid,mesh_file)
