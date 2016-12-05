@@ -36,8 +36,8 @@ module grad
       do i=2,grid%nelemi-1
 
         ! Computing the derivative in the computational domain
-        dvardxi  = (var(i+1,j,:)-var(i-1,j,:))/0.5d0
-        dvardeta = (var(i,j+1,:)-var(i,j-1,:))/0.5d0
+        dvardxi  = 0.5d0*(var(i+1,j,:)-var(i-1,j,:))
+        dvardeta = 0.5d0*(var(i,j+1,:)-var(i,j-1,:))
 
         ! Finding the gradient in the physical domain
         gradVar(i,j,1:4) = 1.0d0/grid%elem(i,j)%detJ*(dvardxi*grid%elem(i,j)%dydeta-dvardeta*grid%elem(i,j)%dydxi)
@@ -70,7 +70,7 @@ module grad
     j = grid%nelemj
     do i=1,grid%nelemi
 
-      dvardeta = 0.5d0*(-3.0d0*var(i,j,:) + 4.0d0*var(i,j+1,:) - var(i,j+2,:))
+      dvardeta = 0.5d0*(3.0d0*var(i,j,:) - 4.0d0*var(i,j-1,:) + var(i,j-2,:))
 
       if (i.ne.1.and.i.ne.grid%nelemi) then
         dvardxi = 0.5d0*(var(i+1,j,:) - var(i-1,j,:))

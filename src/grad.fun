@@ -15,10 +15,14 @@ end teardown
 test gradient
   use mesh_class, only : mesh,read_from_file,preprocess
   implicit none
+
   type(mesh), dimension(3)         :: grids
   double precision, allocatable    :: f(:,:,:)
   double precision, allocatable    :: gradf(:,:,:)
-  double precision                 :: nerrx(3),nerry(3)
+  double precision                 :: nerrx(3),nerry(3),dx(3)
+  double precision, dimension(3)   :: xv,yv
+  double precision                 :: A(3,2),xstar(2),b(3)
+  double precision                 :: Am(2,2),bm(2)
   integer                          :: i,j,k,aerr
   character (len=30), dimension(3) :: fnames
   character (len=30), dimension(3) :: tecnames
@@ -30,6 +34,11 @@ test gradient
   tecnames(1) = "../tests/square050grad.tec"
   tecnames(2) = "../tests/square100grad.tec"
   tecnames(3) = "../tests/square200grad.tec"
+
+  ! Computing dx
+  dx(1) = 1.0d0/50.0d0
+  dx(2) = 1.0d0/100.0d0
+  dx(3) = 1.0d0/200.0d0
   
   ! Looping over meshes
   do k=1,3
@@ -66,13 +75,17 @@ test gradient
     call compute_gradient(grids(k),f,gradf)
 
     ! Computing norm of error in x-direction
-    nerrx = 0.0d0
+    nerrx(k) = 0.0d0
+    nerry(k) = 0.0d0
     do j=1,grids(k)%nelemj
       do i=1,grids(k)%nelemi
-        nerrx(k) = nerrx(k) + (f(i,j,1) - 2.0d0*pi*cos(2.0*pi*grids(k)%elem(i,j)%xc)*sin(2.0*pi*grids(k)%elem(i,j)%yc))**2*grids(k)%elem(i,j)%area
+        nerrx(k) = nerrx(k) + (gradf(i,j,1) - 2.0d0*pi*cos(2.0*pi*grids(k)%elem(i,j)%xc)*sin(2.0*pi*grids(k)%elem(i,j)%yc))**2*grids(k)%elem(i,j)%area
+        nerry(k) = nerry(k) + (gradf(i,j,5) - 2.0d0*pi*sin(2.0*pi*grids(k)%elem(i,j)%xc)*cos(2.0*pi*grids(k)%elem(i,j)%yc))**2*grids(k)%elem(i,j)%area
       end do
     end do
-    print *, "Error in df/dx = ", nerrx(k)
+    nerrx(k) = sqrt(nerrx(k))
+    nerry(k) = sqrt(nerry(k))
+    !print *, "Error in df/dx = ", nerrx(k)
 
     ! Writing result to file
     open(2,file=tecnames(k))
@@ -114,11 +127,31 @@ test gradient
   
   end do
 
-  ! Checking error
-  assert_equal_within(1.0d0,1.0d0,1.0e-3)
+  ! Computing the order-of-accuracy for the x-component of the gradient
+  xv = log10(dx)
+  yv = log10(nerrx)
+  A(1,1) = xv(1)
+  A(1,2) = 1.0d0
+  A(2,1) = xv(2)
+  A(2,2) = 1.0d0
+  A(3,1) = xv(3)
+  A(3,2) = 1.0d0
+  b = yv
+  Am = matmul(transpose(A),A)
+  bm = matmul(transpose(A),b)
+  xstar(1) = (bm(1)*Am(2,2) - Am(1,2)*bm(2))/(Am(1,1)*Am(2,2) - Am(1,2)*Am(2,1))
+  print *, "order of accuracy for x-component of gradient is ", xstar(1)
+  assert_equal_within(xstar(1),2.0d0,1.0e-1)
 
-
-
+  ! Computing the order-of-accuracy for the y-component of the gradient
+  xv = log10(dx)
+  yv = log10(nerry)
+  b = yv
+  bm = matmul(transpose(A),b)
+  xstar(1) = (bm(1)*Am(2,2) - Am(1,2)*bm(2))/(Am(1,1)*Am(2,2) - Am(1,2)*Am(2,1))
+  print *, "order of accuracy for y-component of gradient is ", xstar(1)
+  assert_equal_within(xstar(1),2.0d0,1.0e-1)
+  
 end test
 
 end test_suite

@@ -1,10 +1,16 @@
-Just finished the gradient computation.  Now, I 
-need to write a test for the gradient subroutine.
-This should be relatively easy.  Just create a simple
-square grid and write some function and find the gradient
-analytically, then compare with the results from the 
-subroutine.  Then, I need to implement Venikanakrishnan's (?)
-slope limiter.  After that, all I need to do is change the
+I now have the gradient calculation.  It seems to be correct.  
+Now, I believe that I should go through and reconstruct the 
+states on each face according to
+
+u^L_{i,j+1/2} = u_{i,j} + (grad(u) . rvec) phi(r)
+
+where r = (grad(u) . rvec)_L / (grad(u) . rvec)_R
+
+This will construct the interface states which will 
+then be used to solve the Riemann problem using Roe's
+approximate scheme.  
+
+After that, all I need to do is change the
 update subroutine so that the fluxes from all the interfaces
 are accounted for in the computation of the residual.  Then,
 I need to implement boundary conditions.  I'm going to need
