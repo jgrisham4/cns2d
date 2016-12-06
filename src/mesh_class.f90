@@ -14,6 +14,9 @@ module mesh_class
   !---------------------------------------------------------
   type edge
     double precision :: length  ! length of interface
+    double precision :: xm,ym   ! x- and y-coordinates of midpoint
+    double precision :: uL(4)   ! Left interface state 
+    double precision :: uR(4)   ! Right interface state 
     double precision :: flux(4) ! value of the flux at the interface
   end type edge
 
@@ -513,6 +516,10 @@ module mesh_class
           ! Computing distance between the two nodes
           this%edges_h(i,j)%length = sqrt((x2-x1)**2 + (y2-y1)**2)
 
+          ! Computing the midpoint of the edge
+          this%edges_h(i,j)%xm = (x1+x2)/2.0d0
+          this%edges_h(i,j)%ym = (y1+y2)/2.0d0
+
         end do
       end do
 
@@ -528,6 +535,10 @@ module mesh_class
 
           ! Computing distance between the two nodes
           this%edges_v(i,j)%length = sqrt((x2-x1)**2 + (y2-y1)**2)
+
+          ! Computing the midpoint of the edge
+          this%edges_v(i,j)%xm = (x1+x2)/2.0d0
+          this%edges_v(i,j)%ym = (y1+y2)/2.0d0
 
         end do
       end do
