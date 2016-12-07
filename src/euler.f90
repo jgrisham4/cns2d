@@ -247,16 +247,14 @@ module euler
       end do
 
       ! Reconstructing states on left and right sides of each horizontal interface
-      ! Pick up here  need to modify the below so that it now works for the vertical
-      ! case. 
       do j=1,this%grid%nelemj
         do i=1,this%grid%nelemi
 
-          if (i.eq.1) then
+          if (j.eq.1) then
 
             ! Only need to reconstruct the left state
-            rL(1) = this%grid%edges_v(i+1,j)%xm - this%grid%elem(i,j)%xc
-            rL(2) = this%grid%edges_v(i+1,j)%ym - this%grid%elem(i,j)%yc
+            rL(1) = this%grid%edges_h(i,j+1)%xm - this%grid%elem(i,j)%xc
+            rL(2) = this%grid%edges_h(i,j+1)%ym - this%grid%elem(i,j)%yc
 
             ! Finding the slope on the left side of the interface
             duL = gradU(i,j,1:4)*rL(1) + gradU(i,j,5:8)*rL(2)
@@ -265,27 +263,27 @@ module euler
             do k=1,4
 
               ! Finding necessary inputs to the Barth-Jespersen limiter
-              if (j.eq.1) then
+              if (i.eq.1) then
                 umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
                 umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-              else if (j.eq.this%grid%nelemj) then
-                umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k))
-                umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k))
+              else if (i.eq.this%grid%nelemi) then
+                umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k))
+                umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k))
               else
-                umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i,j-1)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-                umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i,j-1)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
+                umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i-1,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
+                umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i-1,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
               end if
 
               ! Reconstruction
-              this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + barth(duL(k),this%grid%elem(i,j)%u(k),umax,umin)
+              this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + barth(duL(k),this%grid%elem(i,j)%u(k),umax,umin)
 
             end do
 
-          else if (i.eq.(this%grid%nelemi)) then
+          else if (j.eq.(this%grid%nelemj)) then
 
             ! Only need to reconstruct the right state
-            rR(1) = this%grid%edges_v(i,j)%xm - this%grid%elem(i,j)%xc
-            rR(2) = this%grid%edges_v(i,j)%ym - this%grid%elem(i,j)%yc
+            rR(1) = this%grid%edges_h(i,j)%xm - this%grid%elem(i,j)%xc
+            rR(2) = this%grid%edges_h(i,j)%ym - this%grid%elem(i,j)%yc
 
             ! Finding the slope on the right side of the interface
             duR = gradU(i,j,1:4)*rR(1) + gradU(i,j,5:8)*rR(2)
@@ -294,31 +292,30 @@ module euler
             do k=1,4
 
               ! Finding necessary inputs to the Barth-Jespersen limiter
-              if (j.eq.1) then
-                umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-                umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-              else if (j.eq.this%grid%nelemj) then
+              if (i.eq.1) then
+                umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
+                umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
+              else if (i.eq.this%grid%nelemi) then
                 umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k))
                 umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k))
               else
-                umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i,j-1)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-                umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i,j-1)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
+                umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i,i+1)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
+                umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i,i+1)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
               end if
 
               ! Reconstruction
-              this%grid%edges_v(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + barth(duR(k),this%grid%elem(i,j)%u(k),umax,umin)
+              this%grid%edges_h(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + barth(duR(k),this%grid%elem(i,j)%u(k),umax,umin)
 
             end do
           else
 
             ! Computing position vectors for face midpoints
-            rL(1) = this%grid%edges_v(i+1,j)%xm - this%grid%elem(i,j)%xc
-            rL(2) = this%grid%edges_v(i+1,j)%ym - this%grid%elem(i,j)%yc
-            rR(1) = this%grid%edges_v(i,j)%xm - this%grid%elem(i,j)%xc
-            rR(2) = this%grid%edges_v(i,j)%ym - this%grid%elem(i,j)%yc
+            rL(1) = this%grid%edges_h(i,j+1)%xm - this%grid%elem(i,j)%xc
+            rL(2) = this%grid%edges_h(i,j+1)%ym - this%grid%elem(i,j)%yc
+            rR(1) = this%grid%edges_h(i,j)%xm - this%grid%elem(i,j)%xc
+            rR(2) = this%grid%edges_h(i,j)%ym - this%grid%elem(i,j)%yc
 
             ! Finding slopes on left and right
-            ! The below is grad(u) . r_L and grad(u) . r_R
             duL = gradU(i,j,1:4)*rL(1) + gradU(i,j,5:8)*rL(2)
             duR = gradU(i,j,1:4)*rR(1) + gradU(i,j,5:8)*rR(2)
 
@@ -330,12 +327,8 @@ module euler
               umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
 
               ! Reconstruction
-              this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + barth(duL(k),this%grid%elem(i,j)%u(k),umax,umin)
-              this%grid%edges_v(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + barth(duR(k),this%grid%elem(i,j)%u(k),umax,umin)
-
-              ! Not sure that this is right so I'm going to go with the Barth limiter
-              !this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*minmod(r(k))
-              !this%grid%edges_v(i+1,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)*minmod(1.0d0/r(k))
+              this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + barth(duL(k),this%grid%elem(i,j)%u(k),umax,umin)
+              this%grid%edges_h(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + barth(duR(k),this%grid%elem(i,j)%u(k),umax,umin)
 
             end do
           end if
@@ -343,15 +336,21 @@ module euler
         end do
       end do
 
+      ! Enforcing slip boundary conditions along the bottom wall
+
+      ! Enforcing slip boundary conditions along the top wall
+
+      ! Inlet boundary conditions
+
+      ! Outlet boundary conditions
+
       ! The current boundary condition is no gradient at either end.
       ! This is enforced by copying the state from the interior of the domain
       ! to the ghost cells.
       this%elem(0)%wL = this%elem(1)%wR
       this%elem(this%nelem-1)%wR = this%elem(this%nelem-2)%wL
       this%elem(0)%w = this%elem(1)%w
-      !this%elem(0)%w(2) = -this%elem(1)%w(2)   ! v_ghost = -v_1
       this%elem(this%nelem-1)%w = this%elem(this%nelem-2)%w
-      !this%elem(this%nelem)%w(2) = -this%elem(this%nelem-1)%w(2)
 
       ! Must iterate through all the interior interfaces and solve
       ! the Riemann problem to find the fluxes

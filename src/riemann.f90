@@ -16,10 +16,10 @@
 !* These F90 routines were written and made available for download
 !* for an educational purpose. Detailed descripstion of each numerical
 !* flux can be found in the original paper, or in popular textbooks, or
-!* in the (will-be-available) second volume of "I do like CFD". 
+!* in the (will-be-available) second volume of "I do like CFD".
 !*
-!* Note that all routines are not efficietly implemented for clarity; you can 
-!* improve the efficiecy and also you can covert it to double precision 
+!* Note that all routines are not efficietly implemented for clarity; you can
+!* improve the efficiecy and also you can covert it to double precision
 !* version if you wish.
 !*
 !* NOTES: There were bugs in the Rotated-RHLL solver in version 1.
@@ -33,7 +33,7 @@
 !*
 !* P. L. Roe, Approximate Riemann Solvers, Parameter Vectors and Difference
 !* Schemes, Journal of Computational Physics, 43, pp. 357-372.
-!* 
+!*
 !* Katate Masatsuka, February 2009. http://www.cfdbooks.com
 !*****************************************************************************
  function roe(uL, uR, nx, ny)
@@ -63,7 +63,7 @@
        one = 1.0
        two = 2.0
 
-!Tangent vector (Do you like it? Actually, Roe flux can be implemented 
+!Tangent vector (Do you like it? Actually, Roe flux can be implemented
 ! without any tangent vector. See "I do like CFD, VOL.1" for details.)
   tx = -ny
   ty = nx
@@ -99,7 +99,7 @@
     vt = vx*tx+vy*ty
 
 !Wave Strengths
-   drho = rhoR - rhoL 
+   drho = rhoR - rhoL
      dp =   pR - pL
     dvn =  vnR - vnL
     dvt =  vtR - vtL
@@ -123,7 +123,7 @@
    if ( ws(4) < dws(4) ) ws(4) = half * ( ws(4)*ws(4)/dws(4)+dws(4) )
 
 !Right Eigenvectors
-  Rv(1,1) = one    
+  Rv(1,1) = one
   Rv(2,1) = vx - a*nx
   Rv(3,1) = vy - a*ny
   Rv(4,1) =  H - vn*a
@@ -135,7 +135,7 @@
 
   Rv(1,3) = one
   Rv(2,3) = vx
-  Rv(3,3) = vy 
+  Rv(3,3) = vy
   Rv(4,3) = half*(vx*vx+vy*vy)
 
   Rv(1,4) = one
@@ -191,7 +191,7 @@
 !Local constants
  double precision :: gamma                          ! Ratio of specific heat.
  double precision :: zero, fifth, half, one, two    ! Numbers
- double precision :: eps                            ! 
+ double precision :: eps                            !
 !Local variables
  double precision :: nx1, ny1, nx2, ny2             ! Rotated normals, n1 and n2
  double precision :: tx, ty                         ! Tangent vector (taken as n1)
@@ -250,8 +250,8 @@
    fR(4) = rhoR*vnR *  HR
 
 !Define n1 and n2, and compute alpha1 and alpha2: (4.2) in the original paper.
-!(NB: n1 and n2 may need to be frozen at some point during 
-!     a steady calculation to fully make it converge. For time-accurate 
+!(NB: n1 and n2 may need to be frozen at some point during
+!     a steady calculation to fully make it converge. For time-accurate
 !     calculation, this is fine.)
 ! NB: For a boundary face, set (nx2,ny2)=(nx,ny), (nx1,ny1)=(-ny,nx).
 
@@ -260,10 +260,10 @@
        nx1 = (vxR-vxL)/abs_dq
        ny1 = (vyR-vyL)/abs_dq
   else
-    nx1 = -ny 
+    nx1 = -ny
     ny1 =  nx
   endif
-    alpha1 = nx * nx1 + ny * ny1 
+    alpha1 = nx * nx1 + ny * ny1
 !   To make alpha1 always positive.
       temp = sign(one,alpha1)
        nx1 = temp * nx1
@@ -299,7 +299,7 @@
     vtL = vxL*nx1 + vyL*ny1
     vtR = vxR*nx1 + vyR*ny1
 
-   drho = rhoR - rhoL 
+   drho = rhoR - rhoL
      dp =   pR - pL
     dvn =  vnR - vnL
     dvt =  vtR - vtL
@@ -334,7 +334,7 @@
   tx = nx1
   ty = ny1
 
-  Rv(1,1) = one    
+  Rv(1,1) = one
   Rv(2,1) = vx - a*nx2
   Rv(3,1) = vy - a*ny2
   Rv(4,1) =  H - vn*a
@@ -346,7 +346,7 @@
 
   Rv(1,3) = one
   Rv(2,3) = vx
-  Rv(3,3) = vy 
+  Rv(3,3) = vy
   Rv(4,3) = half*(vx*vx+vy*vy)
 
   Rv(1,4) = one

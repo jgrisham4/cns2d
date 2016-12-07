@@ -1,5 +1,5 @@
-I now have the gradient calculation.  It seems to be correct.  
-Now, I believe that I should go through and reconstruct the 
+I now have the gradient calculation.  It seems to be correct.
+Now, I believe that I should go through and reconstruct the
 states on each face according to
 
 u^L_{i,j+1/2} = u_{i,j} + (grad(u) . rvec) phi(r)
@@ -8,7 +8,7 @@ where r = (grad(u) . rvec)_L / (grad(u) . rvec)_R
 
 This will construct the interface states which will 
 then be used to solve the Riemann problem using Roe's
-approximate scheme.  
+approximate scheme.
 
 After that, all I need to do is change the
 update subroutine so that the fluxes from all the interfaces
