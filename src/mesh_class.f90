@@ -15,9 +15,9 @@ module mesh_class
   type edge
     double precision :: length  ! length of interface
     double precision :: xm,ym   ! x- and y-coordinates of midpoint
-    double precision :: uL(4)   ! Left interface state 
-    double precision :: uR(4)   ! Right interface state 
-    double precision :: flux(4) ! value of the flux at the interface
+    double precision :: uL(4)   ! Left interface state
+    double precision :: uR(4)   ! Right interface state
+    double precision :: flux(4) ! value of the flux at the interface (i.e., f.n)
   end type edge
 
   !---------------------------------------------------------
@@ -27,11 +27,11 @@ module mesh_class
     double precision :: xc,yc    ! Coordinates of cell centroid
     double precision :: area     ! Area of the cell
     double precision :: n(2,4)   ! Face normals
-    double precision :: dxdxi    ! dx/dxi 
+    double precision :: dxdxi    ! dx/dxi
     double precision :: dydxi    ! dy/dxi
     double precision :: dxdeta   ! dx/deta
     double precision :: dydeta   ! dy/deta
-    double precision :: detJ      ! Jacobian determinant
+    double precision :: detJ     ! Jacobian determinant
     double precision :: u(4)     ! Vector of conserved variables
     double precision :: u0(4)    ! Vector of conserved variables at previous timestep
     double precision :: w(4)     ! Vector of primitive variables
@@ -39,7 +39,7 @@ module mesh_class
   end type element
 
   !---------------------------------------------------------
-  ! Mesh class definition 
+  ! Mesh class definition
   !---------------------------------------------------------
   type mesh
     integer                       :: imax,jmax      ! Number of nodes in i and j
@@ -50,7 +50,7 @@ module mesh_class
     type(edge), allocatable       :: edges_v(:,:)   ! Vertical edges
   end type mesh
 
-  contains 
+  contains
 
     !-------------------------------------------------------
     ! Subroutine for reading the mesh from a CGNS file
@@ -81,7 +81,7 @@ module mesh_class
       ! Lower range index
       irmin(1) = 1
       irmin(2) = 1
-      
+
       ! Upper range index
       irmax(1)  = isize(1,1)
       irmax(2)  = isize(2,1)
@@ -101,12 +101,12 @@ module mesh_class
         print *, "Error: can't allocate memory for ytmp."
         stop
       end if
-      allocate(this%x(-1:this%imax+2,-1:this%jmax+2),stat=aerr) 
+      allocate(this%x(-1:this%imax+2,-1:this%jmax+2),stat=aerr)
       if (aerr.ne.0) then
         print *, "Error: can't allocate memory for x."
         stop
       end if
-      allocate(this%y(-1:this%imax+2,-1:this%jmax+2),stat=aerr) 
+      allocate(this%y(-1:this%imax+2,-1:this%jmax+2),stat=aerr)
       if (aerr.ne.0) then
         print *, "Error: can't allocate memory for y."
         stop
@@ -153,8 +153,8 @@ module mesh_class
       do j=1,this%jmax
         do i=1,this%imax
           write(2,'(es25.10,a,es25.10)') this%x(i,j),' ',this%y(i,j)
-        end do 
-      end do 
+        end do
+      end do
       close(2)
 
     end subroutine write_to_tec
@@ -171,7 +171,7 @@ module mesh_class
       double precision,dimension(2) :: p1,p2,p3,p4 ! Points used in reflections
       double precision              :: x1,x2,x3,x4 ! Coordinates of nodes for an element
       double precision              :: y1,y2,y3,y4 ! Coordinates of nodes for an element
-      
+
       ! Allocating memory
       allocate(this%elem(-1:(this%imax-1)+2,-1:(this%jmax-1)+2),stat=aerr)
       if (aerr.ne.0) then
@@ -285,7 +285,7 @@ module mesh_class
         this%x(-1,j) = p4(1)
         this%y(-1,j) = p4(2)
 
-        ! Right side first point 
+        ! Right side first point
         p1(1) = this%x(this%imax,j)
         p1(2) = this%y(this%imax,j)
         p2(1) = this%x(this%imax,j+1)
@@ -336,7 +336,7 @@ module mesh_class
       p4 = reflect(p1,p2,p3)
       this%x(this%imax+2,this%jmax) = p4(1)
       this%y(this%imax+2,this%jmax) = p4(2)
-      
+
       ! Copying data to cells in corners
       ! Bottom left corner
       this%x(0,0)   = this%x(0,1)
@@ -401,7 +401,7 @@ module mesh_class
           ! Computing centroids of elements
           this%elem(i,j)%xc = 0.25d0*(x1+x2+x3+x4)
           this%elem(i,j)%yc = 0.25d0*(y1+y2+y3+y4)
-          
+
           ! Computing cell area
           this%elem(i,j)%area = 0.5d0*((x1-x3)*(y2-y4)+(x4-x2)*(y1-y3))
 
@@ -418,7 +418,7 @@ module mesh_class
           this%elem(i,j)%dydeta = 0.5d0*(this%elem(i,j+1)%yc - this%elem(i,j-1)%yc)
         end do
       end do
-      
+
       ! Computing metrics on the vertical boundaries
       do j=1,this%nelemj
 
@@ -444,7 +444,6 @@ module mesh_class
           i = this%nelemi
           this%elem(i,j)%dxdeta = 0.5d0*(this%elem(i,j+1)%xc - this%elem(i,j-1)%xc)
           this%elem(i,j)%dydeta = 0.5d0*(this%elem(i,j+1)%yc - this%elem(i,j-1)%yc)
-          
 
         else if (j.eq.1) then
 
@@ -464,7 +463,7 @@ module mesh_class
           i = 1
           this%elem(i,j)%dxdeta = 0.5d0*(3.0d0*this%elem(i,j)%xc - 4.0d0*this%elem(i,j-1)%xc + this%elem(i,j-2)%xc)
           this%elem(i,j)%dydeta = 0.5d0*(3.0d0*this%elem(i,j)%yc - 4.0d0*this%elem(i,j-1)%yc + this%elem(i,j-2)%yc)
-          
+
           ! northeast corner
           i = this%nelemi
           this%elem(i,j)%dxdeta = 0.5d0*(3.0d0*this%elem(i,j)%xc - 4.0d0*this%elem(i,j-1)%xc + this%elem(i,j-2)%xc)
@@ -474,11 +473,11 @@ module mesh_class
 
 
       end do
-      
+
       ! Computing metrics on the horizontal boundaries
       ! PARALLELIZE
       do i=2,this%nelemi-1
-      
+
         ! top
         j = this%nelemj
         this%elem(i,j)%dxdxi  = 0.5d0*(this%elem(i+1,j)%xc - this%elem(i-1,j)%xc)
@@ -506,7 +505,7 @@ module mesh_class
       ! Horizontal edges
       do j=1,this%jmax
         do i=1,this%nelemi
-          
+
           ! Getting node locations
           x1 = this%x(i,j)
           y1 = this%y(i,j)

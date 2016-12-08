@@ -4,27 +4,30 @@
 ! method.
 !===========================================================
 module euler
-  use class_mesh, only : mesh
+  use mesh_class, only : mesh
   use utils,      only : u_to_w, w_to_u
   use limiters,   only : minmod, vanleer
   use flux,       only : inviscid_flux
   use grad,       only : compute_gradient
   use riemann,    only : roe
+  !use bc_class,   only : bc,apply
   implicit none
   private
   public :: elem_data, solver, initialize, solve, update, write_results
 
-  !*********************************************************
+  !---------------------------------------------------------
   ! Class for solver
-  !*********************************************************
+  !---------------------------------------------------------
   type solver
     integer                       :: ntsteps            ! Number of time steps
     integer                       :: nelem              ! Number of elements
     double precision              :: dt                 ! Time step
     double precision              :: g                  ! Ratio of specific heats
+    double precision              :: winfty(4)          ! Freestream primitive variables
     type(mesh)                    :: grid               ! Mesh object
+    type(bc)                      :: bcs(4)             ! Array of bc objects
     type(elem_data), allocatable  :: elem(:)            ! Element data
-    double precision, allocatable :: w_history(:,:,:,:) ! w solution hist
+    double precision, allocatable :: w_history(:,:,:,:) ! primitive solution hist
   end type solver
 
   contains
@@ -32,25 +35,25 @@ module euler
     !---------------------------------------------------------
     ! Subroutine which initializes solution, i.e., allocates
     ! memory and sets up some important variables
-    !
-    ! NOTE: The initial guess should include the values at
-    ! the ghost cells... I think
     !---------------------------------------------------------
-    subroutine initialize(this,m,nt,delta_t,gam,w0)
+    subroutine initialize(this,m,nt,delta_t,gam,w0,bcnames,winf)
       implicit none
-      type(solver),     intent(inout)           :: this
-      type(mesh),       intent(in)              :: m
-      integer,          intent(in)              :: nt
-      double precision, intent(in)              :: delta_t,gam
-      double precision, intent(in), allocatable :: w0(:,:,:)
-      double precision, allocatable             :: u0(:,:,:)
-      integer                                   :: allocate_err,i
+      type(solver),       intent(inout)           :: this
+      type(mesh),         intent(in)              :: m
+      integer,            intent(in)              :: nt
+      double precision,   intent(in)              :: delta_t,gam
+      double precision,   intent(in), allocatable :: w0(:,:,:)
+      character (len=30), intent(in)              :: bcnames(4)
+      double precision, allocatable               :: u0(:,:,:)
+      double precision, dimension(4)              :: winf
+      integer                                     :: allocate_err,i
 
       ! Assigning members of the solver class
       this%grid    = m
       this%ntsteps = nt
       this%dt      = delta_t
       this%g       = gam
+      this%winfty  = winf
 
       ! Allocating memory for solution history
       allocate(this%w_history(this%grid%nelemi,this%grid%nelemj,nt+1,4),stat=allocate_err)
@@ -69,11 +72,16 @@ module euler
       end do
 
       ! Filling data into elem structures
-      do j=-1,this%grid%nelemj+2
-        do i=-1,this%nelem+2
+      do j=1,this%grid%nelemj
+        do i=1,this%grid%nelemi
           this%elem(i,j)%u  = u0(i,j,:)
           this%elem(i,j)%w  = w0(i,j,:)
         end do
+      end do
+
+      ! Setting up boundary condition objects
+      do i=1,4
+        bcs(i)%bcname = bcnames(i)
       end do
 
       print *, "Done initializing solver."
@@ -122,10 +130,10 @@ module euler
       type(solver), intent(inout)    :: this
       double precision               :: duL(4),duR(4)
       double precision               :: wL(4),wR(4)
-      double precision               :: r(4)
+      double precision, dimension(4) :: fx,fy,uextrap,wextrap
       double precision               :: umax,umin
       integer                        :: i,j,k,err
-      double precision, dimension(2) :: rL,rR
+      double precision, dimension(2) :: rL,rR,r
       double precision, allocatable  :: u(:,:,:)
       double precision, allocatable  :: gradU(:,:,:)
       !double precision,allocatable  :: f_interface(:,:)
@@ -336,28 +344,58 @@ module euler
         end do
       end do
 
-      ! Enforcing slip boundary conditions along the bottom wall
-
-      ! Enforcing slip boundary conditions along the top wall
-
-      ! Inlet boundary conditions
-
-      ! Outlet boundary conditions
-
-      ! The current boundary condition is no gradient at either end.
-      ! This is enforced by copying the state from the interior of the domain
-      ! to the ghost cells.
-      this%elem(0)%wL = this%elem(1)%wR
-      this%elem(this%nelem-1)%wR = this%elem(this%nelem-2)%wL
-      this%elem(0)%w = this%elem(1)%w
-      this%elem(this%nelem-1)%w = this%elem(this%nelem-2)%w
-
-      ! Must iterate through all the interior interfaces and solve
-      ! the Riemann problem to find the fluxes
-      do i=1,this%nelem-1
-        f_interface(:,i) = roe_flux2(this%elem(i-1)%wL,this%elem(i)%wR,this%g)
-        !f_interface(:,i) = roe_flux(this%elem(i-1)%wL,this%elem(i)%wR,this%g)
+      ! Enforcing farfield boundary conditions on the bottom and left boundaries
+      ! Sides of an element are numbered as follows
+      !         3
+      !   o-----------o
+      !   |           |
+      ! 4 |           | 2
+      !   |           |
+      !   o-----------o
+      !         1
+      !
+      fx = fluxax(this%winfty,this%g)
+      fy = fluxay(this%winfty,this%g)
+      do i=1,this%grid%nelemi
+        this%grid%edges_h(i,1)%flux = fx*this%grid%elem(i,1)%n(1,1) + fy*this%grid%elem(i,1)%n(2,1)
       end do
+      do j=1,this%grid%nelemj
+        this%grid%edges_v(1,j)%flux = fx*this%grid%elem(1,j)%n(1,4) + fy*this%grid%elem(1,j)%n(2,4)
+      end do
+
+      ! Enforcing extrapolate bcs on the right and top boundaries
+      j = this%grid%nelemj
+      do i=1,this%grid%nelemi+1
+        r(1) = this%grid%edges_h(i,j+1)%xm - this%grid%elem(i,j)%xc
+        r(2) = this%grid%edges_h(i,j+1)%ym - this%grid%elem(i,j)%yc
+        uextrap = this%grid%elem(i,j)%u + gradU(i,j,1:4)*r(1) + gradU(i,j,5:8)*r(2)
+        wextrap = u_to_w(uextrap,this%g)
+        fx = fluxax(wextrap,this%g)
+        fy = fluxay(wextrap,this%g)
+        this%grid%edges_h(i,j+1)%flux = -fx*this%grid%elem(i,j)%n(1,2) - fy*this%grid%elem(i,j)%n(2,2)
+      end do
+      i = this%grid%nelemi
+      do j=1,this%grid%nelemj+1
+        r(1) = this%grid%edges_v(i+1,j)%xm - this%grid%elem(i,j)%xc
+        r(2) = this%grid%edges_v(i+1,j)%ym - this%grid%elem(i,j)%yc
+        uextrap = this%grid%elem(i,j)%u + gradU(i,j,1:4)*r(1) + gradU(i,j,5:8)*r(2)
+        wextrap = u_to_w(uextrap,this%g)
+        fx = fluxax(wextrap,this%g)
+        fy = fluxay(wextrap,this%g)
+        this%grid%edges_v(i+1,j)%flux = -fx*this%grid%elem(i,j)%n(1,3) - fy*this%grid%elem(i,j)%n(2,3)
+      end do
+
+      ! Must now iterate through all the interior interfaces and solve
+      ! the Riemann problem to find the fluxes
+      do j=1,this%grid%nelemj
+        do i=1,this%grid%nelemi
+        end do
+      end do
+
+      ! This was in 1D
+      !do i=1,this%nelem-1
+      !  f_interface(:,i) = roe_flux2(this%elem(i-1)%wL,this%elem(i)%wR,this%g)
+      !end do
 
       ! Advance one step in time (forward Euler for now)
       do i=1,this%nelem-2
