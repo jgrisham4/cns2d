@@ -1,8 +1,8 @@
 !===========================================================
 ! This module contains some utility functions
 !
-! NOTE: The assumption of a calorically perfect gas is 
-!       made in the below conversions to and from 
+! NOTE: The assumption of a calorically perfect gas is
+!       made in the below conversions to and from
 !       conservative and primitive variable vectors.
 !===========================================================
 
@@ -14,8 +14,8 @@ module utils
   contains
 
     !------------------------------------------------------
-    ! Function for converting a vector of primitive 
-    ! variables to a vector of conserved variables.  
+    ! Function for converting a vector of primitive
+    ! variables to a vector of conserved variables.
     ! Assuming a calorically perfect gas.
     !------------------------------------------------------
     function w_to_u(w,g) result(u)
@@ -27,9 +27,9 @@ module utils
       u(3) = w(1)*w(3)
       u(4) = w(4)/(g-1.0d0)+0.5d0*w(1)*(w(2)**2 + w(3)**2)
     end function w_to_u
-    
+
     !------------------------------------------------------
-    ! Function for converting from vector of conserved 
+    ! Function for converting from vector of conserved
     ! variables to a vector of primitive variables.
     ! Assuming a calorically perfect gas.
     !------------------------------------------------------
@@ -67,7 +67,7 @@ module utils
     end function reflect
 
     !------------------------------------------------------
-    ! Function for computing a normal vector given 
+    ! Function for computing a normal vector given
     ! components of a vector
     !------------------------------------------------------
     function nvec(xc,yc) result(nhat)
@@ -75,7 +75,7 @@ module utils
       double precision, intent(in) :: xc      ! x-component
       double precision, intent(in) :: yc      ! y-component
       double precision             :: mag     ! magnitude of vector
-      double precision             :: nhat(2) 
+      double precision             :: nhat(2)
 
       ! Computing magnitude of vector
       mag = sqrt(xc*xc + yc*yc)

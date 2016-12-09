@@ -124,8 +124,11 @@ test gradient
       end do
       write(2,'(a)') " "
     end do
-  
+
   end do
+
+  ! Closing file
+  close(2)
 
   ! Computing the order-of-accuracy for the x-component of the gradient
   xv = log10(dx)
@@ -151,7 +154,7 @@ test gradient
   xstar(1) = (bm(1)*Am(2,2) - Am(1,2)*bm(2))/(Am(1,1)*Am(2,2) - Am(1,2)*Am(2,1))
   print *, "order of accuracy for y-component of gradient is ", xstar(1)
   assert_equal_within(xstar(1),2.0d0,1.0e-1)
-  
+
 end test
 
 end test_suite

@@ -21,7 +21,7 @@ program test_solver
   dt        = 0.0005d0
   gam       = 1.4d0
   soln_file = "solution.dat"
-  
+
   ! Generating mesh
   call generate(grid,npts,x_min,x_max)
 
@@ -52,7 +52,7 @@ program test_solver
 
   ! Initializing solver
   call initialize(euler_solver,grid,ntsteps,dt,gam,ic)
-  
+
   ! Solving the problem
   call solve(euler_solver)
 

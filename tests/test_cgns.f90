@@ -33,11 +33,11 @@ program test_cgns
   ! Setting the number of nodes in each direction
   isize(1,1) = imax
   isize(2,1) = jmax
-         
+
   ! Setting the number of cells in each direction
   isize(1,2) = imax-1
   isize(2,2) = jmax-1
-         
+
   ! Setting boundary vertex size (0 for structured)
   isize(1,3) = 0
   isize(2,3) = 0

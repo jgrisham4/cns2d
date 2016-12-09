@@ -11,23 +11,23 @@ program test_cgns
   ! Setting grid inputs
   imax = 201
   jmax = 201
-  xmin = 0.0d0
-  xmax = 1.0d0
-  ymin = 0.0d0
-  ymax = 1.0d0
+  xmin = -20.0d0
+  xmax = 20.0d0
+  ymin = -20.0d0
+  ymax = 20.0d0
 
   ! Allocating memory for arrays
   allocate(x(imax,jmax),stat=aerr)
   if (aerr.ne.0) then
-    print *, "Error: Can't allocate memory for x." 
+    print *, "Error: Can't allocate memory for x."
     stop
   end if
   allocate(y(imax,jmax),stat=aerr)
   if (aerr.ne.0) then
-    print *, "Error: Can't allocate memory for y." 
+    print *, "Error: Can't allocate memory for y."
     stop
   end if
-  
+
   ! Creating grid points for this simple example
   dx = (xmax - xmin)/dble(imax-1)
   dy = (ymax - ymin)/dble(jmax-1)
@@ -40,7 +40,7 @@ program test_cgns
   print *, 'Done creating 2-D grid points.'
 
   ! Opening a CGNS file
-  call cg_open_f('square200.cgns',CG_MODE_WRITE,index_file,ier)
+  call cg_open_f('iv200.cgns',CG_MODE_WRITE,index_file,ier)
   if (ier.ne.CG_OK) call cg_error_exit_f
 
   ! Creating base
@@ -55,11 +55,11 @@ program test_cgns
   ! Setting the number of nodes in each direction
   isize(1,1) = imax
   isize(2,1) = jmax
-         
+
   ! Setting the number of cells in each direction
   isize(1,2) = imax-1
   isize(2,2) = jmax-1
-         
+
   ! Setting boundary vertex size (0 for structured)
   isize(1,3) = 0
   isize(2,3) = 0

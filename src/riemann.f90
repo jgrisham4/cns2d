@@ -36,9 +36,10 @@
 !*
 !* Katate Masatsuka, February 2009. http://www.cfdbooks.com
 !*****************************************************************************
- function roe(uL, uR, nx, ny)
+ function roe(uL, uR, nhat)
  double precision :: uL(4), uR(4) !  Input: conservative variables rho*[1, u, v, E]
- double precision :: nx, ny       !  Input: face normal vector, [nx, ny] (Left-to-Right)
+ double precision :: nhat(2)      !  Input: face normal vector
+ double precision :: nx, ny       ! Face normal vector, [nx, ny] (Left-to-Right)
  double precision :: roe(4)       ! Output: Roe flux function (upwind)
 !Local constants
  double precision :: gamma                          ! Ratio of specific heat.
@@ -65,6 +66,8 @@
 
 !Tangent vector (Do you like it? Actually, Roe flux can be implemented
 ! without any tangent vector. See "I do like CFD, VOL.1" for details.)
+  nx = nhat(1)
+  ny = nhat(2)
   tx = -ny
   ty = nx
 

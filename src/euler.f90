@@ -4,16 +4,16 @@
 ! method.
 !===========================================================
 module euler
+  use cgns
   use mesh_class, only : mesh
   use utils,      only : u_to_w, w_to_u
   use limiters,   only : minmod, vanleer
   use flux,       only : inviscid_flux
   use grad,       only : compute_gradient
   use riemann,    only : roe
-  !use bc_class,   only : bc,apply
   implicit none
   private
-  public :: elem_data, solver, initialize, solve, update, write_results
+  public :: elem_data, solver, initialize, solve, update, write_results, write_tec
 
   !---------------------------------------------------------
   ! Class for solver
@@ -22,10 +22,10 @@ module euler
     integer                       :: ntsteps            ! Number of time steps
     integer                       :: nelem              ! Number of elements
     double precision              :: dt                 ! Time step
+    double precision              :: tfinal             ! Final time
     double precision              :: g                  ! Ratio of specific heats
     double precision              :: winfty(4)          ! Freestream primitive variables
     type(mesh)                    :: grid               ! Mesh object
-    type(bc)                      :: bcs(4)             ! Array of bc objects
     type(elem_data), allocatable  :: elem(:)            ! Element data
     double precision, allocatable :: w_history(:,:,:,:) ! primitive solution hist
   end type solver
@@ -36,24 +36,26 @@ module euler
     ! Subroutine which initializes solution, i.e., allocates
     ! memory and sets up some important variables
     !---------------------------------------------------------
-    subroutine initialize(this,m,nt,delta_t,gam,w0,bcnames,winf)
+    subroutine initialize(this,tfinal,m,gam,w0,winf)
       implicit none
       type(solver),       intent(inout)           :: this
       type(mesh),         intent(in)              :: m
-      integer,            intent(in)              :: nt
       double precision,   intent(in)              :: delta_t,gam
       double precision,   intent(in), allocatable :: w0(:,:,:)
       character (len=30), intent(in)              :: bcnames(4)
+      double precision,   intent(in)              :: winf(4)
+      integer                                     :: nt
       double precision, allocatable               :: u0(:,:,:)
-      double precision, dimension(4)              :: winf
       integer                                     :: allocate_err,i
 
       ! Assigning members of the solver class
       this%grid    = m
-      this%ntsteps = nt
       this%dt      = delta_t
       this%g       = gam
       this%winfty  = winf
+
+      ! Determining the largest possible timestep
+
 
       ! Allocating memory for solution history
       allocate(this%w_history(this%grid%nelemi,this%grid%nelemj,nt+1,4),stat=allocate_err)
@@ -79,11 +81,6 @@ module euler
         end do
       end do
 
-      ! Setting up boundary condition objects
-      do i=1,4
-        bcs(i)%bcname = bcnames(i)
-      end do
-
       print *, "Done initializing solver."
 
     end subroutine initialize
@@ -100,8 +97,7 @@ module euler
       do k=1,this%ntsteps
 
         ! Printing some information
-        !write(*,'(es10.5)') dble(i-1)*this%dt
-        print *, "t=", dble(i)*this%dt
+        write(*,'(a,es10.5)') "t = ", dble(i-1)*this%dt
 
         ! Storing current solution
         do j=1,this%grid%nelemj
@@ -115,10 +111,12 @@ module euler
 
       end do
 
-      ! Storing current solution
-      !do j=1,this%grid%num_elements
-      !  this%w_history(j,i+1,:) = this%elem(j)%w
-      !end do
+      ! Storing last solution
+      do j=1,this%grid%nelemj
+        do i=1,this%grid%nelemi
+          this%w_history(i,j,this%ntsteps+1,:) = this%grid%elem(i,j)%w
+        end do
+      end do
 
     end subroutine solve
 
@@ -136,7 +134,6 @@ module euler
       double precision, dimension(2) :: rL,rR,r
       double precision, allocatable  :: u(:,:,:)
       double precision, allocatable  :: gradU(:,:,:)
-      !double precision,allocatable  :: f_interface(:,:)
 
       ! Allocating memory for gradient of state at cell centers
       allocate(gradU(this%grid%nelemi,this%grid%nelemj,8),stat=err)
@@ -387,22 +384,28 @@ module euler
 
       ! Must now iterate through all the interior interfaces and solve
       ! the Riemann problem to find the fluxes
+      ! Vertical faces
       do j=1,this%grid%nelemj
+        do i=2,this%grid%nelemi
+          this%grid%edges_v(i,j)%flux = roe(this%grid%edges_v(i,j)%uL,this%grid%edges_v(i,j)%uR,this%grid%elem(i-1,j)%n(:,2))
+        end do
+      end do
+      ! Horizontal faces
+      do j=2,this%grid%nelemj
         do i=1,this%grid%nelemi
+          this%grid%edges_h(i,j)%flux = roe(this%grid%edges_h(i,j)%uL,this%grid%edges_h(i,j)%uR,this%grid%elem(i,j-1)%n(:,3))
         end do
       end do
 
-      ! This was in 1D
-      !do i=1,this%nelem-1
-      !  f_interface(:,i) = roe_flux2(this%elem(i-1)%wL,this%elem(i)%wR,this%g)
-      !end do
-
       ! Advance one step in time (forward Euler for now)
-      do i=1,this%nelem-2
-        this%elem(i)%u0 = this%elem(i)%u
-        this%elem(i)%u = this%elem(i)%u - this%dt/(this%grid%dx)* &
-          (f_interface(:,i+1) - f_interface(:,i))
-        this%elem(i)%w = u_to_w(this%elem(i)%u,this%g)
+      do j=1,this%grid%nelemj
+        do i=1,this%grid%nelemi
+          this%grid%elem(i,j)%u = this%grid%elem(i,j)%u - this%dt/(this%elem(i,j)%area)* &
+            (this%grid%edges_h(i,j)%flux*this%grid%edges_h(i,j)%length + &
+            this%grid%edges_h(i,j+1)%flux*this%grid%edges_h(i,j+1)%length + &
+            this%grid%edges_v(i,j)%flux*this%grid%edges_v(i,j)%length + &
+            this%grid%edges_v(i+1,j)%flux*this%grid%edges_v(i+1,j)%length)
+        end do
       end do
 
     end subroutine update
@@ -412,50 +415,145 @@ module euler
     !---------------------------------------------------------
     subroutine write_results(this, file_name)
       implicit none
-      type(solver), intent(inout) :: this
-      character (len=*)           :: file_name
-      integer                     :: i,j
+      type(solver), intent(inout)  :: this
+      character (len=*),intent(in) :: file_name
+      integer (kind=4)             :: isize(2,3)
+      character (len=30)           :: basename,zonename
+      integer                      :: i,j,ier
+      integer                      :: idx_file,idx_base
+      integer                      :: icelldim,iphysdim
+      integer, dimension(3)        :: irmin,irmax
 
-      ! Opening file
-      open(3,file="inputs.dat")
-      write(3,*) this%grid%num_elements, this%ntsteps, this%dt
+      ! Setting inputs for CGNS file
+      idx_file   = 1
+      idx_base   = 1
+      icelldim   = 2
+      iphysdim   = 2
+      isize(1,1) = this%grid%imax
+      isize(2,1) = this%grid%jmax
+      isize(1,2) = this%grid%nelemi
+      isize(2,2) = this%grid%nelemj
+      isize(1,3) = 0
+      isize(2,3) = 0
+      basename   = "Base"
+      zonename   = "Euler solution"
 
-      ! Writing cell centers
-      do i=1,this%grid%num_elements
-        write(3,*) this%grid%xc(i)
+      ! Opening CGNS file
+      call cg_open_f(file_name,CG_MODE_WRITE,idx_file,ier)
+      if (ier.ne.CG_OK) call cg_error_exit_f
+
+      ! Creating zone
+
+      ! Closing CGNS file
+      call cg_close_f(idx_file,ier)
+      if (ier.ne.CG_OK) call cg_error_exit_f
+
+    end subroutine write_results
+
+    !---------------------------------------------------------
+    ! Subroutine for writing results out to a Tecplot file
+    !---------------------------------------------------------
+    subroutine write_tec(this, file_name)
+      implicit none
+      type(solver), intent(in)  :: this
+      character (len=*),intent(in) :: file_name
+
+      ! Opening Tecplot file
+      open(2,file="solution.tec")
+
+      ! Writing header
+      write(2,'(a)') 'title="Unsteady results"'
+      write(2,'(a)') 'variables="x","y","rho","u","v","E"'
+      write(2,'(a,i5,a,i5)') 'zone i=', grids(k)%imax, ' j=', grids(k)%jmax
+      write(2,'(a)') 'datapacking=block'
+      write(2,'(a)') 'varlocation=([3,4,5,6]=cellcentered)'
+
+      ! Writing data for each time step
+      do k=1,this%ntsteps
+
+        ! Writing x-coordinates of nodes
+        do j=1,this%grid%jmax
+          do i=1,this%grid%imax
+            write(2,'(es25.10)',advance='no') this%grid%x(i,j)
+            if (mod((j-1)*this%grid%imax+i,10).eq.0) then
+              write(2,'(a)') " "
+            end if
+          end do
+        end do
+        if (mod((j-1)*this%grid%imax+i,10).ne.0) then
+          write(2,'(a)') " "
+        end if
+
+        ! Writing y-coordinates of nodes
+        do j=1,this%grid%jmax
+          do i=1,this%grid%imax
+            write(2,'(es25.10)',advance='no') this%grid%y(i,j)
+            if (mod((j-1)*this%grid%imax+i,10).eq.0) then
+              write(2,'(a)') " "
+            end if
+          end do
+        end do
+        if (mod((j-1)*this%grid%imax+i,10).ne.0) then
+          write(2,'(a)') " "
+        end if
+
+        ! Writing density at cell-centers
+        do j=1,this%grid%nelemj
+          do i=1,this%grid%nelemi
+            write(2,'(es25.10)',advance='no') this%w_history(i,j,k,1)
+            if (mod((j-1)*this%grid%nelemi+i,10).eq.0) then
+              write(2,'(a)') " "
+            end if
+          end do
+        end do
+        if (mod((j-1)*this%grid%nelemi+i,10).ne.0) then
+          write(2,'(a)') " "
+        end if
+
+        ! Writing x-velocity at cell-centers
+        do j=1,this%grid%nelemj
+          do i=1,this%grid%nelemi
+            write(2,'(es25.10)',advance='no') this%w_history(i,j,k,2)
+            if (mod((j-1)*this%grid%nelemi+i,10).eq.0) then
+              write(2,'(a)') " "
+            end if
+          end do
+        end do
+        if (mod((j-1)*this%grid%nelemi+i,10).ne.0) then
+          write(2,'(a)') " "
+        end if
+
+        ! Writing y-velocity at cell-centers
+        do j=1,this%grid%nelemj
+          do i=1,this%grid%nelemi
+            write(2,'(es25.10)',advance='no') this%w_history(i,j,k,3)
+            if (mod((j-1)*this%grid%nelemi+i,10).eq.0) then
+              write(2,'(a)') " "
+            end if
+          end do
+        end do
+        if (mod((j-1)*this%grid%nelemi+i,10).ne.0) then
+          write(2,'(a)') " "
+        end if
+
+        ! Writing pressure at cell-centers
+        do j=1,this%grid%nelemj
+          do i=1,this%grid%nelemi
+            write(2,'(es25.10)',advance='no') this%w_history(i,j,k,4)
+            if (mod((j-1)*this%grid%nelemi+i,10).eq.0) then
+              write(2,'(a)') " "
+            end if
+          end do
+        end do
+        if (mod((j-1)*this%grid%nelemi+i,10).ne.0) then
+          write(2,'(a)') " "
+        end if
+
       end do
 
       ! Closing file
-      close(3)
+      call close(2)
 
-      ! Writing density
-      open(3,file="rho.dat")
-      do j=1,this%ntsteps
-        do i=1,this%grid%num_elements
-          write(3,*) this%w_history(i,j,1)
-        end do
-      end do
-      close(3)
-
-      ! Writing velocity
-      open(3,file="u.dat")
-      do j=1,this%ntsteps
-        do i=1,this%grid%num_elements
-          write(3,*) this%w_history(i,j,2)
-        end do
-      end do
-      close(3)
-
-      ! Writing pressure
-      open(3,file="p.dat")
-      do j=1,this%ntsteps
-        do i=1,this%grid%num_elements
-          write(3,*) this%w_history(i,j,3)
-        end do
-      end do
-      close(3)
-
-
-    end subroutine write_results
+    end subroutine write_tec
 
 end module class_solver
