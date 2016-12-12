@@ -1,18 +1,19 @@
 program isentropic_vortex
-  use mesh_class, only : mesh,read_from_file,preprocess
-  use euler,      only : solver,initialize,solve,write_tec
+  use mesh_class,   only : mesh,read_from_file,preprocess
+  use euler_solver, only : solver,initialize,solve,write_tec
   implicit none
   double precision :: a,rho_inf,p_inf,u_inf,v_inf,x0,y0,K,xb,yb,rb,temp,g
-  double precision :: rgas,t_inf,a_inf
+  double precision :: rgas,t_inf,a_inf,winfty(4)
   double precision, allocatable :: w0(:,:,:)
   double precision, parameter :: pi = 4.0d0*atan(1.0d0)
-  integer :: aerr
+  integer :: aerr,i,j
 
   ! Creating mesh and solver objects
   type(mesh)   :: grid
   type(solver) :: euler_solver
 
   ! Reading mesh
+  !call read_from_file(grid,"iv500.cgns")
   call read_from_file(grid,"iv200.cgns")
 
   ! Preprocessing mesh
@@ -26,24 +27,28 @@ program isentropic_vortex
   end if
 
   ! Setting exact solution
-  rgas    = 287.0d0
-  g       = 1.4d0
-  a       = 1.0d0
-  rho_inf = 1.0d0
-  p_inf   = 1.0/1.40d0
-  u_inf   = 2.0d0
-  v_inf   = 2.0d0
-  x0      = -10.0d0
-  y0      = -10.0d0
-  K       = 5.0d0
-  t_inf   = p_inf/(rho_inf*rgas)
-  a_inf   = sqrt(g*rgas*t_inf)
+  rgas      = 287.0d0
+  g         = 1.4d0
+  a         = 1.0d0
+  rho_inf   = 1.0d0
+  p_inf     = 1.0/1.40d0
+  u_inf     = 2.0d0
+  v_inf     = 2.0d0
+  x0        = -10.0d0
+  y0        = -10.0d0
+  K         = 5.0d0
+  t_inf     = p_inf/(rho_inf*rgas)
+  a_inf     = sqrt(g*rgas*t_inf)
+  winfty(1) = rho_inf
+  winfty(2) = u_inf
+  winfty(3) = v_inf
+  winfty(4) = p_inf
   do j=1,grid%nelemj
     do i=1,grid%nelemi
 
       ! computing bar quantities
-      xb = gird%elem(i,j)%xc - x0
-      yb = gird%elem(i,j)%yc - y0
+      xb = grid%elem(i,j)%xc - x0
+      yb = grid%elem(i,j)%yc - y0
       rb = sqrt(xb**2 + yb**2)
 
       ! Assigning initial field
@@ -57,9 +62,12 @@ program isentropic_vortex
   end do
 
   ! Initializing solver
+  call initialize(euler_solver,grid,0.001d0,10.0d0,1.4d0,w0,winfty)
 
   ! Solving problem
+  call solve(euler_solver)
 
   ! Writing results to ASCII Tecplot file
+  call write_tec(euler_solver,"isentropic_vortex.tec")
 
 end program isentropic_vortex

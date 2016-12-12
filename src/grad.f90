@@ -1,9 +1,9 @@
 !==========================================================
-! This module contains a subroutine which can be used to 
+! This module contains a subroutine which can be used to
 ! compute the gradient of a variable on a curvilinear
-! mesh.  It does so making use of the metrics of the 
+! mesh.  It does so making use of the metrics of the
 ! general transformation.
-! 
+!
 ! Author: James Grisham
 ! Date  : 12-03-2016
 !==========================================================
@@ -17,8 +17,8 @@ module grad
   contains
 
   !--------------------------------------------------------
-  ! Subroutine for computing the gradient 
-  ! Assuming that the variable we want to find the 
+  ! Subroutine for computing the gradient
+  ! Assuming that the variable we want to find the
   ! gradient of is contained in the elements which are
   ! members of the grid.
   !--------------------------------------------------------
@@ -27,9 +27,8 @@ module grad
     type(mesh), intent(in)                       :: grid
     double precision, allocatable, intent(in)    :: var(:,:,:)
     double precision, allocatable, intent(inout) :: gradVar(:,:,:)
-    double precision, dimension(4)               :: dvardx,dvardy
     double precision, dimension(4)               :: dvardxi,dvardeta
-    integer                                      :: i,j,k
+    integer                                      :: i,j
 
     ! Computing the gradient on the interior cells
     do j=2,grid%nelemj-1
@@ -56,7 +55,7 @@ module grad
         dvardxi = 0.5d0*(var(i+1,j,:) - var(i-1,j,:))
       else if (i.eq.1) then
         dvardxi = 0.5d0*(-3.0d0*var(i,j,:) + 4.0d0*var(i+1,j,:) - var(i+2,j,:))
-      else 
+      else
         dvardxi = 0.5d0*(3.0d0*var(i,j,:) - 4.0d0*var(i-1,j,:) + var(i-2,j,:))
       end if
 
@@ -76,7 +75,7 @@ module grad
         dvardxi = 0.5d0*(var(i+1,j,:) - var(i-1,j,:))
       else if (i.eq.1) then
         dvardxi = 0.5d0*(-3.0d0*var(i,j,:) + 4.0d0*var(i+1,j,:) - var(i+2,j,:))
-      else 
+      else
         dvardxi = 0.5d0*(3.0d0*var(i,j,:) - 4.0d0*var(i-1,j,:) + var(i-2,j,:))
       end if
 

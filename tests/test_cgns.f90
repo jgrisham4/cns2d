@@ -1,10 +1,12 @@
 program test_cgns
 
   use cgns
+  implicit none
   double precision :: x(4,4), y(4,4)
-  integer(kind=4) :: isize(2,3)
+  integer(kind=8) :: isize(2,3)
+  integer(kind=4) :: irmin(3),irmax(3)
   character (len=30) :: basename,zonename
-  integer :: imax,jmax
+  integer :: imax,jmax,i,j,icelldim,iphysdim,index_base,index_file,index_zone,index_coord,ier
 
   ! Creating grid points for this simple example
   imax = 4

@@ -1,12 +1,16 @@
-FC=ifort
-FCFLAGS=-O2 -I/share/CGNS-intel/build/include -I../src/ -mkl
+#FC=ifort
+FC=gfortran
+#FCFLAGS=-O2 -I/share/CGNS-intel/build/include -I../src/ -mkl
+#FCFLAGS=-g -check all -fpe0 -warn -traceback -debug extended -I/share/CGNS-intel/build/include -I../src/
+FCFLAGS=-g -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan -I/share/CGNS/build/include -I../src
 LIBNAME = libeuler2d.a
-LFLAGS=-L/share/CGNS-intel/build/lib -L../lib
+#LFLAGS=-L/share/CGNS-intel/build/lib -L../lib
+LFLAGS=-L/share/CGNS/build/lib -L../lib
 LIBS=-leuler2d -lcgns
 TST_FILES = $(wildcard *.f90)
 SRC_FILES = $(wildcard ../src/*.f90)
 OBJ_FILES = $(SRC_FILES:.f90=.o)
-TARGETS = test_mesh test_cgns test_reflection test_ghost square_grid
+TARGETS = test_mesh test_cgns test_reflection test_ghost square_grid isentropic_vortex
 
 all : lib $(TARGETS)
 
@@ -28,8 +32,12 @@ test_reflection : test_reflection.o ../lib/$(LIBNAME)
 test_ghost : test_ghost.o ../lib/$(LIBNAME)
 	$(FC) $(FCFLAGS) -o $@ $< $(LFLAGS) $(LIBS)
 
-square_grid : square_grid.o 
+square_grid : square_grid.o
+	$(FC) $(FCFLAGS) -o $@ $< $(LFLAGS) $(LIBS)
+
+isentropic_vortex : isentropic_vortex.o
 	$(FC) $(FCFLAGS) -o $@ $< $(LFLAGS) $(LIBS)
 
 clean :
-	rm -rf *.o *.out *.mod *.tec $(TARGETS)
+	rm -rf *.o *.out *.mod $(TARGETS)
+	cd ../src; make clean

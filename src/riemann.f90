@@ -36,6 +36,11 @@
 !*
 !* Katate Masatsuka, February 2009. http://www.cfdbooks.com
 !*****************************************************************************
+module riemann
+  implicit none
+  private
+  public :: roe, Rotated_RHLL
+  contains
  function roe(uL, uR, nhat)
  double precision :: uL(4), uR(4) !  Input: conservative variables rho*[1, u, v, E]
  double precision :: nhat(2)      !  Input: face normal vector
@@ -370,3 +375,4 @@
 
  end function Rotated_RHLL
 
+end module riemann

@@ -3,17 +3,17 @@
 ! equations using a second-order accurate finite volume
 ! method.
 !===========================================================
-module euler
+module euler_solver
   use cgns
   use mesh_class, only : mesh
   use utils,      only : u_to_w, w_to_u
-  use limiters,   only : minmod, vanleer
-  use flux,       only : inviscid_flux
+  use limiters,   only : minmod, vanleer, barth
+  use flux,       only : fluxax, fluxay
   use grad,       only : compute_gradient
   use riemann,    only : roe
   implicit none
   private
-  public :: elem_data, solver, initialize, solve, update, write_results, write_tec
+  public :: solver, initialize, solve, update, write_results, write_tec
 
   !---------------------------------------------------------
   ! Class for solver
@@ -26,7 +26,6 @@ module euler
     double precision              :: g                  ! Ratio of specific heats
     double precision              :: winfty(4)          ! Freestream primitive variables
     type(mesh)                    :: grid               ! Mesh object
-    type(elem_data), allocatable  :: elem(:)            ! Element data
     double precision, allocatable :: w_history(:,:,:,:) ! primitive solution hist
   end type solver
 
@@ -36,29 +35,29 @@ module euler
     ! Subroutine which initializes solution, i.e., allocates
     ! memory and sets up some important variables
     !---------------------------------------------------------
-    subroutine initialize(this,tfinal,m,gam,w0,winf)
+    subroutine initialize(this,m,delta_t,t_final,gam,w0,winf)
       implicit none
       type(solver),       intent(inout)           :: this
       type(mesh),         intent(in)              :: m
-      double precision,   intent(in)              :: delta_t,gam
+      double precision,   intent(in)              :: delta_t,gam,t_final
       double precision,   intent(in), allocatable :: w0(:,:,:)
-      character (len=30), intent(in)              :: bcnames(4)
       double precision,   intent(in)              :: winf(4)
-      integer                                     :: nt
       double precision, allocatable               :: u0(:,:,:)
-      integer                                     :: allocate_err,i
+      integer                                     :: allocate_err,i,j
+
+      print *, "Initializing solver..."
 
       ! Assigning members of the solver class
       this%grid    = m
       this%dt      = delta_t
+      this%tfinal  = t_final
       this%g       = gam
       this%winfty  = winf
-
-      ! Determining the largest possible timestep
-
+      this%ntsteps = ceiling(t_final/delta_t)
+      write (*,'(a,i5)') "number of time steps: ", this%ntsteps
 
       ! Allocating memory for solution history
-      allocate(this%w_history(this%grid%nelemi,this%grid%nelemj,nt+1,4),stat=allocate_err)
+      allocate(this%w_history(this%grid%nelemi,this%grid%nelemj,this%ntsteps+1,4),stat=allocate_err)
       if (allocate_err.ne.0) then
         print *, "Error: Can't allocate memory for this%w_history."
         stop
@@ -67,8 +66,8 @@ module euler
       ! Converting initial condition to conserved variables
       ! (includes ghost cells)
       allocate(u0,mold=w0)
-      do j=-1,this%grid%nelemj+2
-        do i=-1,this%grid%nelemi+2
+      do j=1,this%grid%nelemj
+        do i=1,this%grid%nelemi
           u0(i,j,:) = w_to_u(w0(i,j,:),gam)
         end do
       end do
@@ -76,8 +75,8 @@ module euler
       ! Filling data into elem structures
       do j=1,this%grid%nelemj
         do i=1,this%grid%nelemi
-          this%elem(i,j)%u  = u0(i,j,:)
-          this%elem(i,j)%w  = w0(i,j,:)
+          this%grid%elem(i,j)%u  = u0(i,j,:)
+          this%grid%elem(i,j)%w  = w0(i,j,:)
         end do
       end do
 
@@ -97,7 +96,7 @@ module euler
       do k=1,this%ntsteps
 
         ! Printing some information
-        write(*,'(a,es10.5)') "t = ", dble(i-1)*this%dt
+        write(*,'(a,i4,a,es12.5)') "timestep: ", k, " t = ", dble(k-1)*this%dt
 
         ! Storing current solution
         do j=1,this%grid%nelemj
@@ -107,6 +106,7 @@ module euler
         end do
 
         ! Updating solution
+        print *, "Updating..."
         call update(this)
 
       end do
@@ -127,7 +127,6 @@ module euler
       implicit none
       type(solver), intent(inout)    :: this
       double precision               :: duL(4),duR(4)
-      double precision               :: wL(4),wR(4)
       double precision, dimension(4) :: fx,fy,uextrap,wextrap
       double precision               :: umax,umin
       integer                        :: i,j,k,err
@@ -177,8 +176,8 @@ module euler
                 umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
                 umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
               else if (j.eq.this%grid%nelemj) then
-                umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k))
-                umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k))
+                umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
+                umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
               else
                 umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i,j-1)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
                 umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i,j-1)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
@@ -206,8 +205,8 @@ module euler
                 umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
                 umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
               else if (j.eq.this%grid%nelemj) then
-                umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k))
-                umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k))
+                umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
+                umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
               else
                 umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i,j-1)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
                 umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i,j-1)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
@@ -272,8 +271,8 @@ module euler
                 umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
                 umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
               else if (i.eq.this%grid%nelemi) then
-                umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k))
-                umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k))
+                umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
+                umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
               else
                 umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i-1,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
                 umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i-1,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
@@ -301,8 +300,8 @@ module euler
                 umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
                 umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
               else if (i.eq.this%grid%nelemi) then
-                umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k))
-                umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k))
+                umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
+                umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
               else
                 umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i,i+1)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
                 umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i,i+1)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
@@ -400,7 +399,7 @@ module euler
       ! Advance one step in time (forward Euler for now)
       do j=1,this%grid%nelemj
         do i=1,this%grid%nelemi
-          this%grid%elem(i,j)%u = this%grid%elem(i,j)%u - this%dt/(this%elem(i,j)%area)* &
+          this%grid%elem(i,j)%u = this%grid%elem(i,j)%u - this%dt/(this%grid%elem(i,j)%area)* &
             (this%grid%edges_h(i,j)%flux*this%grid%edges_h(i,j)%length + &
             this%grid%edges_h(i,j+1)%flux*this%grid%edges_h(i,j+1)%length + &
             this%grid%edges_v(i,j)%flux*this%grid%edges_v(i,j)%length + &
@@ -457,19 +456,23 @@ module euler
       implicit none
       type(solver), intent(in)  :: this
       character (len=*),intent(in) :: file_name
+      integer ::i,j,k
 
       ! Opening Tecplot file
-      open(2,file="solution.tec")
+      open(2,file=file_name)
 
       ! Writing header
       write(2,'(a)') 'title="Unsteady results"'
       write(2,'(a)') 'variables="x","y","rho","u","v","E"'
-      write(2,'(a,i5,a,i5)') 'zone i=', grids(k)%imax, ' j=', grids(k)%jmax
-      write(2,'(a)') 'datapacking=block'
-      write(2,'(a)') 'varlocation=([3,4,5,6]=cellcentered)'
 
       ! Writing data for each time step
       do k=1,this%ntsteps
+
+        ! Writing header information
+        write(2,'(a,i5,a,i5)') 'zone i=', this%grid%imax, ' j=', this%grid%jmax
+        write(2,'(a)') 'datapacking=block'
+        write(2,'(a)') 'varlocation=([3,4,5,6]=cellcentered)'
+        write(2,'(a,es25.10)') 'solutiontime=', dble(k-1)*this%dt
 
         ! Writing x-coordinates of nodes
         do j=1,this%grid%jmax
@@ -552,8 +555,8 @@ module euler
       end do
 
       ! Closing file
-      call close(2)
+      close(2)
 
     end subroutine write_tec
 
-end module class_solver
+end module euler_solver

@@ -46,7 +46,7 @@ module limiters
     !------------------------------------------------------
     double precision function barth(Delta2,U,Umax,Umin) result(psi)
       implicit none
-      double precision, intent(in) :: Delta2,Umax,Umin
+      double precision, intent(in) :: Delta2,Umax,Umin,U
       if (Delta2.gt.0.0d0) then
         psi = min(1.0d0,(Umax-U)/Delta2)
       else if (Delta2.lt.0.0d0) then

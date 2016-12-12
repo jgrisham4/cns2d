@@ -64,9 +64,12 @@ module mesh_class
       integer                       :: aerr,i,j
       integer                       :: index_file,index_base,index_zone
       integer                       :: ier
-      !gfortran integer(kind=8)               :: isize(2,3),irmin(3),irmax(3)
-      integer(kind=4)               :: isize(2,3),irmin(3),irmax(3)
+      integer(kind=8)               :: isize(2,3)          ! gfortran
+      !integer(kind=4)               :: isize(2,3)         ! ifort
+      integer(kind=4)               :: irmin(3),irmax(3)
       double precision, allocatable :: xtmp(:,:),ytmp(:,:)
+
+      print *, "Reading mesh from ", file_name, "..."
 
       ! Opening CGNS file
       call cg_open_f(file_name,CG_MODE_READ,index_file,ier)
@@ -131,7 +134,7 @@ module mesh_class
       end do
 
       ! Printing some info
-      print *, "Done reading mesh from ", file_name
+      print *, "Done reading mesh."
 
     end subroutine read_from_file
 
@@ -171,6 +174,8 @@ module mesh_class
       double precision,dimension(2) :: p1,p2,p3,p4 ! Points used in reflections
       double precision              :: x1,x2,x3,x4 ! Coordinates of nodes for an element
       double precision              :: y1,y2,y3,y4 ! Coordinates of nodes for an element
+
+      print *, "Preprocessing mesh..."
 
       ! Allocating memory
       allocate(this%elem(-1:(this%imax-1)+2,-1:(this%jmax-1)+2),stat=aerr)
@@ -541,6 +546,8 @@ module mesh_class
 
         end do
       end do
+
+      print *, "Done preprocessing mesh."
 
     end subroutine preprocess
 

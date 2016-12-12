@@ -1,0 +1,49 @@
+gfortran -c -g -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan -I/share/CGNS/build/include euler.f90
+euler.f90:422:39:
+
+       integer                      :: i,j,ier
+                                       1
+Warning: Unused variable ‘i’ declared at (1) [-Wunused-variable]
+euler.f90:425:49:
+
+       integer, dimension(3)        :: irmin,irmax
+                                                 1
+Warning: Unused variable ‘irmax’ declared at (1) [-Wunused-variable]
+euler.f90:425:43:
+
+       integer, dimension(3)        :: irmin,irmax
+                                           1
+Warning: Unused variable ‘irmin’ declared at (1) [-Wunused-variable]
+euler.f90:422:41:
+
+       integer                      :: i,j,ier
+                                         1
+Warning: Unused variable ‘j’ declared at (1) [-Wunused-variable]
+euler.f90:390:40:
+
+           this%grid%edges_v(i,j)%flux = roe(this%grid%edges_v(i,j)%uL,this%grid%edges_v(i,j)%uR,this%grid%elem(i-1,j)%n(:,2))
+                                        1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+euler.f90:396:40:
+
+           this%grid%edges_h(i,j)%flux = roe(this%grid%edges_h(i,j)%uL,this%grid%edges_h(i,j)%uR,this%grid%elem(i,j-1)%n(:,3))
+                                        1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+euler.f90:45:55:
+
+       integer                                     :: nt
+                                                       1
+Warning: Unused variable ‘nt’ declared at (1) [-Wunused-variable]
+euler.f90:72:29:
+
+           u0(i,j,:) = w_to_u(w0(i,j,:),gam)
+                             1
+Warning: Creating array temporary at (1) for argument ‘w’ [-Warray-temporaries]
+euler.f90:72:22:
+
+           u0(i,j,:) = w_to_u(w0(i,j,:),gam)
+                      1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+ar rcs libeuler2d.a utils.o mesh_class.o limiters.o grad.o flux.o riemann.o euler.o
+mkdir -p ../lib
+mv libeuler2d.a ../lib
