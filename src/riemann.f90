@@ -61,8 +61,11 @@ module riemann
  double precision :: fL(4), fR(4), diss(4)          ! Fluxes and dissipation term
  integer :: i, j
 
+ !write(*,'(a,4f10.3)') "uL = ", uL
+ !write(*,'(a,4f10.3)') "uR = ", uR
+
 !Constants.
-     gam = 1.4d0
+       gam = 1.4d0
       zero = 0.0d0
      fifth = 0.2d0
       half = 0.5d0
