@@ -4,7 +4,7 @@ program test_cgns
   double precision, allocatable :: x(:,:), y(:,:)
   double precision              :: xmin,xmax,ymin,ymax
   double precision              :: dx,dy
-  integer(kind=8)               :: isize(2,3)
+  integer(kind=4)               :: isize(2,3)
   character (len=30)            :: basename,zonename
   integer :: imax,jmax,i,j,icelldim,iphysdim,index_base,index_file,index_zone,index_coord,ier,aerr
 

@@ -1,11 +1,9 @@
-#FC=ifort
-FC=gfortran
+FC=ifort
 #FCFLAGS=-O2 -I/share/CGNS-intel/build/include -I../src/ -mkl
 #FCFLAGS=-g -check all -fpe0 -warn -traceback -debug extended -I/share/CGNS-intel/build/include -I../src/
-FCFLAGS=-g -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan -I/share/CGNS/build/include -I../src
+FCFLAGS=-g -fpe0 -traceback -I/share/CGNS-intel/build/include -I../src/
 LIBNAME = libeuler2d.a
-#LFLAGS=-L/share/CGNS-intel/build/lib -L../lib
-LFLAGS=-L/share/CGNS/build/lib -L../lib
+LFLAGS=-L/share/CGNS-intel/build/lib -L../lib
 LIBS=-leuler2d -lcgns
 TST_FILES = $(wildcard *.f90)
 SRC_FILES = $(wildcard ../src/*.f90)

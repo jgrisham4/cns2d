@@ -148,14 +148,17 @@ module euler_solver
 
       ! Computing gradients of the state in each cell for use
       ! in piecewise linear reconstruction
+      print *, "Computing gradient..."
       do j=1,this%grid%nelemj
         do i=1,this%grid%nelemi
           u(i,j,:) = this%grid%elem(i,j)%u
         end do
       end do
       call compute_gradient(this%grid,u,gradU)
+      print *, "Done computing gradient."
 
       ! Reconstructing states on left and right sides of each vertical interface
+      print *, "Reconstructing states at interfaces..."
       do j=1,this%grid%nelemj
         do i=1,this%grid%nelemi
 
@@ -185,6 +188,7 @@ module euler_solver
 
               ! Reconstruction
               this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + barth(duL(k),this%grid%elem(i,j)%u(k),umax,umin)
+              !this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)
 
             end do
 
@@ -214,6 +218,7 @@ module euler_solver
 
               ! Reconstruction
               this%grid%edges_v(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + barth(duR(k),this%grid%elem(i,j)%u(k),umax,umin)
+              !this%grid%edges_v(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)
 
             end do
           else
@@ -239,6 +244,8 @@ module euler_solver
               ! Reconstruction
               this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + barth(duL(k),this%grid%elem(i,j)%u(k),umax,umin)
               this%grid%edges_v(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + barth(duR(k),this%grid%elem(i,j)%u(k),umax,umin)
+              !this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)
+              !this%grid%edges_v(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)
 
               ! Not sure that this is right so I'm going to go with the Barth limiter
               !this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*minmod(r(k))
@@ -280,6 +287,7 @@ module euler_solver
 
               ! Reconstruction
               this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + barth(duL(k),this%grid%elem(i,j)%u(k),umax,umin)
+              !this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)
 
             end do
 
@@ -309,6 +317,7 @@ module euler_solver
 
               ! Reconstruction
               this%grid%edges_h(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + barth(duR(k),this%grid%elem(i,j)%u(k),umax,umin)
+              !this%grid%edges_h(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)
 
             end do
           else
@@ -333,12 +342,17 @@ module euler_solver
               ! Reconstruction
               this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + barth(duL(k),this%grid%elem(i,j)%u(k),umax,umin)
               this%grid%edges_h(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + barth(duR(k),this%grid%elem(i,j)%u(k),umax,umin)
+              !this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)
+              !this%grid%edges_h(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)
 
             end do
           end if
 
         end do
       end do
+
+      print *, "Done with reconstruction."
+      print *, "Enforcing boundary conditions..."
 
       ! Enforcing farfield boundary conditions on the bottom and left boundaries
       ! Sides of an element are numbered as follows
@@ -361,25 +375,28 @@ module euler_solver
 
       ! Enforcing extrapolate bcs on the right and top boundaries
       j = this%grid%nelemj
-      do i=1,this%grid%nelemi+1
+      do i=1,this%grid%nelemi
         r(1) = this%grid%edges_h(i,j+1)%xm - this%grid%elem(i,j)%xc
         r(2) = this%grid%edges_h(i,j+1)%ym - this%grid%elem(i,j)%yc
         uextrap = this%grid%elem(i,j)%u + gradU(i,j,1:4)*r(1) + gradU(i,j,5:8)*r(2)
         wextrap = u_to_w(uextrap,this%g)
         fx = fluxax(wextrap,this%g)
         fy = fluxay(wextrap,this%g)
-        this%grid%edges_h(i,j+1)%flux = -fx*this%grid%elem(i,j)%n(1,2) - fy*this%grid%elem(i,j)%n(2,2)
+        this%grid%edges_h(i,j+1)%flux = fx*this%grid%elem(i,j)%n(1,3) + fy*this%grid%elem(i,j)%n(2,3)
       end do
       i = this%grid%nelemi
-      do j=1,this%grid%nelemj+1
+      do j=1,this%grid%nelemj
         r(1) = this%grid%edges_v(i+1,j)%xm - this%grid%elem(i,j)%xc
         r(2) = this%grid%edges_v(i+1,j)%ym - this%grid%elem(i,j)%yc
         uextrap = this%grid%elem(i,j)%u + gradU(i,j,1:4)*r(1) + gradU(i,j,5:8)*r(2)
         wextrap = u_to_w(uextrap,this%g)
         fx = fluxax(wextrap,this%g)
         fy = fluxay(wextrap,this%g)
-        this%grid%edges_v(i+1,j)%flux = -fx*this%grid%elem(i,j)%n(1,3) - fy*this%grid%elem(i,j)%n(2,3)
+        this%grid%edges_v(i+1,j)%flux = fx*this%grid%elem(i,j)%n(1,2) + fy*this%grid%elem(i,j)%n(2,2)
       end do
+
+      print *, "Done enforcing boundary conditions."
+      print *, "Solving the Riemann problem at each interface..."
 
       ! Must now iterate through all the interior interfaces and solve
       ! the Riemann problem to find the fluxes
@@ -396,7 +413,10 @@ module euler_solver
         end do
       end do
 
+      print *, "Done solving the Riemann problem."
+
       ! Advance one step in time (forward Euler for now)
+      print *, "Advancing one step in time..."
       do j=1,this%grid%nelemj
         do i=1,this%grid%nelemi
           this%grid%elem(i,j)%u = this%grid%elem(i,j)%u - this%dt/(this%grid%elem(i,j)%area)* &
@@ -406,6 +426,7 @@ module euler_solver
             this%grid%edges_v(i+1,j)%flux*this%grid%edges_v(i+1,j)%length)
         end do
       end do
+      print *, "Subroutine update done."
 
     end subroutine update
 

@@ -10,11 +10,11 @@ program isentropic_vortex
 
   ! Creating mesh and solver objects
   type(mesh)   :: grid
-  type(solver) :: euler_solver
+  type(solver) :: esolver
 
   ! Reading mesh
-  !call read_from_file(grid,"iv500.cgns")
-  call read_from_file(grid,"iv200.cgns")
+  call read_from_file(grid,"iv500.cgns")
+  !call read_from_file(grid,"iv200.cgns")
 
   ! Preprocessing mesh
   call preprocess(grid)
@@ -62,12 +62,12 @@ program isentropic_vortex
   end do
 
   ! Initializing solver
-  call initialize(euler_solver,grid,0.001d0,10.0d0,1.4d0,w0,winfty)
+  call initialize(esolver,grid,0.01d0,10.0d0,1.4d0,w0,winfty)
 
   ! Solving problem
-  call solve(euler_solver)
+  call solve(esolver)
 
   ! Writing results to ASCII Tecplot file
-  call write_tec(euler_solver,"isentropic_vortex.tec")
+  call write_tec(esolver,"isentropic_vortex.tec")
 
 end program isentropic_vortex

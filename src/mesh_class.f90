@@ -64,8 +64,8 @@ module mesh_class
       integer                       :: aerr,i,j
       integer                       :: index_file,index_base,index_zone
       integer                       :: ier
-      integer(kind=8)               :: isize(2,3)          ! gfortran
-      !integer(kind=4)               :: isize(2,3)         ! ifort
+      !integer(kind=8)               :: isize(2,3)          ! gfortran
+      integer(kind=4)               :: isize(3,3)         ! ifort
       integer(kind=4)               :: irmin(3),irmax(3)
       double precision, allocatable :: xtmp(:,:),ytmp(:,:)
 
@@ -92,6 +92,17 @@ module mesh_class
       this%jmax = irmax(2)
       this%nelemi = this%imax-1
       this%nelemj = this%jmax-1
+
+      ! Some debugging info
+      !write (*,'(3i4)') irmin
+      !write (*,'(3i4)') irmax
+      !write (*,'(a)') "isize = "
+      !do j=1,3
+      !  do i=1,3
+      !    write (*,'(i4)',advance='no') isize(i,j)
+      !  end do
+      !  write (*,'(a)') " "
+      !end do
 
       ! Allocating memory for x and y
       allocate(xtmp(this%imax,this%jmax),stat=aerr)
@@ -124,6 +135,7 @@ module mesh_class
       ! Closing CGNS file
       call cg_close_f(index_file,ier)
       if (ier.ne.CG_OK) call cg_error_exit_f
+      print *, "Closed CGNS file."
 
       ! Copying grid points from xtmp and ytmp to x and y
       do j=1,this%jmax

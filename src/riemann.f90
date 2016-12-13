@@ -47,7 +47,7 @@ module riemann
  double precision :: nx, ny       ! Face normal vector, [nx, ny] (Left-to-Right)
  double precision :: roe(4)       ! Output: Roe flux function (upwind)
 !Local constants
- double precision :: gamma                          ! Ratio of specific heat.
+ double precision :: gam                          ! Ratio of specific heat.
  double precision :: zero, fifth, half, one, two    ! Numbers
 !Local variables
  double precision :: tx, ty                         ! Tangent vector (perpendicular to the face normal)
@@ -62,12 +62,12 @@ module riemann
  integer :: i, j
 
 !Constants.
-     gamma = 1.4
-      zero = 0.0
-     fifth = 0.2
-      half = 0.5
-       one = 1.0
-       two = 2.0
+     gam = 1.4d0
+      zero = 0.0d0
+     fifth = 0.2d0
+      half = 0.5d0
+       one = 1.0d0
+       two = 2.0d0
 
 !Tangent vector (Do you like it? Actually, Roe flux can be implemented
 ! without any tangent vector. See "I do like CFD, VOL.1" for details.)
@@ -83,17 +83,22 @@ module riemann
      vyL = uL(3)/uL(1)
      vnL = vxL*nx+vyL*ny
      vtL = vxL*tx+vyL*ty
-      pL = (gamma-one)*( uL(4) - half*rhoL*(vxL*vxL+vyL*vyL) )
-      aL = sqrt(gamma*pL/rhoL)
+      pL = (gam-one)*( uL(4) - half*rhoL*(vxL*vxL+vyL*vyL) )
+      aL = sqrt(gam*pL/rhoL)
       HL = ( uL(4) + pL ) / rhoL
+
 !  Right state
+  !write (*,'(a,4f10.3)') "uR = ", uR
     rhoR = uR(1)
      vxR = uR(2)/uR(1)
      vyR = uR(3)/uR(1)
      vnR = vxR*nx+vyR*ny
      vtR = vxR*tx+vyR*ty
-      pR = (gamma-one)*( uR(4) - half*rhoR*(vxR*vxR+vyR*vyR) )
-      aR = sqrt(gamma*pR/rhoR)
+      pR = (gam-one)*( uR(4) - half*rhoR*(vxR*vxR+vyR*vyR) )
+      !print *, pR
+      ! There was a problem here.  I got a negative pressure..
+      ! Removing barth limiter fixed it.
+      aR = sqrt(gam*pR/rhoR)
       HR = ( uR(4) + pR ) / rhoR
 
 !First compute the Roe Averages
@@ -102,7 +107,7 @@ module riemann
     vx = (vxL+RT*vxR)/(one+RT)
     vy = (vyL+RT*vyR)/(one+RT)
      H = ( HL+RT* HR)/(one+RT)
-     a = sqrt( (gamma-one)*(H-half*(vx*vx+vy*vy)) )
+     a = sqrt( (gam-one)*(H-half*(vx*vx+vy*vy)) )
     vn = vx*nx+vy*ny
     vt = vx*tx+vy*ty
 
@@ -197,7 +202,7 @@ module riemann
  double precision :: nx, ny          !  Input: face normal vector, [nx, ny] (Left-to-Right)
  double precision :: Rotated_RHLL(4) ! Output: Rotated_RHLL flux function.
 !Local constants
- double precision :: gamma                          ! Ratio of specific heat.
+ double precision :: gam                          ! Ratio of specific heat.
  double precision :: zero, fifth, half, one, two    ! Numbers
  double precision :: eps                            !
 !Local variables
@@ -219,7 +224,7 @@ module riemann
  integer :: i, j
 
 !Constants.
-     gamma = 1.4
+     gam = 1.4
       zero = 0.0
      fifth = 0.2
       half = 0.5
@@ -232,15 +237,15 @@ module riemann
     rhoL = uL(1)
      vxL = uL(2)/uL(1)
      vyL = uL(3)/uL(1)
-      pL = (gamma-one)*( uL(4) - half*rhoL*(vxL*vxL+vyL*vyL) )
-      aL = sqrt(gamma*pL/rhoL)
+      pL = (gam-one)*( uL(4) - half*rhoL*(vxL*vxL+vyL*vyL) )
+      aL = sqrt(gam*pL/rhoL)
       HL = ( uL(4) + pL ) / rhoL
 !  Right state
     rhoR = uR(1)
      vxR = uR(2)/uR(1)
      vyR = uR(3)/uR(1)
-      pR = (gamma-one)*( uR(4) - half*rhoR*(vxR*vxR+vyR*vyR) )
-      aR = sqrt(gamma*pR/rhoR)
+      pR = (gam-one)*( uR(4) - half*rhoR*(vxR*vxR+vyR*vyR) )
+      aR = sqrt(gam*pR/rhoR)
       HR = ( uR(4) + pR ) / rhoR
 
      vnL = vxL*nx + vyL*ny
@@ -297,7 +302,7 @@ module riemann
      vx = (vxL+RT*vxR)/(one+RT)
      vy = (vyL+RT*vyR)/(one+RT)
       H = ( HL+RT* HR)/(one+RT)
-      a = sqrt( (gamma-one)*(H-half*(vx*vx+vy*vy)) )
+      a = sqrt( (gam-one)*(H-half*(vx*vx+vy*vy)) )
      vn = vx*nx2+vy*ny2
      vt = vx*nx1+vy*ny1
 

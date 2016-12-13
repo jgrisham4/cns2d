@@ -1,7 +1,8 @@
-FC=gfortran
-#FCFLAGS=-g -check all -fpe0 -warn -traceback -debug extended -I/share/CGNS-intel/build/include -I../src/
-FCFLAGS=-g -Wall -Wextra -Warray-temporaries -Wconversion -fimplicit-none -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan -I/share/CGNS/build/include
+FC=ifort
+#FCFLAGS=-xHost -O2 -ipo -I/share/CGNS-intel/build/include -mkl
+FCFLAGS=-g -fpe0 -traceback -I/share/CGNS-intel/build/include -I../src/
 LIBNAME = libeuler2d
+#SRC_FILES = $(wildcard ../src/*.f90)
 SRC_FILES = utils.f90 mesh_class.f90 limiters.f90 grad.f90 flux.f90 riemann.f90 euler.f90
 OBJ_FILES = $(SRC_FILES:.f90=.o)
 TARGETS = $(LIBNAME)

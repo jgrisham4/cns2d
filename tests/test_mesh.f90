@@ -7,11 +7,11 @@ program test_mesh
   type(mesh) :: grid
 
   ! Defining inputs
-  !mesh_file = "simple.cgns"
-  !tec_file  = "simple.tec"
-  mesh_file = "square.cgns"
-  tec_file  = "square.tec"
-  
+  mesh_file = "simple.cgns"
+  tec_file  = "simple.tec"
+  !mesh_file = "square.cgns"
+  !tec_file  = "square.tec"
+
   ! Reading mesh
   call read_from_file(grid,mesh_file)
 
@@ -21,4 +21,4 @@ program test_mesh
   ! Writing mesh to file
   call write_to_tec(grid,tec_file)
 
-end program 
+end program
