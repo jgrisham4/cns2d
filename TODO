@@ -16,3 +16,10 @@ are accounted for in the computation of the residual.  Then,
 I need to implement boundary conditions.  I'm going to need
 slip wall and farfield for now probably.  Then, the Euler 
 solver should be done.
+
+Something is wrong... I'm getting negative densities after
+the first step which is causing NaNs.  I need to double
+check the conversions from primitive to conservative,
+reconstruction and switch from the barth limiter to the
+minmod limiter.
+
