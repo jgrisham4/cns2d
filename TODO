@@ -33,4 +33,8 @@ One idea is to hardwire the reconstruction for the cartesian
 grid case being solved.  Then I might be able to figure out
 if the reconstruction is what is causing the issue.
 
+The sign on some of the fluxes was wrong.  Now, the farfield
+boundaries seem wrong.  It is because I am changing the sign
+of the fluxes in the final loop.  I need to change the enforcement
+of the farfield boundary conditions so that they use the inward pointing face normal!!!!!
 

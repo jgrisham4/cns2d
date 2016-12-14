@@ -53,7 +53,7 @@ module euler_solver
       this%tfinal  = t_final
       this%g       = gam
       this%winfty  = winf
-      this%ntsteps = ceiling(t_final/delta_t)
+      this%ntsteps = ceiling(t_final/delta_t)+1
       write (*,'(a,i5)') "number of time steps: ", this%ntsteps
 
       ! Allocating memory for solution history
@@ -97,51 +97,53 @@ module euler_solver
       do k=1,this%ntsteps
 
         ! Writing result to file
-        write (tecname, '(a,i0,a)') "sol", (k-1), ".tec"
-        !tecname = "solution.tec"
-        open(2,file=tecname)
-        write(2,'(a,i5,a)') 'title="Step ', (k-1), '"'
-        write(2,'(a)') 'variables="x","y","rho","rhou","rhov","E"'
-        write(2,'(a,i5,a,i5)') 'zone i=', this%grid%imax, ' j=', this%grid%jmax
-        write(2,'(a)') 'datapacking=block'
-        write(2,'(a)') 'varlocation=([3,4,5,6]=cellcentered)'
-        do j=1,this%grid%jmax
-          do i=1,this%grid%imax
-            write(2,'(es25.10)',advance='no') this%grid%x(i,j)
+        if (mod(k-1,200).eq.0) then
+          write (tecname, '(a,i0,a)') "sol", (k-1), ".tec"
+          !tecname = "solution.tec"
+          open(2,file=tecname)
+          write(2,'(a,i5,a)') 'title="Step ', (k-1), '"'
+          write(2,'(a)') 'variables="x","y","rho","rhou","rhov","E"'
+          write(2,'(a,i5,a,i5)') 'zone i=', this%grid%imax, ' j=', this%grid%jmax
+          write(2,'(a)') 'datapacking=block'
+          write(2,'(a)') 'varlocation=([3,4,5,6]=cellcentered)'
+          do j=1,this%grid%jmax
+            do i=1,this%grid%imax
+              write(2,'(es25.10)',advance='no') this%grid%x(i,j)
+            end do
+            write(2,'(a)') " "
           end do
-          write(2,'(a)') " "
-        end do
-        do j=1,this%grid%jmax
-          do i=1,this%grid%imax
-            write(2,'(es25.10)',advance='no') this%grid%y(i,j)
+          do j=1,this%grid%jmax
+            do i=1,this%grid%imax
+              write(2,'(es25.10)',advance='no') this%grid%y(i,j)
+            end do
+            write(2,'(a)') " "
           end do
-          write(2,'(a)') " "
-        end do
-        do j=1,this%grid%nelemj
-          do i=1,this%grid%nelemi
-            write(2,'(es25.10)',advance='no') this%grid%elem(i,j)%u(1)
+          do j=1,this%grid%nelemj
+            do i=1,this%grid%nelemi
+              write(2,'(es25.10)',advance='no') this%grid%elem(i,j)%u(1)
+            end do
+            write(2,'(a)') " "
           end do
-          write(2,'(a)') " "
-        end do
-        do j=1,this%grid%nelemj
-          do i=1,this%grid%nelemi
-            write(2,'(es25.10)',advance='no') this%grid%elem(i,j)%u(2)
+          do j=1,this%grid%nelemj
+            do i=1,this%grid%nelemi
+              write(2,'(es25.10)',advance='no') this%grid%elem(i,j)%u(2)
+            end do
+            write(2,'(a)') " "
           end do
-          write(2,'(a)') " "
-        end do
-        do j=1,this%grid%nelemj
-          do i=1,this%grid%nelemi
-            write(2,'(es25.10)',advance='no') this%grid%elem(i,j)%u(3)
+          do j=1,this%grid%nelemj
+            do i=1,this%grid%nelemi
+              write(2,'(es25.10)',advance='no') this%grid%elem(i,j)%u(3)
+            end do
+            write(2,'(a)') " "
           end do
-          write(2,'(a)') " "
-        end do
-        do j=1,this%grid%nelemj
-          do i=1,this%grid%nelemi
-            write(2,'(es25.10)',advance='no') this%grid%elem(i,j)%u(4)
+          do j=1,this%grid%nelemj
+            do i=1,this%grid%nelemi
+              write(2,'(es25.10)',advance='no') this%grid%elem(i,j)%u(4)
+            end do
+            write(2,'(a)') " "
           end do
-          write(2,'(a)') " "
-        end do
-        close(2)
+          close(2)
+        end if
 
         ! Printing some information
         write(*,'(a,i4,a,es12.5)') "timestep: ", k, " t = ", dble(k-1)*this%dt
@@ -161,21 +163,16 @@ module euler_solver
         end do
 
         ! Updating solution
-        print *, "Updating..."
         call update(this)
 
-        if (k.eq.4) then
-          stop
-        end if
-
       end do
 
-      ! Storing last solution
-      do j=1,this%grid%nelemj
-        do i=1,this%grid%nelemi
-          this%w_history(i,j,this%ntsteps+1,:) = this%grid%elem(i,j)%w
-        end do
-      end do
+      !! Storing last solution
+      !do j=1,this%grid%nelemj
+      !  do i=1,this%grid%nelemi
+      !    this%w_history(i,j,this%ntsteps+1,:) = this%grid%elem(i,j)%w
+      !  end do
+      !end do
 
     end subroutine solve
 
@@ -187,7 +184,6 @@ module euler_solver
       type(solver), intent(inout)    :: this
       double precision               :: duL(4),duR(4)
       double precision, dimension(4) :: fx,fy,uextrap,wextrap,wtmp
-      !double precision               :: umax,umin
       integer                        :: i,j,k,err
       double precision, dimension(2) :: rL,rR,r
       double precision, allocatable  :: u(:,:,:)
@@ -207,18 +203,15 @@ module euler_solver
 
       ! Computing gradients of the state in each cell for use
       ! in piecewise linear reconstruction
-      print *, "Computing gradient..."
       do j=1,this%grid%nelemj
         do i=1,this%grid%nelemi
           u(i,j,:) = this%grid%elem(i,j)%u
         end do
       end do
       call compute_gradient(this%grid,u,gradU)
-      print *, "Done computing gradient."
 
 
       ! Reconstructing states on left and right sides of each vertical interface
-      print *, "Reconstructing states at interfaces..."
       do j=1,this%grid%nelemj
         do i=1,this%grid%nelemi
 
@@ -364,9 +357,6 @@ module euler_solver
         end do
       end do
 
-      print *, "Done with reconstruction."
-      print *, "Enforcing boundary conditions..."
-
       ! Enforcing farfield boundary conditions on the bottom and left boundaries
       ! Sides of an element are numbered as follows
       !         3
@@ -378,13 +368,11 @@ module euler_solver
       !         1
       !
       do i=1,this%grid%nelemi
-        this%grid%edges_h(i,1)%flux = flux_adv(this%winfty,this%grid%elem(i,1)%n(:,1),this%g)
+        this%grid%edges_h(i,1)%flux = -flux_adv(this%winfty,this%grid%elem(i,1)%n(:,1),this%g)
         !write (*,'(a,4f12.5)') "bottom flux = ", fb
       end do
       do j=1,this%grid%nelemj
-        this%grid%edges_v(1,j)%flux = flux_adv(this%winfty,this%grid%elem(1,j)%n(:,4),this%g)
-        !this%grid%edges_v(1,j)%flux = fx*this%grid%elem(1,j)%n(1,4) + fy*this%grid%elem(1,j)%n(2,4)
-        write (*,'(a,4f12.5)') "left flux = ", this%grid%edges_v(1,j)%flux
+        this%grid%edges_v(1,j)%flux = -flux_adv(this%winfty,this%grid%elem(1,j)%n(:,4),this%g)
       end do
 
       ! Enforcing extrapolate bcs on the right and top boundaries
@@ -394,9 +382,6 @@ module euler_solver
         r(2) = this%grid%edges_h(i,j+1)%ym - this%grid%elem(i,j)%yc
         uextrap = this%grid%elem(i,j)%u + gradU(i,j,1:4)*r(1) + gradU(i,j,5:8)*r(2)
         wextrap = u_to_w(uextrap,this%g)
-        !fx = fluxax(wextrap,this%g)
-        !fy = fluxay(wextrap,this%g)
-        !this%grid%edges_h(i,j+1)%flux = fx*this%grid%elem(i,j)%n(1,3) + fy*this%grid%elem(i,j)%n(2,3)
         this%grid%edges_h(i,j+1)%flux = flux_adv(wextrap,this%grid%elem(i,j)%n(:,3),this%g)
       end do
       i = this%grid%nelemi
@@ -405,14 +390,9 @@ module euler_solver
         r(2) = this%grid%edges_v(i+1,j)%ym - this%grid%elem(i,j)%yc
         uextrap = this%grid%elem(i,j)%u + gradU(i,j,1:4)*r(1) + gradU(i,j,5:8)*r(2)
         wextrap = u_to_w(uextrap,this%g)
-        !fx = fluxax(wextrap,this%g)
-        !fy = fluxay(wextrap,this%g)
-        !this%grid%edges_v(i+1,j)%flux = fx*this%grid%elem(i,j)%n(1,2) + fy*this%grid%elem(i,j)%n(2,2)
         this%grid%edges_v(i+1,j)%flux = flux_adv(wextrap,this%grid%elem(i,j)%n(:,2),this%g)
       end do
 
-      print *, "Done enforcing boundary conditions."
-      print *, "Solving the Riemann problem at each interface..."
 
       ! Must now iterate through all the interior interfaces and solve
       ! the Riemann problem to find the fluxes
@@ -423,9 +403,6 @@ module euler_solver
           ! Calling Riemann solver
           this%grid%edges_v(i,j)%flux = roe(this%grid%edges_v(i,j)%uL,this%grid%edges_v(i,j)%uR,this%grid%elem(i-1,j)%n(:,2))
 
-          ! An attempt to hardwire an upwind flux
-          !wtmp = u_to_w(this%grid%elem(i-1,j)%u,this%g)
-          !this%grid%edges_v(i,j)%flux = flux_adv(wtmp,this%grid%elem(i-1,j)%n(:,2),this%g)
         end do
       end do
       ! Horizontal faces
@@ -435,26 +412,19 @@ module euler_solver
           ! Calling Riemann solver
           this%grid%edges_h(i,j)%flux = roe(this%grid%edges_h(i,j)%uL,this%grid%edges_h(i,j)%uR,this%grid%elem(i,j-1)%n(:,3))
 
-          ! An attempt to hardwire an upwind flux
-          !wtmp = u_to_w(this%grid%elem(i,j-1)%u,this%g)
-          !this%grid%edges_h(i,j)%flux = flux_adv(wtmp,this%grid%elem(i,j-1)%n(:,3),this%g)
         end do
       end do
 
-      print *, "Done solving the Riemann problem."
-
       ! Advance one step in time (forward Euler for now)
-      print *, "Advancing one step in time..."
       do j=1,this%grid%nelemj
         do i=1,this%grid%nelemi
           this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 - this%dt/(this%grid%elem(i,j)%area)* &
-            (this%grid%edges_h(i,j)%flux*this%grid%edges_h(i,j)%length + &
-            this%grid%edges_h(i,j+1)%flux*this%grid%edges_h(i,j+1)%length + &
+            (-this%grid%edges_h(i,j)%flux*this%grid%edges_h(i,j)%length + &
+            this%grid%edges_h(i,j+1)%flux*this%grid%edges_h(i,j+1)%length - &
             this%grid%edges_v(i,j)%flux*this%grid%edges_v(i,j)%length + &
             this%grid%edges_v(i+1,j)%flux*this%grid%edges_v(i+1,j)%length)
         end do
       end do
-      print *, "Subroutine update done."
 
     end subroutine update
 

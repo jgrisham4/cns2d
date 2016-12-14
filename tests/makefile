@@ -1,7 +1,7 @@
 FC=ifort
-#FCFLAGS=-O2 -I/share/CGNS-intel/build/include -I../src/ -mkl
+FCFLAGS=-xHost -O2 -ipo -traceback -I/share/CGNS-intel/build/include -I../src
 #FCFLAGS=-g -check all -fpe0 -warn -traceback -debug extended -I/share/CGNS-intel/build/include -I../src/
-FCFLAGS=-g -fpe0 -traceback -I/share/CGNS-intel/build/include -I../src/
+#FCFLAGS=-g -fpe0 -traceback -I/share/CGNS-intel/build/include -I../src/
 LIBNAME = libeuler2d.a
 LFLAGS=-L/share/CGNS-intel/build/lib -L../lib
 LIBS=-leuler2d -lcgns
@@ -37,5 +37,5 @@ isentropic_vortex : isentropic_vortex.o
 	$(FC) $(FCFLAGS) -o $@ $< $(LFLAGS) $(LIBS)
 
 clean :
-	rm -rf *.o *.out *.mod $(TARGETS)
+	rm -rf *.o *.out *.mod *.tec $(TARGETS)
 	cd ../src; make clean

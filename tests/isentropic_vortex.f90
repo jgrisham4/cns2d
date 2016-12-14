@@ -62,12 +62,12 @@ program isentropic_vortex
   end do
 
   ! Initializing solver
-  call initialize(esolver,grid,0.001d0,1.0d0,1.4d0,w0,winfty)
+  call initialize(esolver,grid,0.001d0,10.0d0,1.4d0,w0,winfty)
 
   ! Solving problem
   call solve(esolver)
 
   ! Writing results to ASCII Tecplot file
-  call write_tec(esolver,"isentropic_vortex.tec")
+  !call write_tec(esolver,"isentropic_vortex.tec")
 
 end program isentropic_vortex
