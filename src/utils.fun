@@ -5,7 +5,7 @@ double precision, parameter :: ptx = 0.528761d0
 double precision, parameter :: pty = 0.818584d0
 double precision            :: p4(2)
 
-setup 
+setup
   double precision, dimension(2) :: p1,p2,p3
 
   ! Setting coordinates for points
@@ -16,7 +16,7 @@ setup
   p3(1) = 0.25
   p3(2) = 1.5
   p4 = reflect(p1,p2,p3)
-  
+
 end setup
 
 teardown

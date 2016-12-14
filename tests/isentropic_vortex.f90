@@ -31,7 +31,7 @@ program isentropic_vortex
   g         = 1.4d0
   a         = 1.0d0
   rho_inf   = 1.0d0
-  p_inf     = 1.0/1.40d0
+  p_inf     = 1.0d0/1.4d0
   u_inf     = 2.0d0
   v_inf     = 2.0d0
   x0        = -10.0d0
@@ -56,13 +56,13 @@ program isentropic_vortex
       w0(i,j,1) = rho_inf*(temp/t_inf)**(1.0d0/(g-1.0d0))
       w0(i,j,2) = u_inf - K/(2.0d0*pi)*yb*exp(a*(1.0d0-rb**2)/2.0d0)
       w0(i,j,3) = v_inf + K/(2.0d0*pi)*xb*exp(a*(1.0d0-rb**2)/2.0d0)
-      w0(i,j,4) = rho_inf*(temp/t_inf)**(1.0d0/(g-1.0d0))
+      w0(i,j,4) = p_inf*(temp/t_inf)**(g/(g-1.0d0))
 
     end do
   end do
 
   ! Initializing solver
-  call initialize(esolver,grid,0.01d0,10.0d0,1.4d0,w0,winfty)
+  call initialize(esolver,grid,0.001d0,1.0d0,1.4d0,w0,winfty)
 
   ! Solving problem
   call solve(esolver)

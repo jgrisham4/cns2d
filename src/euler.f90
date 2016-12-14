@@ -8,7 +8,7 @@ module euler_solver
   use mesh_class, only : mesh
   use utils,      only : u_to_w, w_to_u
   use limiters,   only : minmod, vanleer, barth
-  use flux,       only : fluxax, fluxay
+  use flux,       only : fluxax, fluxay, flux_adv
   use grad,       only : compute_gradient
   use riemann,    only : roe
   implicit none
@@ -57,11 +57,11 @@ module euler_solver
       write (*,'(a,i5)') "number of time steps: ", this%ntsteps
 
       ! Allocating memory for solution history
-      allocate(this%w_history(this%grid%nelemi,this%grid%nelemj,this%ntsteps+1,4),stat=allocate_err)
-      if (allocate_err.ne.0) then
-        print *, "Error: Can't allocate memory for this%w_history."
-        stop
-      end if
+      !allocate(this%w_history(this%grid%nelemi,this%grid%nelemj,this%ntsteps+1,4),stat=allocate_err)
+      !if (allocate_err.ne.0) then
+      !  print *, "Error: Can't allocate memory for this%w_history."
+      !  stop
+      !end if
 
       ! Converting initial condition to conserved variables
       ! (includes ghost cells)
@@ -91,17 +91,72 @@ module euler_solver
       implicit none
       type(solver), intent(inout) :: this
       integer :: i,j,k
+      character (len=30) :: tecname
 
       ! Marching in time
       do k=1,this%ntsteps
+
+        ! Writing result to file
+        write (tecname, '(a,i0,a)') "sol", (k-1), ".tec"
+        !tecname = "solution.tec"
+        open(2,file=tecname)
+        write(2,'(a,i5,a)') 'title="Step ', (k-1), '"'
+        write(2,'(a)') 'variables="x","y","rho","rhou","rhov","E"'
+        write(2,'(a,i5,a,i5)') 'zone i=', this%grid%imax, ' j=', this%grid%jmax
+        write(2,'(a)') 'datapacking=block'
+        write(2,'(a)') 'varlocation=([3,4,5,6]=cellcentered)'
+        do j=1,this%grid%jmax
+          do i=1,this%grid%imax
+            write(2,'(es25.10)',advance='no') this%grid%x(i,j)
+          end do
+          write(2,'(a)') " "
+        end do
+        do j=1,this%grid%jmax
+          do i=1,this%grid%imax
+            write(2,'(es25.10)',advance='no') this%grid%y(i,j)
+          end do
+          write(2,'(a)') " "
+        end do
+        do j=1,this%grid%nelemj
+          do i=1,this%grid%nelemi
+            write(2,'(es25.10)',advance='no') this%grid%elem(i,j)%u(1)
+          end do
+          write(2,'(a)') " "
+        end do
+        do j=1,this%grid%nelemj
+          do i=1,this%grid%nelemi
+            write(2,'(es25.10)',advance='no') this%grid%elem(i,j)%u(2)
+          end do
+          write(2,'(a)') " "
+        end do
+        do j=1,this%grid%nelemj
+          do i=1,this%grid%nelemi
+            write(2,'(es25.10)',advance='no') this%grid%elem(i,j)%u(3)
+          end do
+          write(2,'(a)') " "
+        end do
+        do j=1,this%grid%nelemj
+          do i=1,this%grid%nelemi
+            write(2,'(es25.10)',advance='no') this%grid%elem(i,j)%u(4)
+          end do
+          write(2,'(a)') " "
+        end do
+        close(2)
 
         ! Printing some information
         write(*,'(a,i4,a,es12.5)') "timestep: ", k, " t = ", dble(k-1)*this%dt
 
         ! Storing current solution
+        !do j=1,this%grid%nelemj
+        !  do i=1,this%grid%nelemi
+        !    this%w_history(i,j,k,:) = this%grid%elem(i,j)%w
+        !  end do
+        !end do
+
+        ! Copying old solution
         do j=1,this%grid%nelemj
           do i=1,this%grid%nelemi
-            this%w_history(i,j,k,:) = this%grid%elem(i,j)%w
+            this%grid%elem(i,j)%u0 = this%grid%elem(i,j)%u
           end do
         end do
 
@@ -109,7 +164,9 @@ module euler_solver
         print *, "Updating..."
         call update(this)
 
-        stop
+        if (k.eq.4) then
+          stop
+        end if
 
       end do
 
@@ -129,7 +186,7 @@ module euler_solver
       implicit none
       type(solver), intent(inout)    :: this
       double precision               :: duL(4),duR(4)
-      double precision, dimension(4) :: fx,fy,uextrap,wextrap
+      double precision, dimension(4) :: fx,fy,uextrap,wextrap,wtmp
       !double precision               :: umax,umin
       integer                        :: i,j,k,err
       double precision, dimension(2) :: rL,rR,r
@@ -159,49 +216,6 @@ module euler_solver
       call compute_gradient(this%grid,u,gradU)
       print *, "Done computing gradient."
 
-      ! Writing result to file
-      open(2,file="step1.tec")
-      write(2,'(a)') 'title="Step 1"'
-      write(2,'(a)') 'variables="x","y","rho","rhou","rhov","E"'
-      write(2,'(a,i5,a,i5)') 'zone i=', this%grid%imax, ' j=', this%grid%jmax
-      write(2,'(a)') 'datapacking=block'
-      write(2,'(a)') 'varlocation=([3,4,5,6]=cellcentered)'
-      do j=1,this%grid%jmax
-        do i=1,this%grid%imax
-          write(2,'(es25.10)',advance='no') this%grid%x(i,j)
-        end do
-        write(2,'(a)') " "
-      end do
-      do j=1,this%grid%jmax
-        do i=1,this%grid%imax
-          write(2,'(es25.10)',advance='no') this%grid%y(i,j)
-        end do
-        write(2,'(a)') " "
-      end do
-      do j=1,this%grid%nelemj
-        do i=1,this%grid%nelemi
-          write(2,'(es25.10)',advance='no') this%grid%elem(i,j)%u(1)
-        end do
-        write(2,'(a)') " "
-      end do
-      do j=1,this%grid%nelemj
-        do i=1,this%grid%nelemi
-          write(2,'(es25.10)',advance='no') this%grid%elem(i,j)%u(2)
-        end do
-        write(2,'(a)') " "
-      end do
-      do j=1,this%grid%nelemj
-        do i=1,this%grid%nelemi
-          write(2,'(es25.10)',advance='no') this%grid%elem(i,j)%u(3)
-        end do
-        write(2,'(a)') " "
-      end do
-      do j=1,this%grid%nelemj
-        do i=1,this%grid%nelemi
-          write(2,'(es25.10)',advance='no') this%grid%elem(i,j)%u(4)
-        end do
-        write(2,'(a)') " "
-      end do
 
       ! Reconstructing states on left and right sides of each vertical interface
       print *, "Reconstructing states at interfaces..."
@@ -220,18 +234,6 @@ module euler_solver
             ! Reconstructing state on left of interface
             do k=1,4
 
-              ! Finding necessary inputs to the Barth-Jespersen limiter
-              !if (j.eq.1) then
-              !  !umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-              !  !umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-              !else if (j.eq.this%grid%nelemj) then
-              !  !umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
-              !  !umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
-              !else
-              !  !umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i,j-1)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-              !  !umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i,j-1)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-              !end if
-
               ! Reconstruction
               !this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + barth(duL(k),this%grid%elem(i,j)%u(k),umax,umin)
               this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)
@@ -249,18 +251,6 @@ module euler_solver
 
             ! Reconstructing primitive states on right of interface
             do k=1,4
-
-              ! Finding necessary inputs to the Barth-Jespersen limiter
-              !if (j.eq.1) then
-              !  !umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-              !  !umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-              !else if (j.eq.this%grid%nelemj) then
-              !  !umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
-              !  !umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
-              !else
-              !  !umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i,j-1)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-              !  !umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i,j-1)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-              !end if
 
               ! Reconstruction
               !this%grid%edges_v(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + barth(duR(k),this%grid%elem(i,j)%u(k),umax,umin)
@@ -283,13 +273,7 @@ module euler_solver
             ! Reconstructing primitive states on left and right of interface
             do k=1,4
 
-              ! Finding necessary inputs to the Barth-Jespersen limiter
-              !umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-              !umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-
-              ! Reconstruction
-              !this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + barth(duL(k),this%grid%elem(i,j)%u(k),umax,umin)
-              !this%grid%edges_v(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + barth(duR(k),this%grid%elem(i,j)%u(k),umax,umin)
+              ! Unlimited
               this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)
               this%grid%edges_v(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)
 
@@ -298,6 +282,13 @@ module euler_solver
               !this%grid%edges_v(i+1,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)*minmod(1.0d0/r(k))
 
             end do
+
+            ! Debugging info
+            !write (*,'(a)') "vertical"
+            !write (*,'(a,4f10.3)') "uR = ", this%grid%edges_v(i,j)%uR
+            !write (*,'(a,4f10.3)') "u  = ", this%grid%elem(i,j)%u
+            !write (*,'(a,4f10.3)') "uL = ", this%grid%edges_v(i+1,j)%uL
+
           end if
 
         end do
@@ -319,18 +310,6 @@ module euler_solver
             ! Reconstructing primitive states on left of interface
             do k=1,4
 
-              ! Finding necessary inputs to the Barth-Jespersen limiter
-              !if (i.eq.1) then
-              !  !umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-              !  !umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-              !else if (i.eq.this%grid%nelemi) then
-              !  !umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-              !  !umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-              !else
-              !  !umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i-1,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-              !  !umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i-1,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-              !end if
-
               ! Reconstruction
               !this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + barth(duL(k),this%grid%elem(i,j)%u(k),umax,umin)
               this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)
@@ -348,18 +327,6 @@ module euler_solver
 
             ! Reconstructing primitive states on right of interface
             do k=1,4
-
-              ! Finding necessary inputs to the Barth-Jespersen limiter
-              !if (i.eq.1) then
-              !  !umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
-              !  !umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
-              !else if (i.eq.this%grid%nelemi) then
-              !  !umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
-              !  !umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
-              !else
-              !  !umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i,i+1)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
-              !  !umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i,i+1)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k)))
-              !end if
 
               ! Reconstruction
               !this%grid%edges_h(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + barth(duR(k),this%grid%elem(i,j)%u(k),umax,umin)
@@ -381,17 +348,17 @@ module euler_solver
             ! Reconstructing primitive states on left and right of interface
             do k=1,4
 
-              ! Finding necessary inputs to the Barth-Jespersen limiter
-              !umax = max(this%grid%elem(i,j)%u(k),max(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-              !umin = min(this%grid%elem(i,j)%u(k),min(this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k)))
-
-              ! Reconstruction
-              !this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + barth(duL(k),this%grid%elem(i,j)%u(k),umax,umin)
-              !this%grid%edges_h(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + barth(duR(k),this%grid%elem(i,j)%u(k),umax,umin)
               this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)
               this%grid%edges_h(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)
 
             end do
+
+            ! Debugging info
+            !write (*,'(a)') "horizontal"
+            !write (*,'(a,4f10.3)') "uR = ", this%grid%edges_h(i,j)%uR
+            !write (*,'(a,4f10.3)') "u  = ", this%grid%elem(i,j)%u
+            !write (*,'(a,4f10.3)') "uL = ", this%grid%edges_h(i,j+1)%uL
+
           end if
 
         end do
@@ -410,13 +377,14 @@ module euler_solver
       !   o-----------o
       !         1
       !
-      fx = fluxax(this%winfty,this%g)
-      fy = fluxay(this%winfty,this%g)
       do i=1,this%grid%nelemi
-        this%grid%edges_h(i,1)%flux = fx*this%grid%elem(i,1)%n(1,1) + fy*this%grid%elem(i,1)%n(2,1)
+        this%grid%edges_h(i,1)%flux = flux_adv(this%winfty,this%grid%elem(i,1)%n(:,1),this%g)
+        !write (*,'(a,4f12.5)') "bottom flux = ", fb
       end do
       do j=1,this%grid%nelemj
-        this%grid%edges_v(1,j)%flux = fx*this%grid%elem(1,j)%n(1,4) + fy*this%grid%elem(1,j)%n(2,4)
+        this%grid%edges_v(1,j)%flux = flux_adv(this%winfty,this%grid%elem(1,j)%n(:,4),this%g)
+        !this%grid%edges_v(1,j)%flux = fx*this%grid%elem(1,j)%n(1,4) + fy*this%grid%elem(1,j)%n(2,4)
+        write (*,'(a,4f12.5)') "left flux = ", this%grid%edges_v(1,j)%flux
       end do
 
       ! Enforcing extrapolate bcs on the right and top boundaries
@@ -426,9 +394,10 @@ module euler_solver
         r(2) = this%grid%edges_h(i,j+1)%ym - this%grid%elem(i,j)%yc
         uextrap = this%grid%elem(i,j)%u + gradU(i,j,1:4)*r(1) + gradU(i,j,5:8)*r(2)
         wextrap = u_to_w(uextrap,this%g)
-        fx = fluxax(wextrap,this%g)
-        fy = fluxay(wextrap,this%g)
-        this%grid%edges_h(i,j+1)%flux = fx*this%grid%elem(i,j)%n(1,3) + fy*this%grid%elem(i,j)%n(2,3)
+        !fx = fluxax(wextrap,this%g)
+        !fy = fluxay(wextrap,this%g)
+        !this%grid%edges_h(i,j+1)%flux = fx*this%grid%elem(i,j)%n(1,3) + fy*this%grid%elem(i,j)%n(2,3)
+        this%grid%edges_h(i,j+1)%flux = flux_adv(wextrap,this%grid%elem(i,j)%n(:,3),this%g)
       end do
       i = this%grid%nelemi
       do j=1,this%grid%nelemj
@@ -436,9 +405,10 @@ module euler_solver
         r(2) = this%grid%edges_v(i+1,j)%ym - this%grid%elem(i,j)%yc
         uextrap = this%grid%elem(i,j)%u + gradU(i,j,1:4)*r(1) + gradU(i,j,5:8)*r(2)
         wextrap = u_to_w(uextrap,this%g)
-        fx = fluxax(wextrap,this%g)
-        fy = fluxay(wextrap,this%g)
-        this%grid%edges_v(i+1,j)%flux = fx*this%grid%elem(i,j)%n(1,2) + fy*this%grid%elem(i,j)%n(2,2)
+        !fx = fluxax(wextrap,this%g)
+        !fy = fluxay(wextrap,this%g)
+        !this%grid%edges_v(i+1,j)%flux = fx*this%grid%elem(i,j)%n(1,2) + fy*this%grid%elem(i,j)%n(2,2)
+        this%grid%edges_v(i+1,j)%flux = flux_adv(wextrap,this%grid%elem(i,j)%n(:,2),this%g)
       end do
 
       print *, "Done enforcing boundary conditions."
@@ -449,13 +419,25 @@ module euler_solver
       ! Vertical faces
       do j=1,this%grid%nelemj
         do i=2,this%grid%nelemi
+
+          ! Calling Riemann solver
           this%grid%edges_v(i,j)%flux = roe(this%grid%edges_v(i,j)%uL,this%grid%edges_v(i,j)%uR,this%grid%elem(i-1,j)%n(:,2))
+
+          ! An attempt to hardwire an upwind flux
+          !wtmp = u_to_w(this%grid%elem(i-1,j)%u,this%g)
+          !this%grid%edges_v(i,j)%flux = flux_adv(wtmp,this%grid%elem(i-1,j)%n(:,2),this%g)
         end do
       end do
       ! Horizontal faces
       do j=2,this%grid%nelemj
         do i=1,this%grid%nelemi
+
+          ! Calling Riemann solver
           this%grid%edges_h(i,j)%flux = roe(this%grid%edges_h(i,j)%uL,this%grid%edges_h(i,j)%uR,this%grid%elem(i,j-1)%n(:,3))
+
+          ! An attempt to hardwire an upwind flux
+          !wtmp = u_to_w(this%grid%elem(i,j-1)%u,this%g)
+          !this%grid%edges_h(i,j)%flux = flux_adv(wtmp,this%grid%elem(i,j-1)%n(:,3),this%g)
         end do
       end do
 
@@ -465,7 +447,7 @@ module euler_solver
       print *, "Advancing one step in time..."
       do j=1,this%grid%nelemj
         do i=1,this%grid%nelemi
-          this%grid%elem(i,j)%u = this%grid%elem(i,j)%u - this%dt/(this%grid%elem(i,j)%area)* &
+          this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 - this%dt/(this%grid%elem(i,j)%area)* &
             (this%grid%edges_h(i,j)%flux*this%grid%edges_h(i,j)%length + &
             this%grid%edges_h(i,j+1)%flux*this%grid%edges_h(i,j+1)%length + &
             this%grid%edges_v(i,j)%flux*this%grid%edges_v(i,j)%length + &
