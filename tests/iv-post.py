@@ -5,10 +5,20 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
+def import_cfd_data(fname):
+    data = np.genfromtxt(fname, skip_header=1, delimiter=",")
+    rho_n = data[:, 0]
+    rhou_n = data[:, 1]
+    rhov_n = data[:, 2]
+    u_n = rhou_n/rho_n
+    et_n = data[:, 3]
+    x_n = data[:, 6]
+    return (x_n, rho_n, et_n)
+
 # Inputs
 y_loc = 10.0
 t = 10.0
-fname = "iv_profile_t10.csv"
+fnames = ["iv_profile_t10_{}.csv".format(n) for n in [500, 800]]
 x_0 = -10.0
 y_0 = -10.0
 g = 1.4
@@ -22,22 +32,15 @@ v_inf = 2.0
 K = 5.0
 T_inf = p_inf/(rho_inf*R)
 a_inf = np.sqrt(g*R*T_inf)
+print("M = {:2.3f}".format(u_inf/a_inf))
 
 # Checking to make sure file exists
-if not os.path.isfile(fname):
-    print("File {} doesn't exist.\nExiting\n\n".format(fname))
-    sys.exit()
-
-# Reading data from csv file
-data = np.genfromtxt(fname, skip_header=1, delimiter=",")
-
-# Separating data
-rho_n = data[:, 0]
-rhou_n = data[:, 1]
-rhov_n = data[:, 2]
-u_n = rhou_n/rho_n
-et_n = data[:, 3]
-x_n = data[:, 6]
+data = []
+for f in fnames:
+    if not os.path.isfile(f):
+        print("File {} doesn't exist.\nExiting\n\n".format(f))
+        sys.exit()
+    data.append(import_cfd_data(f))
 
 # Constructing exact solution
 x_e = np.linspace(-20.0, 20.0, 2000)
@@ -51,9 +54,19 @@ v_e = v_inf + K/(2.0*np.pi)*xb*np.exp(alpha*(1.0-rb**2)/2.0)
 et_e = cv*T + 0.5*(u_e**2 + v_e**2)
 
 # Creating comparison plot
-plt.plot(x_n, rho_n, "ob", lw=1.4, mfc="None", mec="b")
-plt.plot(x_e, rho_e, "-b", lw=1.5)
-plt.plot(x_n, et_n, "ok", lw=1.4, mfc="None", mec="k")
-plt.plot(x_e, et_e, "-k", lw=1.5)
+print("Plotting.")
+fig1 = plt.figure(figsize=(8.0,5.0))
+#plt.plot(data[0][0], data[0][1], "ob", lw=1.4, mfc="None", mec="b",label="500")
+plt.plot(x_e, rho_e, "-k", lw=1.5, label="Exact")
+plt.plot(data[1][0], data[1][1], "sk", lw=1.5, mfc="None", mec="k",label="Numerical", ms=7)
+plt.xlabel(r"$x$ [m]", fontsize=15)
+plt.ylabel(r"$\rho$  [kg/m$^3$]", fontsize=15)
+plt.xlim([0.0, 20.0])
+plt.legend(loc=3)
+
+# Saving plot
+if not os.path.isdir("images"):
+    os.mkdir("images")
+fig1.savefig("images/density_800.pdf")
 
 plt.show()

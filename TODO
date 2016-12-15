@@ -1,40 +1,25 @@
-I now have the gradient calculation.  It seems to be correct.
-Now, I believe that I should go through and reconstruct the
-states on each face according to
+- Implement generalized boundary conditions.
+  - Create boundary condition class.
+  - Derive specific BCs from base BC class.
+  - Pass BCs to initialize
 
-u^L_{i,j+1/2} = u_{i,j} + (grad(u) . rvec) phi(r)
+- Generalize residual so that different time.
+  stepping methods can be added easily.
+  - Rename update to inviscid_residual.
+  - Remove Forward Euler update in update.
 
-where r = (grad(u) . rvec)_L / (grad(u) . rvec)_R
+- Implement RK4.
+  - Must generalize the residual first.
+  - Should be pretty easy to add RK4 after that.
 
-This will construct the interface states which will
-then be used to solve the Riemann problem using Roe's
-approximate scheme.
+- Add minmod limiter.
+  - Going to have to change how the interface
+    states are reconstructed.  I believe I must
+    reconstruct the interface states on an
+    interface-by-interface basis, not on an
+    element-by-element basis.
 
-After that, all I need to do is change the
-update subroutine so that the fluxes from all the interfaces
-are accounted for in the computation of the residual.  Then,
-I need to implement boundary conditions.  I'm going to need
-slip wall and farfield for now probably.  Then, the Euler
-solver should be done.
-
-Something is wrong... I'm getting negative densities after
-the first step which is causing NaNs.  I need to double
-check the conversions from primitive to conservative,
-reconstruction and switch from the barth limiter to the
-minmod limiter.  There is a good explanation of the minmod
-limiter in Leveque's book.
-
-It seems that the information is not being communicated from
-the farfield boundaries.  The fluxes aren't changing, which
-indicates that the boundary condition is being enforced,
-and it seems that the reconstruction is working okay...
-When I print out reconstructed values, they seem reasonable.
-One idea is to hardwire the reconstruction for the cartesian
-grid case being solved.  Then I might be able to figure out
-if the reconstruction is what is causing the issue.
-
-The sign on some of the fluxes was wrong.  Now, the farfield
-boundaries seem wrong.  It is because I am changing the sign
-of the fluxes in the final loop.  I need to change the enforcement
-of the farfield boundary conditions so that they use the inward pointing face normal!!!!!
-
+- Add namelist for inputs such as:
+  - mesh
+  - boundary conditions
+  - freestream conditions
