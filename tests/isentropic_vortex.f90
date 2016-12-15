@@ -1,6 +1,6 @@
 program isentropic_vortex
   use mesh_class,   only : mesh,read_from_file,preprocess
-  use euler_solver, only : solver,initialize,solve_feuler,solve_rk4
+  use solvers, only : solver,initialize,solve_feuler,solve_rk4
   implicit none
   double precision :: a,rho_inf,p_inf,u_inf,v_inf,x0,y0,K,xb,yb,rb,temp,g
   double precision :: rgas,t_inf,a_inf,winfty(4)

@@ -3,7 +3,7 @@
 ! equations using a second-order accurate finite volume
 ! method.
 !===========================================================
-module euler_solver
+module solvers
   use cgns
   use mesh_class, only : mesh
   use utils,      only : u_to_w, w_to_u
@@ -129,6 +129,7 @@ module euler_solver
 
     end subroutine solve_feuler
 
+
     !---------------------------------------------------------
     ! Subroutine for solving to some final time using
     ! Runge-Kutta 4
@@ -203,6 +204,144 @@ module euler_solver
       end do
 
     end subroutine solve_rk4
+
+    !---------------------------------------------------------
+    ! Subroutine for applying boundary conditions
+    ! 1000 - farfield     (primitives specified)
+    ! 1001 - extrapolate  (no information needed)
+    ! 1002 - slip wall    (no information needed)
+    ! 1003 - no-slip wall (wall temperature, assumed adiabatic)
+    !---------------------------------------------------------
+    subroutine apply_bcs(this)
+      implicit none
+      type(solver), intent(inout)    :: this
+      double precision, dimension(4) :: wextrap,uextrap,wtmp
+      double precision               :: m,pw
+      integer                        :: i,j
+
+      !===============================================
+      ! Bottom boundary (inward pointing normal)
+      !===============================================
+      j = 1
+      if (this%bcids(1).eq.1000) then
+
+        ! Farfield
+        do i=1,this%grid%nelemi
+          this%grid%edges_h(i,j)%flux = -flux_adv(this%winfty,this%grid%elem(i,j)%n(:,1),this%g)
+        end do
+
+      else if (this%bcids(1).eq.1001) then
+
+        ! Extrapolate
+        do i=1,this%grid%nelemi
+          uextrap = this%grid%elem(i,j)%u
+          wextrap = u_to_w(uextrap,this%g)
+          this%grid%edges_h(i,j)%flux = -flux_adv(wextrap,this%grid%elem(i,j)%n(:,1),this%g)
+        end do
+
+      else if (this%bcids(1).eq.1002) then
+
+        ! Slip wall
+        do i=1,this%grid%nelemi
+          wtmp = u_to_w(this%grid%elem(i,j)%u,this%g)
+          pw = wtmp()
+        end do
+
+      else if (this%bcids(1).eq.1003) then
+      else
+      end if
+
+      !===============================================
+      ! Right boundary
+      !===============================================
+      i = this%nelemi
+      if (this%bcids(2).eq.1000) then
+
+        ! Farfield
+        do j=1,this%grid%nelemj
+          this%grid%edges_v(i+1,j)%flux = flux_adv(this%winfty,this%grid%elem(i,j)%n(:,2),this%g)
+        end do
+
+      else if (this%bcids(2).eq.1001) then
+
+        ! Extrapolate
+        do j=1,this%grid%nelemj
+          uextrap = this%grid%elem(i,j)%u
+          wextrap = u_to_w(uextrap,this%g)
+          this%grid%edges_v(i+1,j)%flux = flux_adv(wextrap,this%grid%elem(i,j)%n(:,2),this%g)
+        end do
+
+      else if (this%bcids(2).eq.1002) then
+
+        ! Slip wall
+
+      else if (this%bcids(2).eq.1003) then
+
+        ! No-slip wall
+        print *, "Warning: no-slip wall bc not implemented yet."
+
+      else
+      end if
+
+      !===============================================
+      ! Top boundary
+      !===============================================
+      j = this%grid%nelemj
+      if (this%bcids(3).eq.1000) then
+
+        ! Farfield
+        do i=1,this%grid%nelemi
+          this%grid%edges_h(i,j+1)%flux = flux_adv(this%winfty,this%grid%elem(i,j)%n(:,3),this%g)
+        end do
+
+      else if (this%bcids(3).eq.1001) then
+
+        ! Extrapolate
+        do i=1,this%grid%nelemi
+          uextrap = this%grid%elem(i,j)%u
+          wextrap = u_to_w(uextrap,this%g)
+          this%grid%edges_h(i,j+1)%flux = flux_adv(wextrap,this%grid%elem(i,j)%n(:,3),this%g)
+        end do
+
+      else if (this%bcids(3).eq.1002) then
+      else if (this%bcids(3).eq.1003) then
+
+        ! No-slip wall
+        print *, "Warning: no-slip wall bc not implemented yet."
+
+      else
+      end if
+
+      !===============================================
+      ! Left boundary (inward pointing normal)
+      !===============================================
+      i = 1
+      if (this%bcids(4).eq.1000) then
+
+        ! Farfield
+        do j=1,this%grid%nelemj
+          this%grid%edges_v(i,j)%flux = -flux_adv(this%winfty,this%grid%elem(i,j)%n(:,4),this%g)
+        end do
+
+      else if (this%bcids(4).eq.1001) then
+
+        ! Extrapolate
+        do j=1,this%grid%nelemj
+          uextrap = this%grid%elem(i,j)%u
+          wextrap = u_to_w(uextrap,this%g)
+          this%grid%edges_v(i,j)%flux = -flux_adv(wextrap,this%grid%elem(i,j)%n(:,2),this%g)
+        end do
+
+      else if (this%bcids(4).eq.1002) then
+      else if (this%bcids(4).eq.1003) then
+
+        ! No-slip wall
+        print *, "Warning: no-slip wall bc not implemented yet."
+
+      else
+      end if
+
+    end subroutine apply_bcs
 
     !---------------------------------------------------------
     ! Subroutine for computing the residual
@@ -373,41 +512,6 @@ module euler_solver
         end do
       end do
 
-      ! Enforcing farfield boundary conditions on the bottom and left boundaries
-      ! Sides of an element are numbered as follows
-      !         3
-      !   o-----------o
-      !   |           |
-      ! 4 |           | 2
-      !   |           |
-      !   o-----------o
-      !         1
-      !
-      do i=1,this%grid%nelemi
-        this%grid%edges_h(i,1)%flux = -flux_adv(this%winfty,this%grid%elem(i,1)%n(:,1),this%g)
-        !write (*,'(a,4f12.5)') "bottom flux = ", fb
-      end do
-      do j=1,this%grid%nelemj
-        this%grid%edges_v(1,j)%flux = -flux_adv(this%winfty,this%grid%elem(1,j)%n(:,4),this%g)
-      end do
-
-      ! Enforcing extrapolate bcs on the right and top boundaries
-      j = this%grid%nelemj
-      do i=1,this%grid%nelemi
-        r(1) = this%grid%edges_h(i,j+1)%xm - this%grid%elem(i,j)%xc
-        r(2) = this%grid%edges_h(i,j+1)%ym - this%grid%elem(i,j)%yc
-        uextrap = this%grid%elem(i,j)%u + gradU(i,j,1:4)*r(1) + gradU(i,j,5:8)*r(2)
-        wextrap = u_to_w(uextrap,this%g)
-        this%grid%edges_h(i,j+1)%flux = flux_adv(wextrap,this%grid%elem(i,j)%n(:,3),this%g)
-      end do
-      i = this%grid%nelemi
-      do j=1,this%grid%nelemj
-        r(1) = this%grid%edges_v(i+1,j)%xm - this%grid%elem(i,j)%xc
-        r(2) = this%grid%edges_v(i+1,j)%ym - this%grid%elem(i,j)%yc
-        uextrap = this%grid%elem(i,j)%u + gradU(i,j,1:4)*r(1) + gradU(i,j,5:8)*r(2)
-        wextrap = u_to_w(uextrap,this%g)
-        this%grid%edges_v(i+1,j)%flux = flux_adv(wextrap,this%grid%elem(i,j)%n(:,2),this%g)
-      end do
 
 
       ! Must now iterate through all the interior interfaces and solve
@@ -540,4 +644,4 @@ module euler_solver
 
     end subroutine write_results_tec
 
-end module euler_solver
+end module solvers
