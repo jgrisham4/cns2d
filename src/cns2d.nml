@@ -14,15 +14,15 @@
 /
 
 &gas_properties
-  g = 1.4
+  g = 1.4          ! Ratio of specific heats
   C1 = 1.458e-6    ! Constant for Sutherland's law
   S = 110.0        ! Constant for Sutherland's law
 /
 
-&temporal_controls
-  time_advancement = "rk4"   ! Options are rk4 or forward_euler
-  final_time = 10.0          ! Seconds
-  time_step = 0.01           ! Seconds
+&time_advancement
+  method     = "rk4"  ! Options are rk4 or forward_euler
+  final_time = 10.0   ! Seconds
+  time_step  = 0.01   ! Seconds
 /
 
 &boundary_conditions
