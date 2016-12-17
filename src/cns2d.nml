@@ -1,0 +1,33 @@
+&governing_equations
+  viscous_terms = .false.
+/
+
+&mesh
+  mesh_file = "square800.cgns"
+/
+
+&freestream_properties
+  u_inf = 2.0
+  v_inf = 2.0
+  p_inf = 1.0
+  rho_inf = 1.0
+/
+
+&gas_properties
+  g = 1.4
+  C1 = 1.458e-6    ! Constant for Sutherland's law
+  S = 110.0        ! Constant for Sutherland's law
+/
+
+&temporal_controls
+  time_advancement = "rk4"   ! Options are rk4 or forward_euler
+  final_time = 10.0          ! Seconds
+  time_step = 0.01           ! Seconds
+/
+
+&boundary_conditions
+  bcids(1) = 1000
+  bcids(2) = 1001
+  bcids(3) = 1001
+  bcids(4) = 1000
+/

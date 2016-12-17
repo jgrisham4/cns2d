@@ -34,13 +34,14 @@ module solvers
     ! Subroutine which initializes solution, i.e., allocates
     ! memory and sets up some important variables
     !---------------------------------------------------------
-    subroutine initialize(this,m,delta_t,t_final,gam,w0,winf)
+    subroutine initialize(this,m,delta_t,t_final,gam,w0,winf,bcidents)
       implicit none
       type(solver),       intent(inout)           :: this
       type(mesh),         intent(in)              :: m
       double precision,   intent(in)              :: delta_t,gam,t_final
       double precision,   intent(in), allocatable :: w0(:,:,:)
       double precision,   intent(in)              :: winf(4)
+      integer,            intent(in)              :: bcidents(4)
       double precision, allocatable               :: u0(:,:,:)
       integer                                     :: allocate_err,i,j
 
@@ -52,7 +53,8 @@ module solvers
       this%tfinal  = t_final
       this%g       = gam
       this%winfty  = winf
-      this%ntsteps = ceiling(t_final/delta_t)+1
+      this%ntsteps = ceiling(t_final/delta_t)
+      this%bcids   = bcidents
       write (*,'(a,i5)') "number of time steps: ", this%ntsteps
 
       ! Converting initial condition to conserved variables
@@ -95,15 +97,20 @@ module solvers
         stop
       end if
 
+      ! Writing initial solution
+      write (tecname, '(a,i0,a)') "sol", 0, ".tec"
+      print *, "Writing data to ", tecname
+      call write_results_tec(this,tecname)
+
       ! Marching in time
       do k=1,this%ntsteps
 
         ! Printing some information
-        write(*,'(a,i5,a,es12.5)') "timestep: ", k, " t = ", dble(k-1)*this%dt
+        write(*,'(a,i5,a,es12.5)') "timestep: ", k, " t = ", dble(k)*this%dt
 
         ! Writing current solution
-        if (mod(k-1,write_freq).eq.0) then
-          write (tecname, '(a,i0,a)') "sol", (k-1), ".tec"
+        if (mod(k,write_freq).eq.0) then
+          write (tecname, '(a,i0,a)') "sol", (k), ".tec"
           print *, "Writing data to ", tecname
           call write_results_tec(this,tecname)
         end if
@@ -149,15 +156,20 @@ module solvers
         stop
       end if
 
+      ! Writing initial solution
+      write (tecname, '(a,i0,a)') "sol", 0, ".tec"
+      print *, "Writing data to ", tecname
+      call write_results_tec(this,tecname)
+
       ! Marching in time
       do k=1,this%ntsteps
 
         ! Printing some information
-        write(*,'(a,i5,a,es12.5)') "timestep: ", k, " t = ", dble(k-1)*this%dt
+        write(*,'(a,i5,a,es12.5)') "timestep: ", k, " t = ", dble(k)*this%dt
 
         ! Writing current solution
-        if (mod(k-1,write_freq).eq.0) then
-          write (tecname, '(a,i0,a)') "sol", (k-1), ".tec"
+        if (mod(k,write_freq).eq.0) then
+          write (tecname, '(a,i0,a)') "sol", (k), ".tec"
           print *, "Writing data to ", tecname
           call write_results_tec(this,tecname)
         end if
@@ -216,7 +228,8 @@ module solvers
       implicit none
       type(solver), intent(inout)    :: this
       double precision, dimension(4) :: wextrap,uextrap,wtmp
-      double precision               :: m,pw
+      double precision               :: pw
+      !double precision               :: m,p1,p2,d1,d2
       integer                        :: i,j
 
       !===============================================
@@ -244,7 +257,11 @@ module solvers
         ! Slip wall
         do i=1,this%grid%nelemi
           wtmp = u_to_w(this%grid%elem(i,j)%u,this%g)
-          pw = wtmp()
+          pw = wtmp(4)
+          this%grid%edges_h(i,j)%flux(1) = 0.0d0
+          this%grid%edges_h(i,j)%flux(2) = -pw*this%grid%elem(i,j)%n(1,1)
+          this%grid%edges_h(i,j)%flux(3) = -pw*this%grid%elem(i,j)%n(2,1)
+          this%grid%edges_h(i,j)%flux(4) = 0.0d0
         end do
 
       else if (this%bcids(1).eq.1003) then
@@ -254,7 +271,7 @@ module solvers
       !===============================================
       ! Right boundary
       !===============================================
-      i = this%nelemi
+      i = this%grid%nelemi
       if (this%bcids(2).eq.1000) then
 
         ! Farfield
@@ -274,6 +291,14 @@ module solvers
       else if (this%bcids(2).eq.1002) then
 
         ! Slip wall
+        do i=1,this%grid%nelemi
+          wtmp = u_to_w(this%grid%elem(i,j)%u,this%g)
+          pw = wtmp(4)
+          this%grid%edges_v(i+1,j)%flux(1) = 0.0d0
+          this%grid%edges_v(i+1,j)%flux(2) = pw*this%grid%elem(i,j)%n(1,2)
+          this%grid%edges_v(i+1,j)%flux(3) = pw*this%grid%elem(i,j)%n(2,2)
+          this%grid%edges_v(i+1,j)%flux(4) = 0.0d0
+        end do
 
       else if (this%bcids(2).eq.1003) then
 
@@ -304,6 +329,17 @@ module solvers
         end do
 
       else if (this%bcids(3).eq.1002) then
+
+        ! Slip wall
+        do i=1,this%grid%nelemi
+          wtmp = u_to_w(this%grid%elem(i,j)%u,this%g)
+          pw = wtmp(4)
+          this%grid%edges_h(i,j+1)%flux(1) = 0.0d0
+          this%grid%edges_h(i,j+1)%flux(2) = pw*this%grid%elem(i,j)%n(1,3)
+          this%grid%edges_h(i,j+1)%flux(3) = pw*this%grid%elem(i,j)%n(2,3)
+          this%grid%edges_h(i,j+1)%flux(4) = 0.0d0
+        end do
+
       else if (this%bcids(3).eq.1003) then
 
         ! No-slip wall
@@ -329,10 +365,21 @@ module solvers
         do j=1,this%grid%nelemj
           uextrap = this%grid%elem(i,j)%u
           wextrap = u_to_w(uextrap,this%g)
-          this%grid%edges_v(i,j)%flux = -flux_adv(wextrap,this%grid%elem(i,j)%n(:,2),this%g)
+          this%grid%edges_v(i,j)%flux = -flux_adv(wextrap,this%grid%elem(i,j)%n(:,4),this%g)
         end do
 
       else if (this%bcids(4).eq.1002) then
+
+        ! Slip wall
+        do i=1,this%grid%nelemi
+          wtmp = u_to_w(this%grid%elem(i,j)%u,this%g)
+          pw = wtmp(4)
+          this%grid%edges_v(i,j)%flux(1) = 0.0d0
+          this%grid%edges_v(i,j)%flux(2) = -pw*this%grid%elem(i,j)%n(1,4)
+          this%grid%edges_v(i,j)%flux(3) = -pw*this%grid%elem(i,j)%n(2,4)
+          this%grid%edges_v(i,j)%flux(4) = 0.0d0
+        end do
+
       else if (this%bcids(4).eq.1003) then
 
         ! No-slip wall
@@ -512,7 +559,8 @@ module solvers
         end do
       end do
 
-
+      ! Applying boundary conditions
+      call apply_bcs(this)
 
       ! Must now iterate through all the interior interfaces and solve
       ! the Riemann problem to find the fluxes

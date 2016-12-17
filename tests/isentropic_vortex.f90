@@ -6,7 +6,8 @@ program isentropic_vortex
   double precision :: rgas,t_inf,a_inf,winfty(4)
   double precision, allocatable :: w0(:,:,:)
   double precision, parameter :: pi = 4.0d0*atan(1.0d0)
-  integer :: aerr,i,j
+  integer :: aerr,i,j,bcs(4)
+
 
   ! Creating mesh and solver objects
   type(mesh)   :: grid
@@ -61,9 +62,15 @@ program isentropic_vortex
     end do
   end do
 
+  ! Setting boundary conditions
+  bcs(1) = 1000
+  bcs(2) = 1001
+  bcs(3) = 1001
+  bcs(4) = 1000
+
   ! Initializing solver
   !call initialize(esolver,grid,0.001d0,10.0d0,1.4d0,w0,winfty)
-  call initialize(esolver,grid,0.01d0,10.0d0,1.4d0,w0,winfty)
+  call initialize(esolver,grid,0.01d0,10.0d0,1.4d0,w0,winfty,bcs)
 
   ! Solving problem
   !call solve_feuler(esolver,1000)
