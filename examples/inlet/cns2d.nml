@@ -1,0 +1,41 @@
+&governing_equations
+  viscous_terms = .false.
+/
+
+&mesh_inputs
+  mesh_file = "inlet_inv_grid.cgns"
+/
+
+&freestream_properties
+  u_inf = 1020.7879     ! m/s
+  v_inf = 0.0           ! m/s
+  p_inf = 1.013250e3    ! Pa
+  rho_inf = 1.225226e-2 ! kg/m^3
+/
+
+&gas_properties
+  g = 1.4d0        ! Ratio of specific heats
+  C1 = 1.458e-6    ! Constant for Sutherland's law
+  S = 110.0d0      ! Constant for Sutherland's law
+/
+
+&time_advancement
+  method     = "forward_euler"   ! Options are rk4 or forward_euler
+  final_time = 1.0e-6  ! Seconds
+  time_step  = 1.0e-12 ! Seconds
+/
+
+&boundary_conditions
+  bcids(1) = 1002   ! bottom
+  bcids(2) = 1001   ! right
+  bcids(3) = 1002   ! top
+  bcids(4) = 1000   ! left
+/
+
+&slope_limiter
+  limiter = "minmod"
+/
+
+&output
+  write_freq = 10000
+/

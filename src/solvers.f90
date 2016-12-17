@@ -19,13 +19,13 @@ module solvers
   ! Class for solver
   !---------------------------------------------------------
   type solver
-    integer                       :: ntsteps            ! Number of time steps
-    integer, dimension(4)         :: bcids              ! BC identifiers
-    double precision              :: dt                 ! Time step
-    double precision              :: tfinal             ! Final time
-    double precision              :: g                  ! Ratio of specific heats
-    double precision              :: winfty(4)          ! Freestream primitive variables
-    type(mesh)                    :: grid               ! Mesh object
+    integer               :: ntsteps            ! Number of time steps
+    integer, dimension(4) :: bcids              ! BC identifiers
+    double precision      :: dt                 ! Time step
+    double precision      :: tfinal             ! Final time
+    double precision      :: g                  ! Ratio of specific heats
+    double precision      :: winfty(4)          ! Freestream primitive variables
+    type(mesh)            :: grid               ! Mesh object
   end type solver
 
   contains
@@ -265,7 +265,15 @@ module solvers
         end do
 
       else if (this%bcids(1).eq.1003) then
+
+        ! No-slip wall
+        print *, "Warning: no-slip wall bc not implemented yet."
+
       else
+
+        print *, "Boundary condition ", this%bcids(1), " for bottom not recognized."
+        stop
+
       end if
 
       !===============================================
@@ -306,6 +314,10 @@ module solvers
         print *, "Warning: no-slip wall bc not implemented yet."
 
       else
+
+        print *, "Boundary condition ", this%bcids(2), " for right not recognized."
+        stop
+
       end if
 
       !===============================================
@@ -346,6 +358,10 @@ module solvers
         print *, "Warning: no-slip wall bc not implemented yet."
 
       else
+
+        print *, "Boundary condition ", this%bcids(3), " for top not recognized."
+        stop
+
       end if
 
       !===============================================
@@ -386,6 +402,10 @@ module solvers
         print *, "Warning: no-slip wall bc not implemented yet."
 
       else
+
+        print *, "Boundary condition ", this%bcids(4), " for left not recognized."
+        stop
+
       end if
 
     end subroutine apply_bcs
