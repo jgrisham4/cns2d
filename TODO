@@ -1,17 +1,3 @@
-- Implement generalized boundary conditions.
-  - Create boundary condition class.
-  - Derive specific BCs from base BC class.
-  - Pass BCs to initialize
-
-- Generalize residual so that different time.
-  stepping methods can be added easily.
-  - Rename update to inviscid_residual.
-  - Remove Forward Euler update in update.
-
-- Implement RK4.
-  - Must generalize the residual first.
-  - Should be pretty easy to add RK4 after that.
-
 - Add minmod limiter.
   - Going to have to change how the interface
     states are reconstructed.  I believe I must
@@ -19,7 +5,38 @@
     interface-by-interface basis, not on an
     element-by-element basis.
 
-- Add namelist for inputs such as:
-  - mesh
-  - boundary conditions
-  - freestream conditions
+- Add subroutine to compute the max possible time step.
+
+- Generalize gradient computation.
+  - Present gradient computation is a bit specialized
+    to the case where the input is the vector of conserved
+    variables.  Need to make it more generic.
+
+- Fix slip wall BC.
+  - Slip wall is currently being enforced weakly
+    by extrapolating the pressure from the cell
+    centers to the walls.  This is not working.
+    I need to set the state at the ghost cells,
+    reconstruct the solution at the boundary
+    faces and then solve the riemann problem to
+    find the flux.
+  - This can be accomplished by adding a method
+    to compute the gradients along the boundaries.
+
+- Create subroutine for computing gradients along
+  the boundaries (including ghost cells).
+
+- Add subroutine which computes residual of NS.
+  - Must add subroutine for computing the viscous fluxes.
+    The viscous flux is shown in Eq. 2.23.  I have to
+    evaluate the first derivatives of the velocity field
+    and temperature.
+  - Must compute gradient of u,v,T and gradient of each
+    respective derivative so that the states can be
+    reconstructed at the faces.
+  - After I have the states at the faces, the viscous
+    fluxes are computing using the averaged states at
+    the faces.
+  - If I can do all this, I'm done with the NS solver.
+
+- Add implicit residual smoothing to accelerate convergence.

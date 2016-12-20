@@ -12,7 +12,7 @@ module grad
   use mesh_class, only : mesh
   implicit none
   private
-  public :: compute_gradient
+  public :: compute_gradient, compute_boundary_gradient
 
   contains
 
@@ -105,5 +105,59 @@ module grad
     end do
 
   end subroutine compute_gradient
+
+  !--------------------------------------------------------
+  ! Subroutine for computing the gradient along a boundary
+  ! This subroutine computes the gradient of the elements
+  ! on either side of the boundary
+  !--------------------------------------------------------
+  subroutine compute_boundary_gradient(grid,gradu,bindex)
+    implicit none
+    type(mesh), intent(in)                       :: grid
+    double precision, allocatable, intent(inout) :: gradu(:,:,:)
+    integer, intent(in)                          :: bindex
+    double precision, dimension(4)               :: dudxi,dudeta
+    integer                                      :: i,j,aer
+
+    ! Logic for switching between different boundaries
+    select case(bindex)
+    case(1)
+
+      ! Lower boundary
+      do j=1,2
+        do i=1,grid%nelemi
+
+          if (i.eq.1) then
+            dudxi = 0.5d0*(-3.0d0*grid%elem(i,j)%u + 4.0d0*grid%elem(i+1,j)%u - grid%elem(i+2,j)%u)
+          else if (i.eq.grid%nelemi) then
+            dudxi = 0.5d0*(3.0d0*grid%elem(i,j)%u - 4.0d0*grid%elem(i-1,j)%u + grid%elem(i-2,j)%u)
+          else
+            dudxi = 0.5d0*(grid%elem(i+1,j)%u - grid%elem(i-1,j)%u)
+          end if
+          dudeta = 0.5d0*(-3.0d0*grid%elem(i,j)%u + 4.0d0*grid%elem(i,j+1)%u - grid%elem(i,j+2)%u)
+          gradu(i,j,1:4) = 1.0d0/grid%elem(i,j)%detJ*(dudxi*grid%elem(i,j)%dydeta-dudeta*grid%elem(i,j)%dydxi)
+          gradu(i,j,5:8) = 1.0d0/grid%elem(i,j)%detJ*(dudeta*grid%elem(i,j)%dxdxi-dudxi*grid%elem(i,j)%dxdeta)
+
+        end do
+      end do
+
+    case(2)
+
+      ! Right boundary
+
+    case(3)
+
+      ! Top boundary
+
+    case(4)
+
+      ! Left boundary
+
+    case default
+      print *, "Error: Boundary index not recognized."
+      stop
+    end select
+
+  end subroutine compute_boundary_gradient
 
 end module grad

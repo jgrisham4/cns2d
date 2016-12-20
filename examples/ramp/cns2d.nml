@@ -3,14 +3,14 @@
 /
 
 &mesh_inputs
-  mesh_file = "inlet_inv_grid.cgns"
+  mesh_file = "ramp200.cgns"
 /
 
 &freestream_properties
-  u_inf = 1020.7879     ! m/s
-  v_inf = 0.0           ! m/s
-  p_inf = 1.013250e3    ! Pa
-  rho_inf = 1.225226e-2 ! kg/m^3
+  rho_inf = 0.1226     ! kg/m^3
+  u_inf   = 670.0121   ! m/s
+  v_inf   = -118.1412  ! m/s
+  p_inf   = 1.01325e4  ! Pa
 /
 
 &gas_properties
@@ -28,7 +28,7 @@
 &boundary_conditions
   bcids(1) = 1002   ! bottom
   bcids(2) = 1001   ! right
-  bcids(3) = 1002   ! top
+  bcids(3) = 1001   ! top
   bcids(4) = 1000   ! left
 /
 

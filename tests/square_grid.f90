@@ -5,16 +5,17 @@ program test_cgns
   double precision              :: xmin,xmax,ymin,ymax
   double precision              :: dx,dy
   integer(kind=4)               :: isize(2,3)
-  character (len=30)            :: basename,zonename
+  character (len=30)            :: basename,zonename,fname
   integer :: imax,jmax,i,j,icelldim,iphysdim,index_base,index_file,index_zone,index_coord,ier,aerr
 
   ! Setting grid inputs
-  imax = 1001
-  jmax = 1001
-  xmin = -20.0d0
-  xmax = 20.0d0
-  ymin = -20.0d0
-  ymax = 20.0d0
+  imax = 200
+  jmax = 200
+  xmin = 0.0d0
+  xmax = 1.0d0
+  ymin = 0.0d0
+  ymax = 1.0d0
+  fname = "ramp200.cgns"
 
   ! Allocating memory for arrays
   allocate(x(imax,jmax),stat=aerr)
@@ -40,7 +41,7 @@ program test_cgns
   print *, 'Done creating 2-D grid points.'
 
   ! Opening a CGNS file
-  call cg_open_f('iv1000.cgns',CG_MODE_WRITE,index_file,ier)
+  call cg_open_f(fname,CG_MODE_WRITE,index_file,ier)
   if (ier.ne.CG_OK) call cg_error_exit_f
 
   ! Creating base

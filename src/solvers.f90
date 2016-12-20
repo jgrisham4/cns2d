@@ -257,7 +257,9 @@ module solvers
         ! Slip wall
         do i=1,this%grid%nelemi
           wtmp = u_to_w(this%grid%elem(i,j)%u,this%g)
-          pw = wtmp(4)
+          pw = 3.0d0/2.0d0*wtmp(4)
+          wtmp = u_to_w(this%grid%elem(i,j+1)%u,this%g)
+          pw = pw - 0.5d0*wtmp(4)
           this%grid%edges_h(i,j)%flux(1) = 0.0d0
           this%grid%edges_h(i,j)%flux(2) = -pw*this%grid%elem(i,j)%n(1,1)
           this%grid%edges_h(i,j)%flux(3) = -pw*this%grid%elem(i,j)%n(2,1)
@@ -301,7 +303,9 @@ module solvers
         ! Slip wall
         do i=1,this%grid%nelemi
           wtmp = u_to_w(this%grid%elem(i,j)%u,this%g)
-          pw = wtmp(4)
+          pw = 3.0d0/2.0d0*wtmp(4)
+          wtmp = u_to_w(this%grid%elem(i-1,j)%u,this%g)
+          pw = pw - 0.5d0*wtmp(4)
           this%grid%edges_v(i+1,j)%flux(1) = 0.0d0
           this%grid%edges_v(i+1,j)%flux(2) = pw*this%grid%elem(i,j)%n(1,2)
           this%grid%edges_v(i+1,j)%flux(3) = pw*this%grid%elem(i,j)%n(2,2)
@@ -345,7 +349,9 @@ module solvers
         ! Slip wall
         do i=1,this%grid%nelemi
           wtmp = u_to_w(this%grid%elem(i,j)%u,this%g)
-          pw = wtmp(4)
+          pw = 3.0d0/2.0d0*wtmp(4)
+          wtmp = u_to_w(this%grid%elem(i,j-1)%u,this%g)
+          pw = pw - 0.5d0*wtmp(4)
           this%grid%edges_h(i,j+1)%flux(1) = 0.0d0
           this%grid%edges_h(i,j+1)%flux(2) = pw*this%grid%elem(i,j)%n(1,3)
           this%grid%edges_h(i,j+1)%flux(3) = pw*this%grid%elem(i,j)%n(2,3)
@@ -389,7 +395,9 @@ module solvers
         ! Slip wall
         do i=1,this%grid%nelemi
           wtmp = u_to_w(this%grid%elem(i,j)%u,this%g)
-          pw = wtmp(4)
+          pw = 3.0d0/2.0d0*wtmp(4)
+          wtmp = u_to_w(this%grid%elem(i+1,j)%u,this%g)
+          pw = pw - 0.5d0*wtmp(4)
           this%grid%edges_v(i,j)%flux(1) = 0.0d0
           this%grid%edges_v(i,j)%flux(2) = -pw*this%grid%elem(i,j)%n(1,4)
           this%grid%edges_v(i,j)%flux(3) = -pw*this%grid%elem(i,j)%n(2,4)
@@ -603,7 +611,7 @@ module solvers
         end do
       end do
 
-      ! Advance one step in time (forward Euler for now)
+      ! Computing residual
       do j=1,this%grid%nelemj
         do i=1,this%grid%nelemi
           resid(i,j,:) = -1.0d0/(this%grid%elem(i,j)%area)* &
