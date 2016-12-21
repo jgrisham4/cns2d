@@ -7,7 +7,7 @@ module limiters
   use ieee_arithmetic, only : ieee_is_finite
   implicit none
   private
-  public :: minmod, vanleer, barth
+  public :: minmod, vanleer
 
   contains
 
@@ -55,21 +55,5 @@ module limiters
         phi = 2.0d0*r/(r+1.0d0)
       end if
     end function vanleer
-
-    !------------------------------------------------------
-    ! Barth limiter for unstructured grids
-    ! I don't believe this is implemented correctly...
-    !------------------------------------------------------
-    double precision function barth(Delta2,U,Umax,Umin) result(psi)
-      implicit none
-      double precision, intent(in) :: Delta2,Umax,Umin,U
-      if (Delta2.gt.0.0d0) then
-        psi = min(1.0d0,(Umax-U)/sign(Delta2,abs(Delta2+epsilon(Delta2))))
-      else if (Delta2.lt.0.0d0) then
-        psi = min(1.0d0,(Umin-U)/sign(Delta2,abs(Delta2+epsilon(Delta2))))
-      else
-        psi = 1.0d0
-      end if
-    end function barth
 
 end module limiters

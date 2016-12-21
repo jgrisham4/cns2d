@@ -33,9 +33,9 @@
 /
 
 &slope_limiter
-  limiter = "minmod"
+  limiter = "barth"
 /
 
 &output
-  write_freq = 10000
+  write_freq = 1000
 /

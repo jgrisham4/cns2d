@@ -1,17 +1,3 @@
-- Add minmod limiter.
-  - Going to have to change how the interface
-    states are reconstructed.  I believe I must
-    reconstruct the interface states on an
-    interface-by-interface basis, not on an
-    element-by-element basis.
-
-- Add subroutine to compute the max possible time step.
-
-- Generalize gradient computation.
-  - Present gradient computation is a bit specialized
-    to the case where the input is the vector of conserved
-    variables.  Need to make it more generic.
-
 - Fix slip wall BC.
   - Slip wall is currently being enforced weakly
     by extrapolating the pressure from the cell
@@ -22,6 +8,8 @@
     find the flux.
   - This can be accomplished by adding a method
     to compute the gradients along the boundaries.
+
+- Add subroutine to compute the max possible time step.
 
 - Create subroutine for computing gradients along
   the boundaries (including ghost cells).

@@ -68,7 +68,7 @@ module flux
       vx  = w(2)
       vy  = w(3)
       p   = w(4)
-      ht  = u(4) + w(4)/rho  ! ht = et + p/rho
+      ht  = u(4) + p/rho  ! ht = et + p/rho
 
       ! Finding contravariant velocity
       vc = vx*n(1) + vy*n(2)

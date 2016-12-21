@@ -38,3 +38,6 @@ boundaries seem wrong.  It is because I am changing the sign
 of the fluxes in the final loop.  I need to change the enforcement
 of the farfield boundary conditions so that they use the inward pointing face normal!!!!!
 
+Added Barth-Jespersen limiter formulation using their original
+paper.  Something is wrong though because I get NaNs after the
+first few timesteps.

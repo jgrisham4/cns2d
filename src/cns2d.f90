@@ -56,10 +56,10 @@ program cns2d
   write(*,'(a)') "-------------------------------"
   write(*,'(a)') "Freestream properties"
   write(*,'(a)') "-------------------------------"
-  write(*,'(a,f5.2,a)') "u_inf  : ", u_inf, " m/s"
-  write(*,'(a,f5.2,a)') "v_inf  : ", v_inf, " m/s"
-  write(*,'(a,f5.2,a)') "p_inf  : ", p_inf, " Pa"
-  write(*,'(a,f5.2,a/)') "rho_inf: ", rho_inf, " kg/m^3"
+  write(*,'(a,f12.5,a)') "u_inf  : ", u_inf, " m/s"
+  write(*,'(a,f12.5,a)') "v_inf  : ", v_inf, " m/s"
+  write(*,'(a,es12.5,a)') "p_inf  : ", p_inf, " Pa"
+  write(*,'(a,f12.5,a/)') "rho_inf: ", rho_inf, " kg/m^3"
   write(*,'(a)') "-------------------------------"
   write(*,'(a)') "Gas properties"
   write(*,'(a)') "-------------------------------"
@@ -68,8 +68,8 @@ program cns2d
   write(*,'(a)') "Time advancement"
   write(*,'(a)') "-------------------------------"
   write(*,'(2a)') "method    : ", method
-  write(*,'(a,f5.2,a)') "Final time: ", final_time, " sec"
-  write(*,'(a,f5.2,a/)') "Time step : ", time_step, " sec"
+  write(*,'(a,f5.4,a)') "Final time: ", final_time, " sec"
+  write(*,'(a,es12.5,a/)') "Time step : ", time_step, " sec"
   write(*,'(a)') "-------------------------------"
   write(*,'(a)') "Boundary conditions"
   write(*,'(a)') "-------------------------------"
@@ -84,7 +84,7 @@ program cns2d
   write(*,'(a)') "-------------------------------"
   write(*,'(a)') "Output options"
   write(*,'(a)') "-------------------------------"
-  write(*,'(a,i6/)') "write_frequency: ", write_freq
+  write(*,'(a,i9/)') "write_frequency: ", write_freq
 
   ! Setting freestream quantities
   winfty(1) = rho_inf
@@ -114,7 +114,7 @@ program cns2d
   end do
 
   ! Initializing solver
-  call initialize(solv,grid,time_step,final_time,g,w0,winfty,bcids)
+  call initialize(solv,grid,time_step,final_time,g,w0,winfty,bcids,limiter)
 
   ! Solving the problem
   if (method.eq."forward_euler") then
