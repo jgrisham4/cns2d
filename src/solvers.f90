@@ -5,12 +5,13 @@
 !===========================================================
 module solvers
   use cgns
-  use mesh_class, only : mesh
-  use utils,      only : u_to_w, w_to_u
-  use limiters,   only : minmod, vanleer
-  use flux,       only : fluxax, fluxay, flux_adv
-  use grad,       only : compute_gradient
-  use riemann,    only : roe
+  use mesh_class,      only : mesh
+  use utils,           only : u_to_w, w_to_u, compute_elem_max, compute_elem_min
+  use limiters,        only : minmod, vanleer
+  use flux,            only : fluxax, fluxay, flux_adv
+  use grad,            only : compute_gradient
+  use riemann,         only : roe,rotated_rhll
+  use ieee_arithmetic, only : ieee_is_finite
   implicit none
   private
   public :: solver, initialize, solve_feuler, solve_rk4, residual_inv, write_results_cgns, write_results_tec
@@ -183,20 +184,22 @@ module solvers
             this%grid%elem(i,j)%u0 = this%grid%elem(i,j)%u
           end do
         end do
+        !call write_results_tec(this,"stage0.tec")
 
         ! Stage 1
         call residual_inv(this,resid)
         do j=1,this%grid%nelemj
           do i=1,this%grid%nelemi
-            this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%dt/4.0*resid(i,j,:)
+            this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%dt/4.0d0*resid(i,j,:)
           end do
         end do
+        !call write_results_tec(this,"stage1.tec")
 
         ! Stage 2
         call residual_inv(this,resid)
         do j=1,this%grid%nelemj
           do i=1,this%grid%nelemi
-            this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%dt/3.0*resid(i,j,:)
+            this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%dt/3.0d0*resid(i,j,:)
           end do
         end do
 
@@ -204,7 +207,7 @@ module solvers
         call residual_inv(this,resid)
         do j=1,this%grid%nelemj
           do i=1,this%grid%nelemi
-            this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%dt/2.0*resid(i,j,:)
+            this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%dt/2.0d0*resid(i,j,:)
           end do
         end do
 
@@ -428,21 +431,31 @@ module solvers
       implicit none
       type(solver), intent(inout)     :: this
       double precision, intent(inout) :: resid(:,:,:)
-      double precision                :: duL(4),duR(4),phi(4),umax(4),umin(4)
+      double precision                :: duL(4),duR(4),phi(4)
       double precision, dimension(4)  :: fx,fy,uextrap,wextrap,wtmp
       double precision, dimension(2)  :: rL,rR,r
-      double precision, allocatable   :: u(:,:,:),gradU(:,:,:)
+      double precision, allocatable   :: u(:,:,:),gradU(:,:,:),umax(:,:,:),umin(:,:,:)
       integer                         :: i,j,k,l,err
 
       ! Allocating memory for gradient of state at cell centers
       allocate(gradU(this%grid%nelemi,this%grid%nelemj,8),stat=err)
       if (err.ne.0) then
-        print *, "Error: Can't allocate memory for gradU in update."
+        print *, "Error: Can't allocate memory for gradU in residual_inv."
         stop
       end if
       allocate(u(this%grid%nelemi,this%grid%nelemj,4),stat=err)
       if (err.ne.0) then
-        print *, "Error: can't allocate memory for u in solve_feuler."
+        print *, "Error: can't allocate memory for u in residual_inv."
+        stop
+      end if
+      allocate(umax(this%grid%nelemi,this%grid%nelemj,4),stat=err)
+      if (err.ne.0) then
+        print *, "Error: can't allocate memory for umax in residual_inv."
+        stop
+      end if
+      allocate(umin(this%grid%nelemi,this%grid%nelemj,4),stat=err)
+      if (err.ne.0) then
+        print *, "Error: can't allocate memory for umin in residual_inv."
         stop
       end if
 
@@ -456,6 +469,12 @@ module solvers
       ! Computing gradient for use in reconstruction
       call compute_gradient(this%grid,u,gradU)
 
+      ! Finding max and min of states for each element and neighbors
+      if (this%limiter.eq."barth") then
+        umax = compute_elem_max(u,this%grid%nelemi,this%grid%nelemj)
+        umin = compute_elem_min(u,this%grid%nelemi,this%grid%nelemj)
+      end if
+
       ! Reconstructing states on left and right sides of each vertical interface
       do j=1,this%grid%nelemj
         do i=1,this%grid%nelemi
@@ -466,7 +485,7 @@ module solvers
             rL(1) = this%grid%edges_v(i+1,j)%xm - this%grid%elem(i,j)%xc
             rL(2) = this%grid%edges_v(i+1,j)%ym - this%grid%elem(i,j)%yc
 
-            ! Finding the slope on the left side of the interface
+            ! Finding grad(u) . r_L on the left side of the interface
             duL = gradU(i,j,1:4)*rL(1) + gradU(i,j,5:8)*rL(2)
 
             ! Reconstructing state on left of interface
@@ -477,30 +496,19 @@ module solvers
                 end do
               case ("barth")
 
-                ! Finding max and min states of surrounding elements
-                if (j.eq.1) then
-                  do k=1,4
-                    umax(k) = max(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k))
-                    umin(k) = min(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k))
-                  end do
-                else if (j.eq.this%grid%nelemj) then
-                  do k=1,4
-                    umax(k) = max(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k))
-                    umin(k) = min(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k))
-                  end do
-                else
-                  do k=1,4
-                    umax(k) = max(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k),this%grid%elem(i,j+1)%u(k))
-                    umin(k) = min(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k),this%grid%elem(i,j+1)%u(k))
-                  end do
-                end if
-
                 ! Calling barth subroutine to find limiter
-                call barth(this,i,j,gradU,umax,umin,phi)
+                phi = barth(this,i,j,gradU,umax,umin)
 
                 ! Slope-limited reconstruction
                 do k=1,4
                   this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*phi(k)
+                  !if (isnan(phi(k)).or..not.ieee_is_finite(phi(k)).or.isnan(duL(k))) then
+                  !  write(*,'(a,i2,a,f12.5)') "phi(", k, ") = ", phi(k)
+                  !  write(*,'(a,i2,a,f12.5)') "duL(", k, ") = ", duL(k)
+                  !  write(*,'(a,i2,a,f12.5)') "  u(", k, ") = ", this%grid%elem(i,j)%u(k)
+                  !  write(*,'(a,i4,a,i4)') "i = ", i, " j = ", j
+                  !  stop
+                  !end if
                 end do
 
               case default
@@ -525,26 +533,8 @@ module solvers
                 end do
               case ("barth")
 
-                ! Finding max and min states of surrounding elements
-                if (j.eq.1) then
-                  do k=1,4
-                    umax(k) = max(this%grid%elem(i,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k))
-                    umin(k) = min(this%grid%elem(i,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k))
-                  end do
-                else if (j.eq.this%grid%nelemj) then
-                  do k=1,4
-                    umax(k) = max(this%grid%elem(i,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k))
-                    umin(k) = min(this%grid%elem(i,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k))
-                  end do
-                else
-                  do k=1,4
-                    umax(k) = max(this%grid%elem(i,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k),this%grid%elem(i,j+1)%u(k))
-                    umin(k) = min(this%grid%elem(i,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k),this%grid%elem(i,j+1)%u(k))
-                  end do
-                end if
-
                 ! Calling subroutine to compute the barth limiter
-                call barth(this,i,j,gradU,umax,umin,phi)
+                phi = barth(this,i,j,gradU,umax,umin)
 
                 ! Slope-limited reconstruction
                 do k=1,4
@@ -555,7 +545,6 @@ module solvers
                 write(*,'(3a)') "Slope limiter ", this%limiter, " not recognized."
                 stop
             end select
-
 
           else
 
@@ -579,26 +568,8 @@ module solvers
                 end do
               case ("barth")
 
-                ! Finding max and min states of surrounding elements
-                if (j.eq.1) then
-                  do k=1,4
-                    umax(k) = max(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k))
-                    umin(k) = min(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k))
-                  end do
-                else if (j.eq.this%grid%nelemj) then
-                  do k=1,4
-                    umax(k) = max(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k))
-                    umin(k) = min(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k))
-                  end do
-                else
-                  do k=1,4
-                    umax(k) = max(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k),this%grid%elem(i,j+1)%u(k))
-                    umin(k) = min(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k),this%grid%elem(i,j+1)%u(k))
-                  end do
-                end if
-
                 ! Calling subroutine to compute the barth limiter
-                call barth(this,i,j,gradU,umax,umin,phi)
+                phi = barth(this,i,j,gradU,umax,umin)
 
                 ! Slope-limited reconstruction
                 do k=1,4
@@ -610,7 +581,6 @@ module solvers
                 write(*,'(3a)') "Slope limiter ", this%limiter, " not recognized."
                 stop
             end select
-
 
           end if
 
@@ -638,26 +608,8 @@ module solvers
                 end do
               case ("barth")
 
-                ! Finding max and min states of surrounding elements
-                if (i.eq.1) then
-                  do k=1,4
-                    umax(k) = max(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k))
-                    umin(k) = min(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j+1)%u(k))
-                  end do
-                else if (i.eq.this%grid%nelemi) then
-                  do k=1,4
-                    umax(k) = max(this%grid%elem(i,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k))
-                    umin(k) = min(this%grid%elem(i,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k))
-                  end do
-                else
-                  do k=1,4
-                    umax(k) = max(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k))
-                    umin(k) = min(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k))
-                  end do
-                end if
-
                 ! Calling barth subroutine to find limiter
-                call barth(this,i,j,gradU,umax,umin,phi)
+                phi = barth(this,i,j,gradU,umax,umin)
 
                 ! Slope-limited reconstruction
                 do k=1,4
@@ -680,9 +632,6 @@ module solvers
             duR = gradU(i,j,1:4)*rR(1) + gradU(i,j,5:8)*rR(2)
 
             ! Reconstructing primitive states on right of interface
-            do k=1,4
-            end do
-
             select case (this%limiter)
               case ("none")
                 do k=1,4
@@ -690,26 +639,8 @@ module solvers
                 end do
               case ("barth")
 
-                ! Finding max and min states of surrounding elements
-                if (i.eq.1) then
-                  do k=1,4
-                    umax(k) = max(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k))
-                    umin(k) = min(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k))
-                  end do
-                else if (i.eq.this%grid%nelemi) then
-                  do k=1,4
-                    umax(k) = max(this%grid%elem(i,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k))
-                    umin(k) = min(this%grid%elem(i,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k))
-                  end do
-                else
-                  do k=1,4
-                    umax(k) = max(this%grid%elem(i,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k))
-                    umin(k) = min(this%grid%elem(i,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k))
-                  end do
-                end if
-
                 ! Calling subroutine to compute the barth limiter
-                call barth(this,i,j,gradU,umax,umin,phi)
+                phi = barth(this,i,j,gradU,umax,umin)
 
                 ! Slope-limited reconstruction
                 do k=1,4
@@ -742,26 +673,8 @@ module solvers
                 end do
               case ("barth")
 
-                ! Finding max and min states of surrounding elements
-                if (i.eq.1) then
-                  do k=1,4
-                    umax(k) = max(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k),this%grid%elem(i,j+1)%u(k))
-                    umin(k) = min(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i,j-1)%u(k),this%grid%elem(i,j+1)%u(k))
-                  end do
-                else if (i.eq.this%grid%nelemi) then
-                  do k=1,4
-                    umax(k) = max(this%grid%elem(i,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k),this%grid%elem(i,j-1)%u(k))
-                    umin(k) = min(this%grid%elem(i,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j+1)%u(k),this%grid%elem(i,j-1)%u(k))
-                  end do
-                else
-                  do k=1,4
-                    umax(k) = max(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k),this%grid%elem(i,j+1)%u(k))
-                    umin(k) = min(this%grid%elem(i,j)%u(k),this%grid%elem(i+1,j)%u(k),this%grid%elem(i-1,j)%u(k),this%grid%elem(i,j-1)%u(k),this%grid%elem(i,j+1)%u(k))
-                  end do
-                end if
-
                 ! Calling subroutine to compute the barth limiter
-                call barth(this,i,j,gradU,umax,umin,phi)
+                phi = barth(this,i,j,gradU,umax,umin)
 
                 ! Slope-limited reconstruction
                 do k=1,4
@@ -790,6 +703,14 @@ module solvers
 
           ! Calling Riemann solver
           this%grid%edges_v(i,j)%flux = roe(this%grid%edges_v(i,j)%uL,this%grid%edges_v(i,j)%uR,this%grid%elem(i-1,j)%n(:,2))
+          !this%grid%edges_v(i,j)%flux = rotated_rhll(this%grid%edges_v(i,j)%uL,this%grid%edges_v(i,j)%uR,this%grid%elem(i-1,j)%n(:,2))
+          !do k=1,4
+          !  if (isnan(this%grid%edges_v(i,j)%flux(k))) then
+          !    write(*,'(a)') "NaNs encountered after solving Riemann problem for vertical faces"
+          !    write(*,'(a,i4,a,i4,a,i4)') "i = ", i, " j = ", j , " k = ", k
+          !    stop
+          !  end if
+          !end do
 
         end do
       end do
@@ -799,6 +720,14 @@ module solvers
 
           ! Calling Riemann solver
           this%grid%edges_h(i,j)%flux = roe(this%grid%edges_h(i,j)%uL,this%grid%edges_h(i,j)%uR,this%grid%elem(i,j-1)%n(:,3))
+          !this%grid%edges_h(i,j)%flux = rotated_rhll(this%grid%edges_h(i,j)%uL,this%grid%edges_h(i,j)%uR,this%grid%elem(i,j-1)%n(:,3))
+          !do k=1,4
+          !  if (isnan(this%grid%edges_h(i,j)%flux(k))) then
+          !    write(*,'(a)') "NaNs encountered after solving Riemann problem for horizontal faces"
+          !    write(*,'(a,i4,a,i4,a,i4)') "i = ", i, " j = ", j , " k = ", k
+          !    stop
+          !  end if
+          !end do
 
         end do
       end do
@@ -915,67 +844,65 @@ module solvers
     !-------------------------------------------------------
     ! Subroutine for the Barth-Jespersen limiter
     !-------------------------------------------------------
-    subroutine barth(s,i,j,gradu,umax,umin,phi)
+    pure function barth(s,i,j,gradu,umax,umin) result(ph)
       implicit none
-      type(solver), intent(in)        :: s
-      integer, intent(in)             :: i,j
-      double precision, intent(in)    :: gradu(:,:,:)
-      double precision, intent(in)    :: umax(4),umin(4)
-      double precision, intent(inout) :: phi(4)
-      double precision                :: r(2),ubarth(4,4),phibar(4,4)
-      integer                         :: k,l
+      type(solver), intent(in)                  :: s
+      integer, intent(in)                       :: i,j
+      double precision, allocatable, intent(in) :: gradu(:,:,:),umax(:,:,:),umin(:,:,:)
+      double precision                          :: ph(4)
+      double precision                          :: rvec(2),unodes(4,4),phibar(4,4)
+      integer                                   :: k,l
 
       ! Node numbering:
       !
       !  4           3
       !   o---------o
       !   |         |
-      !   |    O    |
+      !   |    +    |
       !   |         |
       !   o---------o
       !  1           2
 
       ! Extrapolating state to vertices of element
       ! Point 1
-      r(1) = s%grid%x(i,j) - s%grid%elem(i,j)%xc
-      r(2) = s%grid%y(i,j) - s%grid%elem(i,j)%yc
-      ubarth(:,1) = s%grid%elem(i,j)%u + gradU(i,j,1:4)*r(1) + gradU(i,j,5:8)*r(2)
+      rvec(1) = s%grid%x(i,j) - s%grid%elem(i,j)%xc
+      rvec(2) = s%grid%y(i,j) - s%grid%elem(i,j)%yc
+      unodes(:,1) = s%grid%elem(i,j)%u + gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
 
       ! Point 2
-      r(1) = s%grid%x(i+1,j) - s%grid%elem(i,j)%xc
-      r(2) = s%grid%y(i+1,j) - s%grid%elem(i,j)%yc
-      ubarth(:,2) = s%grid%elem(i,j)%u + gradU(i,j,1:4)*r(1) + gradU(i,j,5:8)*r(2)
+      rvec(1) = s%grid%x(i+1,j) - s%grid%elem(i,j)%xc
+      rvec(2) = s%grid%y(i+1,j) - s%grid%elem(i,j)%yc
+      unodes(:,2) = s%grid%elem(i,j)%u + gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
 
       ! Point 3
-      r(1) = s%grid%x(i+1,j+1) - s%grid%elem(i,j)%xc
-      r(2) = s%grid%y(i+1,j+1) - s%grid%elem(i,j)%yc
-      ubarth(:,3) = s%grid%elem(i,j)%u + gradU(i,j,1:4)*r(1) + gradU(i,j,5:8)*r(2)
+      rvec(1) = s%grid%x(i+1,j+1) - s%grid%elem(i,j)%xc
+      rvec(2) = s%grid%y(i+1,j+1) - s%grid%elem(i,j)%yc
+      unodes(:,3) = s%grid%elem(i,j)%u + gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
 
       ! Point 4
-      r(1) = s%grid%x(i,j+1) - s%grid%elem(i,j)%xc
-      r(2) = s%grid%y(i,j+1) - s%grid%elem(i,j)%yc
-      ubarth(:,4) = s%grid%elem(i,j)%u + gradU(i,j,1:4)*r(1) + gradU(i,j,5:8)*r(2)
+      rvec(1) = s%grid%x(i,j+1) - s%grid%elem(i,j)%xc
+      rvec(2) = s%grid%y(i,j+1) - s%grid%elem(i,j)%yc
+      unodes(:,4) = s%grid%elem(i,j)%u + gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
 
       ! Finding value of limiter at each vertex
       ! k - vertex, l - variables
       do k=1,4
         do l=1,4
-          if (ubarth(l,k)-s%grid%elem(i,j)%u(l).gt.0.0d0) then
-            phibar(l,k) = min(1.0d0,(umax(l)-s%grid%elem(i,j)%u(l))/(ubarth(l,k)-s%grid%elem(i,j)%u(l)))
-          else if (ubarth(k,l)-s%grid%elem(i,j)%u(k).lt.0.0d0) then
-            phibar(l,k) = min(1.0d0,(umin(l)-s%grid%elem(i,j)%u(l))/(ubarth(l,k)-s%grid%elem(i,j)%u(l)))
+          if (unodes(l,k)-s%grid%elem(i,j)%u(l).gt.0.0d0) then
+            phibar(l,k) = min(1.0d0,(umax(i,j,l)-s%grid%elem(i,j)%u(l))/(unodes(l,k)-s%grid%elem(i,j)%u(l)))
+          else if (unodes(l,k)-s%grid%elem(i,j)%u(l).lt.0.0d0) then
+            phibar(l,k) = min(1.0d0,(umin(i,j,l)-s%grid%elem(i,j)%u(l))/(unodes(l,k)-s%grid%elem(i,j)%u(l)))
           else
             phibar(l,k) = 1.0d0
           end if
         end do
       end do
 
-      ! Slope-limited reconstruction
+      ! Finding the final value of the limiter for each conserved variable
       do k=1,4
-        phi(k) = minval(phibar(k,:))
+        ph(k) = minval(phibar(k,:))
       end do
-      !write(*,'(a,4(f5.3,1x))') "phi = ", phi
 
-    end subroutine barth
+    end function barth
 
 end module solvers

@@ -39,32 +39,32 @@
 module riemann
   implicit none
   private
-  public :: roe, Rotated_RHLL
+  public :: roe, rotated_rhll
   contains
- function roe(uL, uR, nhat)
- double precision :: uL(4), uR(4) !  Input: conservative variables rho*[1, u, v, E]
- double precision :: nhat(2)      !  Input: face normal vector
- double precision :: nx, ny       ! Face normal vector, [nx, ny] (Left-to-Right)
- double precision :: roe(4)       ! Output: Roe flux function (upwind)
-!Local constants
- double precision :: gam                          ! Ratio of specific heat.
- double precision :: zero, fifth, half, one, two    ! Numbers
-!Local variables
- double precision :: tx, ty                         ! Tangent vector (perpendicular to the face normal)
- double precision :: vxL, vxR, vyL, vyR             ! Velocity components.
- double precision :: rhoL, rhoR, pL, pR             ! Primitive variables.
- double precision :: vnL, vnR, vtL, vtR             ! Normal and tangent velocities
- double precision :: aL, aR, HL, HR                 ! Speeds of sound.
- double precision :: RT,rho,vx,vy,H,a,vn, vt        ! Roe-averages
- double precision :: drho,dvx,dvy,dvn,dvt,dp,dV(4)  ! Wave strenghs
- double precision :: ws(4),dws(4), Rv(4,4)          ! Wave speeds and right-eigevectors
- double precision :: fL(4), fR(4), diss(4)          ! Fluxes and dissipation term
- integer :: i, j
+    function roe(uL, uR, nhat)
+      double precision :: uL(4), uR(4) !  Input: conservative variables rho*[1, u, v, E]
+      double precision :: nhat(2)      !  Input: face normal vector
+      double precision :: nx, ny       ! Face normal vector, [nx, ny] (Left-to-Right)
+      double precision :: roe(4)       ! Output: Roe flux function (upwind)
+      !Local constants
+      double precision :: gam                          ! Ratio of specific heat.
+      double precision :: zero, fifth, half, one, two    ! Numbers
+      !Local variables
+      double precision :: tx, ty                         ! Tangent vector (perpendicular to the face normal)
+      double precision :: vxL, vxR, vyL, vyR             ! Velocity components.
+      double precision :: rhoL, rhoR, pL, pR             ! Primitive variables.
+      double precision :: vnL, vnR, vtL, vtR             ! Normal and tangent velocities
+      double precision :: aL, aR, HL, HR                 ! Speeds of sound.
+      double precision :: RT,rho,vx,vy,H,a,vn, vt        ! Roe-averages
+      double precision :: drho,dvx,dvy,dvn,dvt,dp,dV(4)  ! Wave strenghs
+      double precision :: ws(4),dws(4), Rv(4,4)          ! Wave speeds and right-eigevectors
+      double precision :: fL(4), fR(4), diss(4)          ! Fluxes and dissipation term
+      integer :: i, j
 
- !write(*,'(a,4f10.3)') "uL = ", uL
- !write(*,'(a,4f10.3)') "uR = ", uR
+      !write(*,'(a,4f10.3)') "uL = ", uL
+      !write(*,'(a,4f10.3)') "uR = ", uR
 
-!Constants.
+      !Constants.
        gam = 1.4d0
       zero = 0.0d0
      fifth = 0.2d0
@@ -72,113 +72,113 @@ module riemann
        one = 1.0d0
        two = 2.0d0
 
-!Tangent vector (Do you like it? Actually, Roe flux can be implemented
-! without any tangent vector. See "I do like CFD, VOL.1" for details.)
-  nx = nhat(1)
-  ny = nhat(2)
-  tx = -ny
-  ty = nx
+      !Tangent vector (Do you like it? Actually, Roe flux can be implemented
+      ! without any tangent vector. See "I do like CFD, VOL.1" for details.)
+        nx = nhat(1)
+        ny = nhat(2)
+        tx = -ny
+        ty = nx
 
-!Primitive and other variables.
-!  Left state
-    rhoL = uL(1)
-     vxL = uL(2)/uL(1)
-     vyL = uL(3)/uL(1)
-     vnL = vxL*nx+vyL*ny
-     vtL = vxL*tx+vyL*ty
-      pL = (gam-one)*( uL(4) - half*rhoL*(vxL*vxL+vyL*vyL) )
-      aL = sqrt(gam*pL/rhoL)
-      HL = ( uL(4) + pL ) / rhoL
+      !Primitive and other variables.
+      !  Left state
+          rhoL = uL(1)
+           vxL = uL(2)/uL(1)
+           vyL = uL(3)/uL(1)
+           vnL = vxL*nx+vyL*ny
+           vtL = vxL*tx+vyL*ty
+            pL = (gam-one)*( uL(4) - half*rhoL*(vxL*vxL+vyL*vyL) )
+            aL = sqrt(gam*pL/rhoL)
+            HL = ( uL(4) + pL ) / rhoL
 
-!  Right state
-  !write (*,'(a,4f10.3)') "uR = ", uR
-    rhoR = uR(1)
-     vxR = uR(2)/uR(1)
-     vyR = uR(3)/uR(1)
-     vnR = vxR*nx+vyR*ny
-     vtR = vxR*tx+vyR*ty
-      pR = (gam-one)*( uR(4) - half*rhoR*(vxR*vxR+vyR*vyR) )
-      !print *, pR
-      ! There was a problem here.  I got a negative pressure..
-      ! Removing barth limiter fixed it.
-      aR = sqrt(gam*pR/rhoR)
-      HR = ( uR(4) + pR ) / rhoR
+      !  Right state
+        !write (*,'(a,4f10.3)') "uR = ", uR
+          rhoR = uR(1)
+           vxR = uR(2)/uR(1)
+           vyR = uR(3)/uR(1)
+           vnR = vxR*nx+vyR*ny
+           vtR = vxR*tx+vyR*ty
+            pR = (gam-one)*( uR(4) - half*rhoR*(vxR*vxR+vyR*vyR) )
+            !print *, pR
+            ! There was a problem here.  I got a negative pressure..
+            ! Removing barth limiter fixed it.
+            aR = sqrt(gam*pR/rhoR)
+            HR = ( uR(4) + pR ) / rhoR
 
-!First compute the Roe Averages
-    RT = sqrt(rhoR/rhoL)
-   rho = RT*rhoL
-    vx = (vxL+RT*vxR)/(one+RT)
-    vy = (vyL+RT*vyR)/(one+RT)
-     H = ( HL+RT* HR)/(one+RT)
-     a = sqrt( (gam-one)*(H-half*(vx*vx+vy*vy)) )
-    vn = vx*nx+vy*ny
-    vt = vx*tx+vy*ty
+      !First compute the Roe Averages
+          RT = sqrt(rhoR/rhoL)
+         rho = RT*rhoL
+          vx = (vxL+RT*vxR)/(one+RT)
+          vy = (vyL+RT*vyR)/(one+RT)
+           H = ( HL+RT* HR)/(one+RT)
+           a = sqrt( (gam-one)*(H-half*(vx*vx+vy*vy)) )
+          vn = vx*nx+vy*ny
+          vt = vx*tx+vy*ty
 
-!Wave Strengths
-   drho = rhoR - rhoL
-     dp =   pR - pL
-    dvn =  vnR - vnL
-    dvt =  vtR - vtL
+      !Wave Strengths
+         drho = rhoR - rhoL
+           dp =   pR - pL
+          dvn =  vnR - vnL
+          dvt =  vtR - vtL
 
-  dV(1) = (dp - rho*a*dvn )/(two*a*a)
-  dV(2) = rho*dvt/a
-  dV(3) =  drho - dp/(a*a)
-  dV(4) = (dp + rho*a*dvn )/(two*a*a)
+        dV(1) = (dp - rho*a*dvn )/(two*a*a)
+        dV(2) = rho*dvt/a
+        dV(3) =  drho - dp/(a*a)
+        dV(4) = (dp + rho*a*dvn )/(two*a*a)
 
-!Wave Speed
-  ws(1) = abs(vn-a)
-  ws(2) = abs(vn)
-  ws(3) = abs(vn)
-  ws(4) = abs(vn+a)
+      !Wave Speed
+        ws(1) = abs(vn-a)
+        ws(2) = abs(vn)
+        ws(3) = abs(vn)
+        ws(4) = abs(vn+a)
 
-!Harten's Entropy Fix JCP(1983), 49, pp357-393:
-! only for the nonlinear fields.
-  dws(1) = fifth
-   if ( ws(1) < dws(1) ) ws(1) = half * ( ws(1)*ws(1)/dws(1)+dws(1) )
-  dws(4) = fifth
-   if ( ws(4) < dws(4) ) ws(4) = half * ( ws(4)*ws(4)/dws(4)+dws(4) )
+      !Harten's Entropy Fix JCP(1983), 49, pp357-393:
+      ! only for the nonlinear fields.
+        dws(1) = fifth
+         if ( ws(1) < dws(1) ) ws(1) = half * ( ws(1)*ws(1)/dws(1)+dws(1) )
+        dws(4) = fifth
+         if ( ws(4) < dws(4) ) ws(4) = half * ( ws(4)*ws(4)/dws(4)+dws(4) )
 
-!Right Eigenvectors
-  Rv(1,1) = one
-  Rv(2,1) = vx - a*nx
-  Rv(3,1) = vy - a*ny
-  Rv(4,1) =  H - vn*a
+      !Right Eigenvectors
+        Rv(1,1) = one
+        Rv(2,1) = vx - a*nx
+        Rv(3,1) = vy - a*ny
+        Rv(4,1) =  H - vn*a
 
-  Rv(1,2) = zero
-  Rv(2,2) = a*tx
-  Rv(3,2) = a*ty
-  Rv(4,2) = vt*a
+        Rv(1,2) = zero
+        Rv(2,2) = a*tx
+        Rv(3,2) = a*ty
+        Rv(4,2) = vt*a
 
-  Rv(1,3) = one
-  Rv(2,3) = vx
-  Rv(3,3) = vy
-  Rv(4,3) = half*(vx*vx+vy*vy)
+        Rv(1,3) = one
+        Rv(2,3) = vx
+        Rv(3,3) = vy
+        Rv(4,3) = half*(vx*vx+vy*vy)
 
-  Rv(1,4) = one
-  Rv(2,4) = vx + a*nx
-  Rv(3,4) = vy + a*ny
-  Rv(4,4) =  H + vn*a
+        Rv(1,4) = one
+        Rv(2,4) = vx + a*nx
+        Rv(3,4) = vy + a*ny
+        Rv(4,4) =  H + vn*a
 
-!Dissipation Term
-  diss = zero
-  do i=1,4
-   do j=1,4
-    diss(i) = diss(i) + ws(j)*dV(j)*Rv(i,j)
-   end do
-  end do
+      !Dissipation Term
+        diss = zero
+        do i=1,4
+         do j=1,4
+          diss(i) = diss(i) + ws(j)*dV(j)*Rv(i,j)
+         end do
+        end do
 
-!Compute the flux.
-  fL(1) = rhoL*vnL
-  fL(2) = rhoL*vnL * vxL + pL*nx
-  fL(3) = rhoL*vnL * vyL + pL*ny
-  fL(4) = rhoL*vnL *  HL
+      !Compute the flux.
+        fL(1) = rhoL*vnL
+        fL(2) = rhoL*vnL * vxL + pL*nx
+        fL(3) = rhoL*vnL * vyL + pL*ny
+        fL(4) = rhoL*vnL *  HL
 
-  fR(1) = rhoR*vnR
-  fR(2) = rhoR*vnR * vxR + pR*nx
-  fR(3) = rhoR*vnR * vyR + pR*ny
-  fR(4) = rhoR*vnR *  HR
+        fR(1) = rhoR*vnR
+        fR(2) = rhoR*vnR * vxR + pR*nx
+        fR(3) = rhoR*vnR * vyR + pR*ny
+        fR(4) = rhoR*vnR *  HR
 
-  roe = half * (fL + fR - diss)
+        roe = half * (fL + fR - diss)
 
  end function roe
 
@@ -200,10 +200,11 @@ module riemann
 !*
 !* Katate Masatsuka, February 2010. http://www.cfdbooks.com
 !*****************************************************************************
- function Rotated_RHLL(uL, uR, nx, ny)
+ function rotated_rhll(uL, uR, nhat)
  double precision :: uL(4), uR(4)    !  Input: conservative variables rho*[1, u, v, E]
+ double precision :: nhat(2)      !  Input: face normal vector
  double precision :: nx, ny          !  Input: face normal vector, [nx, ny] (Left-to-Right)
- double precision :: Rotated_RHLL(4) ! Output: Rotated_RHLL flux function.
+ double precision :: rotated_rhll(4) ! Output: Rotated_RHLL flux function.
 !Local constants
  double precision :: gam                          ! Ratio of specific heat.
  double precision :: zero, fifth, half, one, two    ! Numbers
@@ -225,6 +226,10 @@ module riemann
  double precision :: fL(4), fR(4), diss(4)          ! Fluxes ad dissipation term
  double precision :: temp
  integer :: i, j
+
+ ! Separating normal vector
+ nx = nhat(1)
+ ny = nhat(2)
 
 !Constants.
      gam = 1.4
@@ -379,8 +384,8 @@ module riemann
   end do
 
 !Compute the Rotated-RHLL flux.
-  Rotated_RHLL = (SRp*fL - SLm*fR)/(SRp-SLm) - half*diss
+  rotated_rhll = (SRp*fL - SLm*fR)/(SRp-SLm) - half*diss
 
- end function Rotated_RHLL
+ end function rotated_rhll
 
 end module riemann

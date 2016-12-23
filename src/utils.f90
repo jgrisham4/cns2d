@@ -9,7 +9,7 @@
 module utils
   implicit none
   private
-  public :: w_to_u, u_to_w, reflect, nvec
+  public::w_to_u,u_to_w,reflect,nvec,compute_elem_max,compute_elem_min
 
   contains
 
@@ -48,7 +48,7 @@ module utils
     ! pt1 and pt2 create a line about which pt3 is to be
     ! reflected
     !------------------------------------------------------
-    function reflect(pt1,pt2,pt3) result(ptref)
+    pure function reflect(pt1,pt2,pt3) result(ptref)
       implicit none
       double precision, intent(in)  :: pt1(2)
       double precision, intent(in)  :: pt2(2)
@@ -70,7 +70,7 @@ module utils
     ! Function for computing a normal vector given
     ! components of a vector
     !------------------------------------------------------
-    function nvec(xc,yc) result(nhat)
+    pure function nvec(xc,yc) result(nhat)
       implicit none
       double precision, intent(in) :: xc      ! x-component
       double precision, intent(in) :: yc      ! y-component
@@ -83,5 +83,123 @@ module utils
       nhat(2) = yc/mag
 
     end function nvec
+
+    !------------------------------------------------------
+    ! Function for determining the max state for
+    ! each element and the surrounding elements
+    !------------------------------------------------------
+    pure function compute_elem_max(u,ni,nj) result(um)
+      implicit none
+      double precision, allocatable, intent(in) :: u(:,:,:)
+      double precision, allocatable             :: um(:,:,:)
+      integer, intent(in)                       :: ni,nj
+      integer                                   :: i,j,k,aer
+
+      ! Allocating memory for um
+      allocate(um(ni,nj,4),stat=aer)
+
+      ! Looping over all elements
+      do j=1,nj
+        do i=1,ni
+          if ((i.ne.1).and.(i.ne.ni).and.(j.ne.1).and.(j.ne.nj)) then
+            do k=1,4
+              um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i-1,j,k),u(i,j-1,k))
+            end do
+          else if ((i.eq.1).and.(j.eq.1)) then
+            do k=1,4
+              um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i,j+1,k))
+            end do
+          else if ((i.eq.1).and.(j.eq.nj)) then
+            do k=1,4
+              um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i,j-1,k))
+            end do
+          else if ((i.eq.ni).and.(j.eq.1)) then
+            do k=1,4
+              um(i,j,k) = max(u(i,j,k),u(i,j+1,k),u(i-1,j,k))
+            end do
+          else if ((i.eq.ni).and.(j.eq.nj)) then
+            do k=1,4
+              um(i,j,k) = max(u(i,j,k),u(i-1,j,k),u(i,j-1,k))
+            end do
+          else if (i.eq.1) then
+            do k=1,4
+              um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i,j-1,k))
+            end do
+          else if (i.eq.ni) then
+            do k=1,4
+              um(i,j,k) = max(u(i,j,k),u(i,j+1,k),u(i-1,j,k),u(i,j-1,k))
+            end do
+          else if (j.eq.1) then
+            do k=1,4
+              um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i-1,j,k))
+            end do
+          else if (j.eq.nj) then
+            do k=1,4
+              um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i-1,j,k),u(i,j-1,k))
+            end do
+          end if
+        end do
+      end do
+
+    end function compute_elem_max
+
+    !------------------------------------------------------
+    ! Function for determining the min state for
+    ! each element and the surrounding elements
+    !------------------------------------------------------
+    pure function compute_elem_min(u,ni,nj) result(um)
+      implicit none
+      double precision, allocatable, intent(in) :: u(:,:,:)
+      double precision, allocatable             :: um(:,:,:)
+      integer, intent(in)                       :: ni,nj
+      integer                                   :: i,j,k,aer
+
+      ! Allocating memory for um
+      allocate(um(ni,nj,4),stat=aer)
+
+      ! Looping over all elements
+      do j=1,nj
+        do i=1,ni
+          if ((i.ne.1).and.(i.ne.ni).and.(j.ne.1).and.(j.ne.nj)) then
+            do k=1,4
+              um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i-1,j,k),u(i,j-1,k))
+            end do
+          else if ((i.eq.1).and.(j.eq.1)) then
+            do k=1,4
+              um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i,j+1,k))
+            end do
+          else if ((i.eq.1).and.(j.eq.nj)) then
+            do k=1,4
+              um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i,j-1,k))
+            end do
+          else if ((i.eq.ni).and.(j.eq.1)) then
+            do k=1,4
+              um(i,j,k) = min(u(i,j,k),u(i,j+1,k),u(i-1,j,k))
+            end do
+          else if ((i.eq.ni).and.(j.eq.nj)) then
+            do k=1,4
+              um(i,j,k) = min(u(i,j,k),u(i-1,j,k),u(i,j-1,k))
+            end do
+          else if (i.eq.1) then
+            do k=1,4
+              um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i,j-1,k))
+            end do
+          else if (i.eq.ni) then
+            do k=1,4
+              um(i,j,k) = min(u(i,j,k),u(i,j+1,k),u(i-1,j,k),u(i,j-1,k))
+            end do
+          else if (j.eq.1) then
+            do k=1,4
+              um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i-1,j,k))
+            end do
+          else if (j.eq.nj) then
+            do k=1,4
+              um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i-1,j,k),u(i,j-1,k))
+            end do
+          end if
+        end do
+      end do
+
+    end function compute_elem_min
 
 end module utils

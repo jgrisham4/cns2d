@@ -41,3 +41,30 @@ of the farfield boundary conditions so that they use the inward pointing face no
 Added Barth-Jespersen limiter formulation using their original
 paper.  Something is wrong though because I get NaNs after the
 first few timesteps.
+
+I've tracked down the NaNs to the residual_inv subroutine.
+When using RK4 to march in time, the NaNs arise after the first
+stage of the RK4 process.  There must be something inside the select
+case that is screwing things up.  This doesn't happen if the limiter
+is set to "none".  The limiter variable phi is always real and finite.
+I removed the multiplication by phi in the reconstruction step and
+I'm still getting NaNs after the first stage of RK4.  This leads me
+to believe that there is some unintended side-effect happening in the
+code.  I need to find the side-effect and remove it.  I know that it is
+isolated to the portion of the select case that matches "barth".
+
+It seems that something about the slope limited reconstruction
+causes the Riemann solver to return NaNs for the fluxes....  I'm
+not sure how or why this is happening.  I've gotta figure out how
+to implement the minmod slope limiter instead.  This is strange because
+the limiter is returning between 0 and 1 at all times.  I printed out
+the values and everything seemed reasonable.  I'm not sure why the
+Riemann solver is returning NaNs.
+
+I believe the NaNs are coming about as a result of the slip wall
+boundary condition.  I need to add another boundary condition which
+strongly enforcing the slip wall bc.  This should be do-able
+by setting up another boundary condition option.  I can't find anything
+wrong with the Euler or RK4 time stepping.  I can't find anything
+wrong with the slope-limited reconstruction...  I don't know what is
+wrong.

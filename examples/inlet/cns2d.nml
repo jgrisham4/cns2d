@@ -33,7 +33,7 @@
 /
 
 &slope_limiter
-  limiter = "minmod"
+  limiter = "barth"
 /
 
 &output
