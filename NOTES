@@ -61,6 +61,7 @@ the limiter is returning between 0 and 1 at all times.  I printed out
 the values and everything seemed reasonable.  I'm not sure why the
 Riemann solver is returning NaNs.
 
+12-22-2016
 I believe the NaNs are coming about as a result of the slip wall
 boundary condition.  I need to add another boundary condition which
 strongly enforcing the slip wall bc.  This should be do-able
@@ -68,3 +69,15 @@ by setting up another boundary condition option.  I can't find anything
 wrong with the Euler or RK4 time stepping.  I can't find anything
 wrong with the slope-limited reconstruction...  I don't know what is
 wrong.
+
+12-23-2016 - 12:46 pm
+I fixed some of the NaNs.  There were bugs in the barth limiter portion
+of the code.  The barth limiter now works properly it seems.
+I tried the barth limiter on the isentropic vortex case.  It works,
+but is very diffusive.  The bugs were associated with copying the
+code I wrote for the barth limiter and not changing some of the edges_v
+to edges_h. The problem now is that the timestep I have to use is very small.
+Also, it seems that when I get NaNs, they come from the horizontal interfaces.
+I'm not sure what exactly is happening.  To try to fix it I am going to
+finish implementing strong enforcement of slip wall BCs to all boundaries.
+

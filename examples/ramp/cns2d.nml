@@ -26,16 +26,16 @@
 /
 
 &boundary_conditions
-  bcids(1) = 1002   ! bottom
+  bcids(1) = 1003   ! bottom
   bcids(2) = 1001   ! right
   bcids(3) = 1001   ! top
   bcids(4) = 1000   ! left
 /
 
 &slope_limiter
-  limiter = "none" ! barth or none
+  limiter = "barth" ! barth or none
 /
 
 &output
-  write_freq = 100
+  write_freq = 1000
 /

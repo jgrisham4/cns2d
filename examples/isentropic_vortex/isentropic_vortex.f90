@@ -69,8 +69,8 @@ program isentropic_vortex
   bcs(4) = 1000
 
   ! Initializing solver
-  call initialize(esolver,grid,0.01d0,10.0d0,1.4d0,w0,winfty,bcs,"none")
-  !call initialize(esolver,grid,0.001d0,10.0d0,1.4d0,w0,winfty,bcs,"barth")
+  !call initialize(esolver,grid,0.01d0,10.0d0,1.4d0,w0,winfty,bcs,"none")
+  call initialize(esolver,grid,0.01d0,10.0d0,1.4d0,w0,winfty,bcs,"barth")
 
   ! Solving problem
   !call solve_feuler(esolver,1000)

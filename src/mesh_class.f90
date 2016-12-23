@@ -35,6 +35,8 @@ module mesh_class
     double precision :: u(4)     ! Vector of conserved variables
     double precision :: u0(4)    ! Vector of conserved variables at previous timestep
     double precision :: w(4)     ! Vector of primitive variables
+    double precision :: dudx(4)  ! Gradient of u in x-direction
+    double precision :: dudy(4)  ! Gradient of u in y-direction
     double precision :: wi(4,4)  ! Primitive states at interfaces (1-bottom, 2-right,...)
   end type element
 
@@ -396,8 +398,8 @@ module mesh_class
       this%y(-1,this%jmax+2) = this%y(1,this%jmax+2)
 
       ! Computing geometric quantities PARALLELIZE
-      do j=1,this%nelemj
-        do i=1,this%nelemi
+      do j=-1,this%nelemj+2
+        do i=-1,this%nelemi+2
 
           ! Getting coordinates of the nodes that belong to this element
           x1 = this%x(i,j)

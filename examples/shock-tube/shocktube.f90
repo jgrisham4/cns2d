@@ -28,8 +28,8 @@ program isentropic_vortex
   end if
 
   ! Time step and final time
-  dt = 0.0000001d0
-  tfinal = 0.4d0
+  dt = 1.0e-6
+  tfinal = 0.1d0
 
   ! Setting initial guess
   winfty(1) = 0.0d0
@@ -55,17 +55,24 @@ program isentropic_vortex
   end do
 
   ! Setting boundary conditions
+  ! Weakly enforced slip wall
   bcs(1) = 1002
   bcs(2) = 1002
   bcs(3) = 1002
   bcs(4) = 1002
 
+  ! Strongly enforced slip wall
+  !bcs(1) = 1003
+  !bcs(2) = 1003
+  !bcs(3) = 1003
+  !bcs(4) = 1003
+
   ! Initializing solver
-  !call initialize(esolver,grid,dt,tfinal,1.4d0,w0,winfty,bcs,"barth")
-  call initialize(esolver,grid,dt,tfinal,1.4d0,w0,winfty,bcs,"none")
+  call initialize(esolver,grid,dt,tfinal,1.4d0,w0,winfty,bcs,"barth")
+  !call initialize(esolver,grid,dt,tfinal,1.4d0,w0,winfty,bcs,"none")
 
   ! Solving problem
-  !call solve_feuler(esolver,1000)
-  call solve_rk4(esolver,10000)
+  call solve_feuler(esolver,1000)
+  !call solve_rk4(esolver,1000)
 
 end program isentropic_vortex

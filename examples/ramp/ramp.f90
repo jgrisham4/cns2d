@@ -74,7 +74,7 @@ program isentropic_vortex
   end do
 
   ! Setting boundary conditions
-  bcs(1) = 1002
+  bcs(1) = 1003
   bcs(2) = 1001
   bcs(3) = 1000
   bcs(4) = 1000
