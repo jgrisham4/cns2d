@@ -184,7 +184,6 @@ module solvers
             this%grid%elem(i,j)%u0 = this%grid%elem(i,j)%u
           end do
         end do
-        !call write_results_tec(this,"stage0.tec")
 
         ! Stage 1
         call residual_inv(this,resid)
@@ -193,7 +192,6 @@ module solvers
             this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%dt/4.0d0*resid(i,j,:)
           end do
         end do
-        !call write_results_tec(this,"stage1.tec")
 
         ! Stage 2
         call residual_inv(this,resid)
@@ -345,7 +343,7 @@ module solvers
       else if (this%bcids(2).eq.1002) then
 
         ! Slip wall
-        do i=1,this%grid%nelemi
+        do j=1,this%grid%nelemj
           wtmp = u_to_w(this%grid%elem(i,j)%u,this%g)
           pw = 3.0d0/2.0d0*wtmp(4)
           wtmp = u_to_w(this%grid%elem(i-1,j)%u,this%g)
@@ -358,8 +356,40 @@ module solvers
 
       else if (this%bcids(2).eq.1003) then
 
-        ! No-slip wall
-        print *, "Warning: strong slip wall bc not implemented yet."
+        ! Slip wall strongly enforced
+        do j=1,this%grid%nelemj
+
+          ! Setting state in ghost cells
+          this%grid%elem(i+1,j)%u(1) =  this%grid%elem(i,j)%u(1)
+          this%grid%elem(i+1,j)%u(2) = -this%grid%elem(i,j)%u(2)
+          this%grid%elem(i+1,j)%u(3) = -this%grid%elem(i,j)%u(3)
+          this%grid%elem(i+1,j)%u(4) =  this%grid%elem(i,j)%u(4)
+          this%grid%elem(i+2,j)%u(1) =  this%grid%elem(i-1,j)%u(1)
+          this%grid%elem(i+2,j)%u(2) = -this%grid%elem(i-1,j)%u(2)
+          this%grid%elem(i+2,j)%u(3) = -this%grid%elem(i-1,j)%u(3)
+          this%grid%elem(i+2,j)%u(4) =  this%grid%elem(i-1,j)%u(4)
+
+          ! Computing the gradient in the ghost cells using
+          ! first-order accurate differences
+          ds = sqrt((this%grid%edges_v(i+1,j)%xm - this%grid%elem(i+1,j)%xc)**2 + &
+                    (this%grid%edges_v(i+1,j)%ym - this%grid%elem(i+1,j)%yc)**2)
+          duds = (this%grid%elem(i+1,j)%u - this%grid%elem(i+2,j)%u)/ds
+
+          ! Reconstructing the state on the interior
+          rL(1) = this%grid%edges_v(i+1,j)%xm - this%grid%elem(i,j)%xc
+          rL(2) = this%grid%edges_v(i+1,j)%ym - this%grid%elem(i,j)%yc
+          this%grid%edges_v(i+1,j)%uL = this%grid%elem(i,j)%u + this%grid%elem(i,j)%dudx*rL(1) + &
+            this%grid%elem(i,j)%dudy*rL(2)
+
+          ! Reconstructing the state on the exterior
+          rR(1) = this%grid%edges_v(i+1,j)%xm - this%grid%elem(i+1,j)%xc
+          rR(2) = this%grid%edges_v(i+1,j)%ym - this%grid%elem(i+1,j)%yc
+          this%grid%edges_v(i+1,j)%uR = this%grid%elem(i+1,j)%u + duds*sqrt(rR(1)**2+rR(2)**2)
+
+          ! Solving the Riemann problem at the interface
+          this%grid%edges_v(i+1,j)%flux = roe(this%grid%edges_v(i+1,j)%uL,this%grid%edges_v(i+1,j)%uR,this%grid%elem(i,j)%n(:,2))
+
+        end do
 
       else
 
@@ -404,8 +434,51 @@ module solvers
 
       else if (this%bcids(3).eq.1003) then
 
-        ! No-slip wall
-        print *, "Warning: strong slip wall bc not implemented yet."
+        ! Strong enforcement of slip wall
+        ! This is accomplished by setting the state at the ghost cells
+        ! Reconstructing the interface states and solving the Riemann
+        ! problem at the interface
+      !  do i=1,this%grid%nelemi
+
+      !    ! Setting state in the ghost cells
+      !    this%grid%elem(i,j+1)%u(1) =  this%grid%elem(i,j)%u(1)
+      !    this%grid%elem(i,j+1)%u(2) = -this%grid%elem(i,j)%u(2)
+      !    this%grid%elem(i,j+1)%u(3) = -this%grid%elem(i,j)%u(3)
+      !    this%grid%elem(i,j+1)%u(4) =  this%grid%elem(i,j)%u(4)
+      !    this%grid%elem(i,j+2)%u(1) =  this%grid%elem(i,j-1)%u(1)
+      !    this%grid%elem(i,j+2)%u(2) = -this%grid%elem(i,j-1)%u(2)
+      !    this%grid%elem(i,j+2)%u(3) = -this%grid%elem(i,j-1)%u(3)
+      !    this%grid%elem(i,j+2)%u(4) =  this%grid%elem(i,j-1)%u(4)
+
+      !    ! Finding the gradient using first-order accurate differences
+      !    ds = sqrt((this%grid%elem(i,j+1)%xc - this%grid%elem(i,j+2)%xc)**2 + &
+      !              (this%grid%elem(i,j+1)%yc - this%grid%elem(i,j+2)%yc)**2)
+      !    duds = (this%grid%elem(i,j+1)%u - this%grid%elem(i,j+2)%u)/ds
+
+      !    ! o------------o
+      !    ! |            | j+2 -- ghost
+      !    ! |            |
+      !    ! o------------o
+      !    ! |            | j+1 -- ghost
+      !    ! | R          |
+      !    ! o------------o
+      !    ! | L          | j
+      !    ! |            |
+      !    ! o------------o
+      !    ! Computing the left state of the interface
+      !    rL(1) = this%grid%edges_h(i,j+1)%xm - this%grid%elem(i,j)%xc
+      !    rL(2) = this%grid%edges_h(i,j+1)%ym - this%grid%elem(i,j)%yc
+      !    this%grid%edges_h(i,j+1)%uL = this%grid%elem(i,j)%u + &
+      !                                  this%grid%elem(i,j)%dudx*rL(1) + &
+      !                                  this%grid%elem(i,j)%dudy*rL(2)
+
+      !    ! Computing the right state of the interface
+      !    rR(1) = this%grid%edges_h(i,j+1)%xm - this%grid%elem(i,j+1)%xc
+      !    rR(2) = this%grid%edges_h(i,j+1)%ym - this%grid%elem(i,j+1)%yc
+      !    this%grid%edges_h(i,j+1)%uR = this%grid%elem(i,j+1)%u + duds*sqrt(rR(1)**2 + rR(2)**2)
+
+      !    ! Solving the Riemann problem at the interface
+      !    this%grid%edges_h(i,j+1)%flux = roe(this%grid%edges_h(i,j+1)%uL,this%grid%edges_h(i,j+1)%uR,this%grid%elem(i,j)%n(:,3))
 
       else
 
@@ -437,7 +510,7 @@ module solvers
       else if (this%bcids(4).eq.1002) then
 
         ! Slip wall
-        do i=1,this%grid%nelemi
+        do j=1,this%grid%nelemj
           wtmp = u_to_w(this%grid%elem(i,j)%u,this%g)
           pw = 3.0d0/2.0d0*wtmp(4)
           wtmp = u_to_w(this%grid%elem(i+1,j)%u,this%g)
@@ -450,8 +523,20 @@ module solvers
 
       else if (this%bcids(4).eq.1003) then
 
-        ! No-slip wall
-        print *, "Warning: no-slip wall bc not implemented yet."
+        ! Strongly enforced slip wall
+        do j=1,this%grid%nelemj
+
+          ! Assigning states in the ghost cells
+
+          ! Computing gradient in the ghost cell
+
+          ! Reconstructing the exterior state
+
+          ! Reconstructing the interior state
+
+          ! Solving the Riemann problem
+
+        end do
 
       else
 
@@ -750,6 +835,8 @@ module solvers
           ! Calling Riemann solver
           this%grid%edges_v(i,j)%flux = roe(this%grid%edges_v(i,j)%uL,this%grid%edges_v(i,j)%uR,this%grid%elem(i-1,j)%n(:,2))
           !this%grid%edges_v(i,j)%flux = rotated_rhll(this%grid%edges_v(i,j)%uL,this%grid%edges_v(i,j)%uR,this%grid%elem(i-1,j)%n(:,2))
+
+          ! Checking for NaNs
           do k=1,4
             if (isnan(this%grid%edges_v(i,j)%flux(k))) then
               write(*,'(a)') "NaNs encountered after solving Riemann problem for vertical faces"
@@ -768,6 +855,8 @@ module solvers
           ! Calling Riemann solver
           this%grid%edges_h(i,j)%flux = roe(this%grid%edges_h(i,j)%uL,this%grid%edges_h(i,j)%uR,this%grid%elem(i,j-1)%n(:,3))
           !this%grid%edges_h(i,j)%flux = rotated_rhll(this%grid%edges_h(i,j)%uL,this%grid%edges_h(i,j)%uR,this%grid%elem(i,j-1)%n(:,3))
+
+          ! Checking for NaNs
           do k=1,4
             if (isnan(this%grid%edges_h(i,j)%flux(k))) then
               write(*,'(a)') "NaNs encountered after solving Riemann problem for horizontal faces"

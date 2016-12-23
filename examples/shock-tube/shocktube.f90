@@ -28,8 +28,8 @@ program isentropic_vortex
   end if
 
   ! Time step and final time
-  dt = 1.0e-6
-  tfinal = 0.1d0
+  dt = 1.0e-4
+  tfinal = 0.8d0
 
   ! Setting initial guess
   winfty(1) = 0.0d0
@@ -72,7 +72,7 @@ program isentropic_vortex
   !call initialize(esolver,grid,dt,tfinal,1.4d0,w0,winfty,bcs,"none")
 
   ! Solving problem
-  call solve_feuler(esolver,1000)
+  call solve_feuler(esolver,250)
   !call solve_rk4(esolver,1000)
 
 end program isentropic_vortex
