@@ -81,3 +81,8 @@ Also, it seems that when I get NaNs, they come from the horizontal interfaces.
 I'm not sure what exactly is happening.  To try to fix it I am going to
 finish implementing strong enforcement of slip wall BCs to all boundaries.
 
+12-23-2016 - 11:02 pm
+I found another bug in the enforcement of the slip wall BCs. Some
+of the indices in the slip wall bc were wrong.  I was looping over
+i instead of j in some cases.  I think there still might be something
+wrong with the horizontal interfaces.  I need to debug more tomorrow.

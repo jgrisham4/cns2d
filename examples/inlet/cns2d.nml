@@ -21,8 +21,8 @@
 
 &time_advancement
   method     = "forward_euler"   ! Options are rk4 or forward_euler
-  final_time = 1.0e-3  ! Seconds
-  time_step  = 1.0e-9 ! Seconds
+  final_time = 1.0e-4  ! Seconds
+  time_step  = 1.0e-10 ! Seconds
 /
 
 &boundary_conditions
@@ -37,5 +37,5 @@
 /
 
 &output
-  write_freq = 5000
+  write_freq = 10000
 /

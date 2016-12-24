@@ -29,8 +29,8 @@ program isentropic_vortex
   end if
 
   ! Time step and final time
-  dt = 1.0e-12
-  tfinal = 1.0e-6
+  dt = 1.0e-9
+  tfinal = 1.0e-5
 
   ! Setting initial guess
   !beta_r    = 29.314*pi/180.0d0
@@ -74,17 +74,17 @@ program isentropic_vortex
   end do
 
   ! Setting boundary conditions
-  bcs(1) = 1003
+  bcs(1) = 1002
   bcs(2) = 1001
   bcs(3) = 1000
   bcs(4) = 1000
 
   ! Initializing solver
-  !call initialize(esolver,grid,dt,tfinal,1.4d0,w0,winfty,bcs,"barth")
-  call initialize(esolver,grid,dt,tfinal,1.4d0,w0,winfty,bcs,"none")
+  call initialize(esolver,grid,dt,tfinal,1.4d0,w0,winfty,bcs,"barth")
+  !call initialize(esolver,grid,dt,tfinal,1.4d0,w0,winfty,bcs,"none")
 
   ! Solving problem
-  call solve_feuler(esolver,10000)
+  call solve_feuler(esolver,1000)
   !call solve_rk4(esolver,500)
 
 end program isentropic_vortex
