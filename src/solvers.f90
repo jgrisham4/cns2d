@@ -13,8 +13,8 @@ module solvers
   use riemann,         only : roe,rotated_rhll
   use ieee_arithmetic, only : ieee_is_finite
   implicit none
-  private
-  public :: solver, initialize, solve_feuler, solve_rk4, residual_inv, write_results_cgns, write_results_tec
+  private :: apply_bcs
+  public  :: solver, initialize, solve_feuler, solve_rk4, residual_inv, write_results_cgns, write_results_tec
 
   !---------------------------------------------------------
   ! Class for solver
@@ -438,47 +438,49 @@ module solvers
         ! This is accomplished by setting the state at the ghost cells
         ! Reconstructing the interface states and solving the Riemann
         ! problem at the interface
-      !  do i=1,this%grid%nelemi
+        do i=1,this%grid%nelemi
 
-      !    ! Setting state in the ghost cells
-      !    this%grid%elem(i,j+1)%u(1) =  this%grid%elem(i,j)%u(1)
-      !    this%grid%elem(i,j+1)%u(2) = -this%grid%elem(i,j)%u(2)
-      !    this%grid%elem(i,j+1)%u(3) = -this%grid%elem(i,j)%u(3)
-      !    this%grid%elem(i,j+1)%u(4) =  this%grid%elem(i,j)%u(4)
-      !    this%grid%elem(i,j+2)%u(1) =  this%grid%elem(i,j-1)%u(1)
-      !    this%grid%elem(i,j+2)%u(2) = -this%grid%elem(i,j-1)%u(2)
-      !    this%grid%elem(i,j+2)%u(3) = -this%grid%elem(i,j-1)%u(3)
-      !    this%grid%elem(i,j+2)%u(4) =  this%grid%elem(i,j-1)%u(4)
+          ! Setting state in the ghost cells
+          this%grid%elem(i,j+1)%u(1) =  this%grid%elem(i,j)%u(1)
+          this%grid%elem(i,j+1)%u(2) = -this%grid%elem(i,j)%u(2)
+          this%grid%elem(i,j+1)%u(3) = -this%grid%elem(i,j)%u(3)
+          this%grid%elem(i,j+1)%u(4) =  this%grid%elem(i,j)%u(4)
+          this%grid%elem(i,j+2)%u(1) =  this%grid%elem(i,j-1)%u(1)
+          this%grid%elem(i,j+2)%u(2) = -this%grid%elem(i,j-1)%u(2)
+          this%grid%elem(i,j+2)%u(3) = -this%grid%elem(i,j-1)%u(3)
+          this%grid%elem(i,j+2)%u(4) =  this%grid%elem(i,j-1)%u(4)
 
-      !    ! Finding the gradient using first-order accurate differences
-      !    ds = sqrt((this%grid%elem(i,j+1)%xc - this%grid%elem(i,j+2)%xc)**2 + &
-      !              (this%grid%elem(i,j+1)%yc - this%grid%elem(i,j+2)%yc)**2)
-      !    duds = (this%grid%elem(i,j+1)%u - this%grid%elem(i,j+2)%u)/ds
+          ! Finding the gradient using first-order accurate differences
+          ds = sqrt((this%grid%elem(i,j+1)%xc - this%grid%elem(i,j+2)%xc)**2 + &
+                    (this%grid%elem(i,j+1)%yc - this%grid%elem(i,j+2)%yc)**2)
+          duds = (this%grid%elem(i,j+1)%u - this%grid%elem(i,j+2)%u)/ds
 
-      !    ! o------------o
-      !    ! |            | j+2 -- ghost
-      !    ! |            |
-      !    ! o------------o
-      !    ! |            | j+1 -- ghost
-      !    ! | R          |
-      !    ! o------------o
-      !    ! | L          | j
-      !    ! |            |
-      !    ! o------------o
-      !    ! Computing the left state of the interface
-      !    rL(1) = this%grid%edges_h(i,j+1)%xm - this%grid%elem(i,j)%xc
-      !    rL(2) = this%grid%edges_h(i,j+1)%ym - this%grid%elem(i,j)%yc
-      !    this%grid%edges_h(i,j+1)%uL = this%grid%elem(i,j)%u + &
-      !                                  this%grid%elem(i,j)%dudx*rL(1) + &
-      !                                  this%grid%elem(i,j)%dudy*rL(2)
+          ! o------------o
+          ! |            | j+2 -- ghost
+          ! |            |
+          ! o------------o
+          ! |            | j+1 -- ghost
+          ! | R          |
+          ! o------------o
+          ! | L          | j
+          ! |            |
+          ! o------------o
+          ! Computing the left state of the interface
+          rL(1) = this%grid%edges_h(i,j+1)%xm - this%grid%elem(i,j)%xc
+          rL(2) = this%grid%edges_h(i,j+1)%ym - this%grid%elem(i,j)%yc
+          this%grid%edges_h(i,j+1)%uL = this%grid%elem(i,j)%u + &
+                                        this%grid%elem(i,j)%dudx*rL(1) + &
+                                        this%grid%elem(i,j)%dudy*rL(2)
 
-      !    ! Computing the right state of the interface
-      !    rR(1) = this%grid%edges_h(i,j+1)%xm - this%grid%elem(i,j+1)%xc
-      !    rR(2) = this%grid%edges_h(i,j+1)%ym - this%grid%elem(i,j+1)%yc
-      !    this%grid%edges_h(i,j+1)%uR = this%grid%elem(i,j+1)%u + duds*sqrt(rR(1)**2 + rR(2)**2)
+          ! Computing the right state of the interface
+          rR(1) = this%grid%edges_h(i,j+1)%xm - this%grid%elem(i,j+1)%xc
+          rR(2) = this%grid%edges_h(i,j+1)%ym - this%grid%elem(i,j+1)%yc
+          this%grid%edges_h(i,j+1)%uR = this%grid%elem(i,j+1)%u + duds*sqrt(rR(1)**2 + rR(2)**2)
 
-      !    ! Solving the Riemann problem at the interface
-      !    this%grid%edges_h(i,j+1)%flux = roe(this%grid%edges_h(i,j+1)%uL,this%grid%edges_h(i,j+1)%uR,this%grid%elem(i,j)%n(:,3))
+          ! Solving the Riemann problem at the interface
+          this%grid%edges_h(i,j+1)%flux = roe(this%grid%edges_h(i,j+1)%uL,this%grid%edges_h(i,j+1)%uR,this%grid%elem(i,j)%n(:,3))
+
+        end do
 
       else
 
@@ -527,14 +529,34 @@ module solvers
         do j=1,this%grid%nelemj
 
           ! Assigning states in the ghost cells
+          this%grid%elem(i-1,j)%u(1) =  this%grid%elem(i,j)%u(1)
+          this%grid%elem(i-1,j)%u(2) = -this%grid%elem(i,j)%u(2)
+          this%grid%elem(i-1,j)%u(3) = -this%grid%elem(i,j)%u(3)
+          this%grid%elem(i-1,j)%u(4) =  this%grid%elem(i,j)%u(4)
+          this%grid%elem(i-2,j)%u(1) =  this%grid%elem(i+1,j)%u(1)
+          this%grid%elem(i-2,j)%u(2) = -this%grid%elem(i+1,j)%u(2)
+          this%grid%elem(i-2,j)%u(3) = -this%grid%elem(i+1,j)%u(3)
+          this%grid%elem(i-2,j)%u(4) =  this%grid%elem(i+1,j)%u(4)
 
           ! Computing gradient in the ghost cell
+          ds = sqrt((this%grid%elem(i-1,j)%xc - this%grid%elem(i-2,j)%xc)**2 + &
+                    (this%grid%elem(i-1,j)%yc - this%grid%elem(i-2,j)%yc)**2)
+          duds = (this%grid%elem(i-1,j)%u - this%grid%elem(i-2,j))/ds
 
           ! Reconstructing the exterior state
+          rL(1) = this%grid%edges_v(i,j)%xm - this%grid%elem(i-1,j)%xc
+          rL(2) = this%grid%edges_v(i,j)%ym - this%grid%elem(i-1,j)%yc
+          this%grid%edges_v(i,j)%uL = this%grid%elem(i-1,j)%u + duds*sqrt(rL(1)**2 + rL(2)**2)
 
           ! Reconstructing the interior state
+          rR(1) = this%grid%edges_v(i,j)%xm - this%grid%elem(i,j)%xc
+          rR(2) = this%grid%edges_v(i,j)%ym - this%grid%elem(i,j)%yc
+          this%grid%edges_v(i,j)%uR = this%grid%elem(i,j)%u + &
+                                      this%grid%elem(i,j)%dudx*rR(1) + &
+                                      this%grid%elem(i,j)%dudy*rR(2)
 
           ! Solving the Riemann problem
+          this%grid%edges_v(i,j)%flux = roe(this%grid%edges_v(i,j)%uL,this%grid%edges_v(i,j)%uR,this%grid%elem(i-1,j)%n(:,2))
 
         end do
 
@@ -634,13 +656,6 @@ module solvers
                 ! Slope-limited reconstruction
                 do k=1,4
                   this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*phi(k)
-                  !if (isnan(phi(k)).or..not.ieee_is_finite(phi(k)).or.isnan(duL(k))) then
-                  !  write(*,'(a,i2,a,f12.5)') "phi(", k, ") = ", phi(k)
-                  !  write(*,'(a,i2,a,f12.5)') "duL(", k, ") = ", duL(k)
-                  !  write(*,'(a,i2,a,f12.5)') "  u(", k, ") = ", this%grid%elem(i,j)%u(k)
-                  !  write(*,'(a,i4,a,i4)') "i = ", i, " j = ", j
-                  !  stop
-                  !end if
                 end do
 
               case default
