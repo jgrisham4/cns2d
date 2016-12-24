@@ -56,10 +56,10 @@ module solvers
       this%tfinal  = t_final
       this%g       = gam
       this%winfty  = winf
-      this%ntsteps = ceiling(t_final/delta_t)
+      this%ntsteps = nint(t_final/delta_t)
       this%bcids   = bcidents
       this%limiter = lim
-      write (*,'(a,i5)') "number of time steps: ", this%ntsteps
+      write (*,'(a,i7)') "number of time steps: ", this%ntsteps
 
       ! Converting initial condition to conserved variables
       ! (includes ghost cells)
@@ -541,7 +541,7 @@ module solvers
           ! Computing gradient in the ghost cell
           ds = sqrt((this%grid%elem(i-1,j)%xc - this%grid%elem(i-2,j)%xc)**2 + &
                     (this%grid%elem(i-1,j)%yc - this%grid%elem(i-2,j)%yc)**2)
-          duds = (this%grid%elem(i-1,j)%u - this%grid%elem(i-2,j))/ds
+          duds = (this%grid%elem(i-1,j)%u - this%grid%elem(i-2,j)%u)/ds
 
           ! Reconstructing the exterior state
           rL(1) = this%grid%edges_v(i,j)%xm - this%grid%elem(i-1,j)%xc

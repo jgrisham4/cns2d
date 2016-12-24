@@ -1,6 +1,7 @@
-program isentropic_vortex
-  use mesh_class,   only : mesh,read_from_file,preprocess
-  use solvers, only : solver,initialize,solve_feuler,solve_rk4
+program shocktube
+  use utils,      only : u_to_w
+  use mesh_class, only : mesh,read_from_file,preprocess
+  use solvers,    only : solver,initialize,solve_feuler,solve_rk4
   implicit none
   double precision :: a,rho_inf,p_inf,u_inf,v_inf,x0,y0,K,xb,yb,rb,temp,g
   double precision :: rgas,t_inf,a_inf,winfty(4)
@@ -29,8 +30,8 @@ program isentropic_vortex
 
   ! Time step and final time
   !dt = 1.0e-4
-  dt = 1.0e-3
-  tfinal = 2.0d0
+  dt = 5.0e-4
+  tfinal = 0.4d0
 
   ! Setting initial guess
   winfty(1) = 0.0d0
@@ -40,7 +41,7 @@ program isentropic_vortex
   do j=1,grid%nelemj
     do i=1,grid%nelemi
 
-      if (grid%elem(i,j)%xc.ge.0.5d0) then
+      if (grid%elem(i,j)%xc.le.0.5d0) then
         w0(i,j,1) = 1.0d0
         w0(i,j,2) = 0.0d0
         w0(i,j,3) = 0.0d0
@@ -70,10 +71,18 @@ program isentropic_vortex
 
   ! Initializing solver
   call initialize(esolver,grid,dt,tfinal,1.4d0,w0,winfty,bcs,"barth")
-  !call initialize(esolver,grid,dt,tfinal,1.4d0,w0,winfty,bcs,"none")
 
   ! Solving problem
-  !call solve_feuler(esolver,250)
-  call solve_rk4(esolver,100)
+  call solve_feuler(esolver,100)
+  !call solve_rk4(esolver,100)
 
-end program isentropic_vortex
+  ! Writing out a slice to file
+  j = 10
+  open(3,file="results2d.dat")
+  do i=1,grid%nelemi
+    esolver%grid%elem(i,j)%w = u_to_w(esolver%grid%elem(i,j)%u,esolver%g)
+    write(3,'(es13.6,a,4(es13.6,1x))') esolver%grid%elem(i,j)%xc, " ", esolver%grid%elem(i,j)%w
+  end do
+  close(3)
+
+end program shocktube

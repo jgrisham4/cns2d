@@ -86,3 +86,13 @@ I found another bug in the enforcement of the slip wall BCs. Some
 of the indices in the slip wall bc were wrong.  I was looping over
 i instead of j in some cases.  I think there still might be something
 wrong with the horizontal interfaces.  I need to debug more tomorrow.
+
+12-24-2016 - 2:17 pm
+I checked the 2D numerical solution against the 1D numerical solution
+and the exact solution for the shock tube case.  It is weird.  It seems
+that the results don't match.  I think I know what it is... I think that
+I am inadvertently setting extrapolate BCs in the 1D code.  Are the sides
+open??????  I'm not sure.  Out of time for now.  Need to check the actual
+boundary conditions for Sod's problem.  In the 1D code, which matches the
+exact solution, I am setting the BCs by copying the inside state to the
+exterior state.  I think that is extrapolate BC??? Weird.
