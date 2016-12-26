@@ -96,3 +96,14 @@ open??????  I'm not sure.  Out of time for now.  Need to check the actual
 boundary conditions for Sod's problem.  In the 1D code, which matches the
 exact solution, I am setting the BCs by copying the inside state to the
 exterior state.  I think that is extrapolate BC??? Weird.
+
+12-26-2016 - 8:46 am
+The results match up until the shock impinges on the right wall and reflects.
+The results from the 1D code match the "exact" result that I got from
+the python script.  If I stop the 2d code before the shock reaches the right
+wall, the results match the exact and 1d results very well.  On the WIND-US
+website, they mentioned that they used a frozen bc at the left and right walls.
+The frozen bc is equivalent to making the state at the wall the same as the
+initial condition regardless of time.  It seems like a strange boundary
+condition to me.  I'm just going to compare my 1D and 2D codes against the
+exact solution for t=0.2 s.  They match perfectly at that time.
