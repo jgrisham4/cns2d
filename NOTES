@@ -17,12 +17,16 @@ I need to implement boundary conditions.  I'm going to need
 slip wall and farfield for now probably.  Then, the Euler
 solver should be done.
 
+-------------------------
+
 Something is wrong... I'm getting negative densities after
 the first step which is causing NaNs.  I need to double
 check the conversions from primitive to conservative,
 reconstruction and switch from the barth limiter to the
 minmod limiter.  There is a good explanation of the minmod
 limiter in Leveque's book.
+
+-------------------------
 
 It seems that the information is not being communicated from
 the farfield boundaries.  The fluxes aren't changing, which
@@ -33,14 +37,20 @@ One idea is to hardwire the reconstruction for the cartesian
 grid case being solved.  Then I might be able to figure out
 if the reconstruction is what is causing the issue.
 
+-------------------------
+
 The sign on some of the fluxes was wrong.  Now, the farfield
 boundaries seem wrong.  It is because I am changing the sign
 of the fluxes in the final loop.  I need to change the enforcement
 of the farfield boundary conditions so that they use the inward pointing face normal!!!!!
 
+-------------------------
+
 Added Barth-Jespersen limiter formulation using their original
 paper.  Something is wrong though because I get NaNs after the
 first few timesteps.
+
+-------------------------
 
 I've tracked down the NaNs to the residual_inv subroutine.
 When using RK4 to march in time, the NaNs arise after the first
@@ -53,6 +63,8 @@ to believe that there is some unintended side-effect happening in the
 code.  I need to find the side-effect and remove it.  I know that it is
 isolated to the portion of the select case that matches "barth".
 
+-------------------------
+
 It seems that something about the slope limited reconstruction
 causes the Riemann solver to return NaNs for the fluxes....  I'm
 not sure how or why this is happening.  I've gotta figure out how
@@ -60,6 +72,8 @@ to implement the minmod slope limiter instead.  This is strange because
 the limiter is returning between 0 and 1 at all times.  I printed out
 the values and everything seemed reasonable.  I'm not sure why the
 Riemann solver is returning NaNs.
+
+-------------------------
 
 12-22-2016
 I believe the NaNs are coming about as a result of the slip wall
@@ -69,6 +83,8 @@ by setting up another boundary condition option.  I can't find anything
 wrong with the Euler or RK4 time stepping.  I can't find anything
 wrong with the slope-limited reconstruction...  I don't know what is
 wrong.
+
+-------------------------
 
 12-23-2016 - 12:46 pm
 I fixed some of the NaNs.  There were bugs in the barth limiter portion
@@ -81,11 +97,15 @@ Also, it seems that when I get NaNs, they come from the horizontal interfaces.
 I'm not sure what exactly is happening.  To try to fix it I am going to
 finish implementing strong enforcement of slip wall BCs to all boundaries.
 
+-------------------------
+
 12-23-2016 - 11:02 pm
 I found another bug in the enforcement of the slip wall BCs. Some
 of the indices in the slip wall bc were wrong.  I was looping over
 i instead of j in some cases.  I think there still might be something
 wrong with the horizontal interfaces.  I need to debug more tomorrow.
+
+-------------------------
 
 12-24-2016 - 2:17 pm
 I checked the 2D numerical solution against the 1D numerical solution
@@ -97,6 +117,8 @@ boundary conditions for Sod's problem.  In the 1D code, which matches the
 exact solution, I am setting the BCs by copying the inside state to the
 exterior state.  I think that is extrapolate BC??? Weird.
 
+-------------------------
+
 12-26-2016 - 8:46 am
 The results match up until the shock impinges on the right wall and reflects.
 The results from the 1D code match the "exact" result that I got from
@@ -107,3 +129,21 @@ The frozen bc is equivalent to making the state at the wall the same as the
 initial condition regardless of time.  It seems like a strange boundary
 condition to me.  I'm just going to compare my 1D and 2D codes against the
 exact solution for t=0.2 s.  They match perfectly at that time.
+
+-------------------------
+
+12-26-2016 10:39 pm
+I believe there is something wrong with the fluxes from the
+horizontal faces.  The vertical faces seem fine.  One way I could
+check this is to run the shock tube going from down-to-up instead
+of left-to-right.
+
+-------------------------
+
+12-26-2016 11:02 pm
+I tried running the shock tube from down-to-up.  Everything seemed to
+work fine.  I think the slow convergence may be due to the fact that
+I'm using an explicit scheme.  I believe I could accelerate the convergence
+by using implicit residual smoothing.  I've gotta do something.
+
+-------------------------

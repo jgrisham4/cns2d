@@ -29,7 +29,7 @@ program isentropic_vortex
   end if
 
   ! Time step and final time
-  dt = 1.0e-9
+  dt = 5.0e-10
   tfinal = 1.0e-5
 
   ! Setting initial guess
@@ -74,7 +74,7 @@ program isentropic_vortex
   end do
 
   ! Setting boundary conditions
-  bcs(1) = 1002
+  bcs(1) = 1003
   bcs(2) = 1001
   bcs(3) = 1000
   bcs(4) = 1000

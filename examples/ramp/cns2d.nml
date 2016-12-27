@@ -26,10 +26,10 @@
 /
 
 &boundary_conditions
-  bcids(1) = 1003   ! bottom
-  bcids(2) = 1001   ! right
-  bcids(3) = 1001   ! top
-  bcids(4) = 1000   ! left
+  bcids(1) = 1003   ! bottom - strongly enforced slip wall
+  bcids(2) = 1001   ! right  - extrapolate
+  bcids(3) = 1000   ! top    - freestream
+  bcids(4) = 1000   ! left   - freestream
 /
 
 &slope_limiter

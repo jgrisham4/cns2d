@@ -31,7 +31,7 @@ program shocktube
   ! Time step and final time
   !dt = 1.0e-4
   dt = 5.0e-4
-  tfinal = 0.4d0
+  tfinal = 0.2d0
 
   ! Setting initial guess
   winfty(1) = 0.0d0
@@ -73,8 +73,8 @@ program shocktube
   call initialize(esolver,grid,dt,tfinal,1.4d0,w0,winfty,bcs,"barth")
 
   ! Solving problem
-  call solve_feuler(esolver,100)
-  !call solve_rk4(esolver,100)
+  !call solve_feuler(esolver,100)
+  call solve_rk4(esolver,100)
 
   ! Writing out a slice to file
   j = 10

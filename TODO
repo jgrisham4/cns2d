@@ -1,18 +1,8 @@
-- Fix slip wall BC.
-  - Slip wall is currently being enforced weakly
-    by extrapolating the pressure from the cell
-    centers to the walls.  This is not working.
-    I need to set the state at the ghost cells,
-    reconstruct the solution at the boundary
-    faces and then solve the riemann problem to
-    find the flux.
-  - This can be accomplished by adding a method
-    to compute the gradients along the boundaries.
-
 - Add subroutine to compute the max possible time step.
 
-- Create subroutine for computing gradients along
-  the boundaries (including ghost cells).
+- Add implicit residual smoothing to accelerate convergence.
+
+- Parallelize loops using OpenMP.
 
 - Add subroutine which computes residual of NS.
   - Must add subroutine for computing the viscous fluxes.
@@ -27,4 +17,7 @@
     the faces.
   - If I can do all this, I'm done with the NS solver.
 
-- Add implicit residual smoothing to accelerate convergence.
+- Implement selective frequency damping.
+
+- Use Frechet derivative to compute the eigenmodes and
+  eigenvalues.
