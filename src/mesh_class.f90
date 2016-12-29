@@ -7,7 +7,7 @@ module mesh_class
   use utils, only : reflect, nvec
   implicit none
   private
-  public :: mesh,read_from_file,write_to_tec,preprocess
+  public :: mesh,element,read_from_file,write_to_tec,preprocess
 
   !---------------------------------------------------------
   ! Edge class definition
@@ -37,6 +37,8 @@ module mesh_class
     double precision :: w(4)     ! Vector of primitive variables
     double precision :: dudx(4)  ! Gradient of u in x-direction
     double precision :: dudy(4)  ! Gradient of u in y-direction
+    double precision :: dTdx     ! Gradient of T in x-direction
+    double precision :: dTdy     ! Gradient of T in y-direction
     double precision :: wi(4,4)  ! Primitive states at interfaces (1-bottom, 2-right,...)
   end type element
 

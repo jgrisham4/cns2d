@@ -18,7 +18,7 @@ module utils
     ! variables to a vector of conserved variables.
     ! Assuming a calorically perfect gas.
     !------------------------------------------------------
-    function w_to_u(w,g) result(u)
+    pure function w_to_u(w,g) result(u)
       implicit none
       double precision, intent(in) :: w(4),g
       double precision             :: u(4)
@@ -33,7 +33,7 @@ module utils
     ! variables to a vector of primitive variables.
     ! Assuming a calorically perfect gas.
     !------------------------------------------------------
-    function u_to_w(u,g) result(w)
+    pure function u_to_w(u,g) result(w)
       implicit none
       double precision, intent(in) :: u(4),g
       double precision             :: w(4)

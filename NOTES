@@ -147,3 +147,15 @@ I'm using an explicit scheme.  I believe I could accelerate the convergence
 by using implicit residual smoothing.  I've gotta do something.
 
 -------------------------
+
+12-27-2016 2:04 pm
+I'm not sure that there is anything wrong with the code.  I've checked and
+re-checked the residual_inv function.  I can't find anything wrong.  I'm
+thinking that the ramp doesn't look exactly correct because the scheme is
+taking a very long time to converge to the steady state.
+
+-------------------------
+
+12-28-2016 7:01 pm
+Yesterday was not a good day.  Lost Max yesterday so not much progress.
+I added the viscous fluxes.  Need to setup a test case.

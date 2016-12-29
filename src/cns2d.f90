@@ -9,7 +9,7 @@ program cns2d
   logical            :: viscous_terms
   character (len=30) :: mesh_file,method,limiter
   double precision   :: u_inf,v_inf,p_inf,rho_inf
-  double precision   :: g,C1,S,final_time,time_step
+  double precision   :: g,C1,S,final_time,time_step,R
   integer            :: bcids(4),write_freq
 
   ! Local variables
@@ -23,7 +23,7 @@ program cns2d
   namelist /governing_equations/viscous_terms
   namelist /mesh_inputs/mesh_file
   namelist /freestream_properties/u_inf,v_inf,p_inf,rho_inf
-  namelist /gas_properties/g,C1,S
+  namelist /gas_properties/g,C1,S,R
   namelist /time_advancement/method,final_time,time_step
   namelist /boundary_conditions/bcids
   namelist /slope_limiter/limiter
@@ -114,7 +114,7 @@ program cns2d
   end do
 
   ! Initializing solver
-  call initialize(solv,grid,time_step,final_time,g,w0,winfty,bcids,limiter)
+  call initialize(solv,grid,time_step,final_time,g,R,w0,winfty,bcids,limiter)
 
   ! Solving the problem
   if (method.eq."forward_euler") then
