@@ -1,8 +1,17 @@
 !===========================================================
 ! This module contains a simple solver for the 2D Euler
-! equations using a second-order accurate finite volume
-! method.
+! equations and Navier-Stokes equations on curvilinear
+! meshes using an upwind second-order accurate finite
+! volume method. The discretization makes use of Roe flux
+! difference splitting, piecewise linear reconstruction,
+! the barth slope limiter, first-order accuracy in time
+! using the forward Euler method or fourth-order accuracy
+! in time using a Runge Kutta 4 method.
+!
+! Author: James Grisham
+! Date: 01-01-2017
 !===========================================================
+
 module solvers
   use cgns
   use mesh_class,      only : mesh
@@ -11,6 +20,7 @@ module solvers
   use flux,            only : fluxax, fluxay, flux_adv
   use grad,            only : compute_gradient
   use riemann,         only : roe,rotated_rhll
+  use mms,             only : s_continuity,s_xmom,s_ymom,s_energy,rho_e,u_e,v_e,et_e
   use ieee_arithmetic, only : ieee_is_finite
   implicit none
   private :: apply_bcs
@@ -230,11 +240,12 @@ module solvers
     ! 1002 - slip wall weak   (no information needed)
     ! 1003 - slip wall strong (no information needed)
     ! 1004 - no-slip wall     (wall temperature, assumed adiabatic)
+    ! 2000 - mms solution     (Dirichlet along walls--state is set)
     !---------------------------------------------------------
     subroutine apply_bcs(this)
       implicit none
       type(solver), intent(inout)    :: this
-      double precision, dimension(4) :: wextrap,uextrap,wtmp
+      double precision, dimension(4) :: wextrap,uextrap,utmp,wtmp
       double precision, dimension(4) :: duds
       double precision               :: pw,ds,rL(2),rR(2)
       integer                        :: i,j
@@ -312,6 +323,25 @@ module solvers
 
           ! Solving the Riemann problem at the interface
           this%grid%edges_h(i,j)%flux = roe(this%grid%edges_h(i,j)%uL,this%grid%edges_h(i,j)%uR,this%grid%elem(i,j-1)%n(:,3))
+
+        end do
+
+      else if (this%bcids(1).eq.2000) then
+
+        do i=1,this%grid%nelemi
+
+          ! Finding the conserved variables from the exact solution
+          utmp(1) = rho_e(this%grid%edges_h(i,j)%xm,this%grid%edges_h(i,j)%ym)
+          utmp(2) = utmp(1)*u_e(this%grid%edges_h(i,j)%xm,this%grid%edges_h(i,j)%ym)
+          utmp(3) = utmp(1)*v_e(this%grid%edges_h(i,j)%xm,this%grid%edges_h(i,j)%ym)
+          utmp(4) = et_e(this%grid%edges_h(i,j)%xm,this%grid%edges_h(i,j)%ym)
+
+          ! I MUST ADD ALL THE VISCOUS FLUXES TO THE BOUNDARY CONDITIONS
+
+          ! Finding the primitive variables at the face and computing the flux
+          wtmp = u_to_w(utmp,this%g)
+          this%grid%edges_h(i,j)%flux = -(flux_adv(wtmp,this%grid%elem(i,j)%n(:,1),this%g) + &
+            flux_visc(wtmp,)
 
         end do
 
@@ -915,22 +945,22 @@ module solvers
       ! Allocating memory for gradient of state at cell centers
       allocate(gradU(this%grid%nelemi,this%grid%nelemj,8),stat=err)
       if (err.ne.0) then
-        print *, "Error: Can't allocate memory for gradU in residual_inv."
+        print *, "Error: Can't allocate memory for gradU in residual_visc."
         stop
       end if
       allocate(u(this%grid%nelemi,this%grid%nelemj,4),stat=err)
       if (err.ne.0) then
-        print *, "Error: can't allocate memory for u in residual_inv."
+        print *, "Error: can't allocate memory for u in residual_visc."
         stop
       end if
       allocate(umax(this%grid%nelemi,this%grid%nelemj,4),stat=err)
       if (err.ne.0) then
-        print *, "Error: can't allocate memory for umax in residual_inv."
+        print *, "Error: can't allocate memory for umax in residual_visc."
         stop
       end if
       allocate(umin(this%grid%nelemi,this%grid%nelemj,4),stat=err)
       if (err.ne.0) then
-        print *, "Error: can't allocate memory for umin in residual_inv."
+        print *, "Error: can't allocate memory for umin in residual_visc."
         stop
       end if
 

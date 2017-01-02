@@ -12,6 +12,10 @@ module flux
   private
   public :: fluxax, fluxay, flux_adv, flux_visc
 
+  ! Constants used in MMS
+  double precision, parameter :: k_mms  = 1.0d0
+  double precision, parameter :: mu_mms = 0.3d0
+
   contains
 
     !------------------------------------------------------
@@ -94,7 +98,7 @@ module flux
       double precision             :: f(4),lambda
       double precision             :: tauxx,tauxy,tauyy
       double precision             :: thetax,thetay
-      double precision             :: u,v,T,TL,TR,wL(4),wR(4),m
+      double precision             :: u,v,T,TL,TR,wL(4),wR(4),m,kval
       double precision             :: dudx,dudy,dvdx,dvdy,dTdx,dTdy
 
       ! Converting from conservative variables to primitive
@@ -117,7 +121,10 @@ module flux
       dTdy = 0.5d0*(elemL%dTdy + elemR%dTdy)
 
       ! Using Stokes' Theorem to compute lambda
-      m = mu(T)
+      !m     = mu(T)
+      !k     = k(T)
+      m      = mu_mms        ! ONLY FOR METHOD OF MANUFACTURED SOLUTIONS
+      kval   = k_mms         ! ONLY FOR METHOD OF MANUFACTURED SOLUTIONS
       lambda = -2.0d0/3.0d0*m
 
       ! Computing components of shear stress tensor
@@ -126,8 +133,8 @@ module flux
       tauxy = m*(dudy + dvdx)
 
       ! Computing work done by shear in addition to heat transfer
-      thetax = u*tauxx + v*tauxy + k(T)*dTdx
-      thetay = u*tauxy + v*tauyy + k(T)*dTdy
+      thetax = u*tauxx + v*tauxy + kval*dTdx
+      thetay = u*tauxy + v*tauyy + kval*dTdy
 
       ! Computing the flux
       f(1) = 0.0d0

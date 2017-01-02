@@ -4,19 +4,6 @@
 
 - Parallelize loops using OpenMP.
 
-- Add subroutine which computes residual of NS.
-  - Must add subroutine for computing the viscous fluxes.
-    The viscous flux is shown in Eq. 2.23.  I have to
-    evaluate the first derivatives of the velocity field
-    and temperature.
-  - Must compute gradient of u,v,T and gradient of each
-    respective derivative so that the states can be
-    reconstructed at the faces.
-  - After I have the states at the faces, the viscous
-    fluxes are computing using the averaged states at
-    the faces.
-  - If I can do all this, I'm done with the NS solver.
-
 - Implement selective frequency damping.
 
 - Use Frechet derivative to compute the eigenmodes and

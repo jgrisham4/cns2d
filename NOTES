@@ -159,3 +159,32 @@ taking a very long time to converge to the steady state.
 12-28-2016 7:01 pm
 Yesterday was not a good day.  Lost Max yesterday so not much progress.
 I added the viscous fluxes.  Need to setup a test case.
+
+-------------------------
+
+12-30-2016 10:03 pm
+I didn't work on this yesterday because I was working on a post-doc application.
+I need to come up with a manufactured solution to check the Navier-Stokes code.
+I'm going to use the one from the paper by Liao, Diskin, Peng and Luo.  Need to
+write an operator for the Navier-Stokes equations in Mathematica in order to
+determine what source term(s) I should add to the governing equations.
+
+-------------------------
+
+01-01-2016 8:10 pm
+Working on adding an order-of-accuracy check using the method of manufactured
+solutions.  I'm avoiding temporal accuracy for now and using a steady
+solution.
+
+-------------------------
+
+01-01-2016 10:41 pm
+I need to find a good way to add the viscous fluxes to all of the boundary
+conditions.  I could make inviscid bcs 1000 series and viscous 2000.  I should
+also find a way to switch the time steppers between viscous and inviscid.  For
+the boundary conditions, I need to be able to provide the primitive variables
+as well as the derivatives of the primitive variables for the viscous fluxes.
+I need to create a new viscous flux function that takes all of this information
+as inputs instead of using element information.  Pick up in apply_bcs in
+solver.f90 and flux.f90.
+

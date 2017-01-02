@@ -12,7 +12,7 @@ module grad
   use mesh_class, only : mesh
   implicit none
   private
-  public :: compute_gradient, compute_boundary_gradient
+  public :: compute_gradient
 
   contains
 
