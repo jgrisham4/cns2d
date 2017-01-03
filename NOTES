@@ -194,3 +194,13 @@ solver.f90 and flux.f90.
 I'm almost done with all the modifications necessary for validating the code using
 the method of manufactured solutions.  Running out of steam for the day.  I need
 to pick up in examples/manufactured/ns_validation.f90.
+
+-------------------------
+
+01-02-2017 10:24 pm
+I finished the modifications required for the method of manufactured solutions.
+Found one mistake in the enforcement of the boundary conditions for the MMS.
+Getting NaNs in the residual_inv subroutine for vertical faces near the
+upper right corner.  I'm not sure what is wrong.  I need to check the
+residual_visc subroutine along with the flux_visc_state and flux_visc
+functions.

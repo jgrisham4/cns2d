@@ -428,6 +428,12 @@ module solvers
           u    = u_e(xtmp,ytmp)
           v    = v_e(xtmp,ytmp)
           T    = (this%g-1.0d0)/this%R*(et_e(xtmp,ytmp)-0.5d0*(u**2+v**2))
+          dudx = dudx_e(xtmp,ytmp)
+          dudy = dudy_e(xtmp,ytmp)
+          dvdx = dvdx_e(xtmp,ytmp)
+          dvdy = dvdy_e(xtmp,ytmp)
+          dTdx = dTdx_e(xtmp,ytmp)
+          dTdy = dTdy_e(xtmp,ytmp)
 
           ! Setting the conserved variables at the face
           utmp(1) = rho_e(xtmp,ytmp)
@@ -528,9 +534,15 @@ module solvers
           ! Computing exact solution at midpoint of face
           xtmp = this%grid%edges_v(i+1,j)%xm
           ytmp = this%grid%edges_v(i+1,j)%ym
-          u = u_e(xtmp,ytmp)
-          v = v_e(xtmp,ytmp)
-          T = (this%g-1.0d0)/this%R*(et_e(xtmp,ytmp)-0.5d0*(u**2+v**2))
+          u    = u_e(xtmp,ytmp)
+          v    = v_e(xtmp,ytmp)
+          T    = (this%g-1.0d0)/this%R*(et_e(xtmp,ytmp)-0.5d0*(u**2+v**2))
+          dudx = dudx_e(xtmp,ytmp)
+          dudy = dudy_e(xtmp,ytmp)
+          dvdx = dvdx_e(xtmp,ytmp)
+          dvdy = dvdy_e(xtmp,ytmp)
+          dTdx = dTdx_e(xtmp,ytmp)
+          dTdy = dTdy_e(xtmp,ytmp)
 
           ! Setting conserved variables at the face
           utmp(1) = rho_e(xtmp,ytmp)
@@ -647,6 +659,12 @@ module solvers
           u    = u_e(xtmp,ytmp)
           v    = v_e(xtmp,ytmp)
           T    = (this%g-1.0d0)/this%R*(et_e(xtmp,ytmp)-0.5d0*(u**2+v**2))
+          dudx = dudx_e(xtmp,ytmp)
+          dudy = dudy_e(xtmp,ytmp)
+          dvdx = dvdx_e(xtmp,ytmp)
+          dvdy = dvdy_e(xtmp,ytmp)
+          dTdx = dTdx_e(xtmp,ytmp)
+          dTdy = dTdy_e(xtmp,ytmp)
 
           ! Setting the conserved variables at the face
           utmp(1) = rho_e(xtmp,ytmp)
@@ -750,6 +768,12 @@ module solvers
           u    = u_e(xtmp,ytmp)
           v    = v_e(xtmp,ytmp)
           T    = (this%g-1.0d0)/this%R*(et_e(xtmp,ytmp)-0.5d0*(u**2+v**2))
+          dudx = dudx_e(xtmp,ytmp)
+          dudy = dudy_e(xtmp,ytmp)
+          dvdx = dvdx_e(xtmp,ytmp)
+          dvdy = dvdy_e(xtmp,ytmp)
+          dTdx = dTdx_e(xtmp,ytmp)
+          dTdy = dTdy_e(xtmp,ytmp)
 
           ! Setting the conserved variables at the face
           utmp(1) = rho_e(xtmp,ytmp)
@@ -1126,295 +1150,9 @@ module solvers
         print *, "Error: can't allocate memory for u in residual_visc."
         stop
       end if
-      allocate(umax(this%grid%nelemi,this%grid%nelemj,4),stat=err)
-      if (err.ne.0) then
-        print *, "Error: can't allocate memory for umax in residual_visc."
-        stop
-      end if
-      allocate(umin(this%grid%nelemi,this%grid%nelemj,4),stat=err)
-      if (err.ne.0) then
-        print *, "Error: can't allocate memory for umin in residual_visc."
-        stop
-      end if
 
-      ! Copying the last solution into u
-      do j=1,this%grid%nelemj
-        do i=1,this%grid%nelemi
-          u(i,j,:) = this%grid%elem(i,j)%u
-        end do
-      end do
-
-      ! Computing gradient for use in reconstruction
-      call compute_gradient(this%grid,u,gradU)
-
-      ! Assigning gradient to elements
-      do j=1,this%grid%nelemj
-        do i=1,this%grid%nelemi
-          this%grid%elem(i,j)%dudx = gradU(i,j,1:4)
-          this%grid%elem(i,j)%dudy = gradU(i,j,5:8)
-        end do
-      end do
-
-      ! Finding max and min of states for each element and neighbors
-      if (this%limiter.eq."barth") then
-        umax = compute_elem_max(u,this%grid%nelemi,this%grid%nelemj)
-        umin = compute_elem_min(u,this%grid%nelemi,this%grid%nelemj)
-      end if
-
-      ! Reconstructing states on left and right sides of each vertical interface
-      ! for each element
-      do j=1,this%grid%nelemj
-        do i=1,this%grid%nelemi
-
-          if (i.eq.1) then
-
-            ! Only need to reconstruct the left state
-            rL(1) = this%grid%edges_v(i+1,j)%xm - this%grid%elem(i,j)%xc
-            rL(2) = this%grid%edges_v(i+1,j)%ym - this%grid%elem(i,j)%yc
-
-            ! Finding grad(u) . r_L on the left side of the interface
-            duL = gradU(i,j,1:4)*rL(1) + gradU(i,j,5:8)*rL(2)
-
-            ! Reconstructing state on left of interface
-            select case (this%limiter)
-              case ("none")
-                do k=1,4
-                  this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)
-                end do
-              case ("barth")
-
-                ! Calling barth subroutine to find limiter
-                phi = barth(this,i,j,gradU,umax,umin)
-
-                ! Slope-limited reconstruction
-                do k=1,4
-                  this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*phi(k)
-                end do
-
-              case default
-                write(*,'(3a)') "Slope limiter ", this%limiter, " not recognized."
-                stop
-            end select
-
-          else if (i.eq.(this%grid%nelemi)) then
-
-            ! Only need to reconstruct the right state
-            rR(1) = this%grid%edges_v(i,j)%xm - this%grid%elem(i,j)%xc
-            rR(2) = this%grid%edges_v(i,j)%ym - this%grid%elem(i,j)%yc
-
-            ! Finding the slope on the right side of the interface
-            duR = gradU(i,j,1:4)*rR(1) + gradU(i,j,5:8)*rR(2)
-
-            ! Reconstructing primitive states on right of interface
-            select case (this%limiter)
-              case ("none")
-                do k=1,4
-                  this%grid%edges_v(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)
-                end do
-              case ("barth")
-
-                ! Calling subroutine to compute the barth limiter
-                phi = barth(this,i,j,gradU,umax,umin)
-
-                ! Slope-limited reconstruction
-                do k=1,4
-                  this%grid%edges_v(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)*phi(k)
-                end do
-
-              case default
-                write(*,'(3a)') "Slope limiter ", this%limiter, " not recognized."
-                stop
-            end select
-
-          else
-
-            ! Computing position vectors for face midpoints
-            rL(1) = this%grid%edges_v(i+1,j)%xm - this%grid%elem(i,j)%xc
-            rL(2) = this%grid%edges_v(i+1,j)%ym - this%grid%elem(i,j)%yc
-            rR(1) = this%grid%edges_v(i,j)%xm - this%grid%elem(i,j)%xc
-            rR(2) = this%grid%edges_v(i,j)%ym - this%grid%elem(i,j)%yc
-
-            ! Finding slopes on left and right
-            ! The below is grad(u) . r_L and grad(u) . r_R
-            duL = gradU(i,j,1:4)*rL(1) + gradU(i,j,5:8)*rL(2)
-            duR = gradU(i,j,1:4)*rR(1) + gradU(i,j,5:8)*rR(2)
-
-            ! Reconstructing primitive states on left and right of interface
-            select case (this%limiter)
-              case ("none")
-                do k=1,4
-                  this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)
-                  this%grid%edges_v(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)
-                end do
-              case ("barth")
-
-                ! Calling subroutine to compute the barth limiter
-                phi = barth(this,i,j,gradU,umax,umin)
-
-                ! Slope-limited reconstruction
-                do k=1,4
-                  this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*phi(k)
-                  this%grid%edges_v(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)*phi(k)
-                end do
-
-              case default
-                write(*,'(3a)') "Slope limiter ", this%limiter, " not recognized."
-                stop
-            end select
-
-          end if
-
-        end do
-      end do
-
-      ! Reconstructing states on left and right sides of each horizontal interface
-      do j=1,this%grid%nelemj
-        do i=1,this%grid%nelemi
-
-          if (j.eq.1) then
-
-            ! Only need to reconstruct the left state
-            rL(1) = this%grid%edges_h(i,j+1)%xm - this%grid%elem(i,j)%xc
-            rL(2) = this%grid%edges_h(i,j+1)%ym - this%grid%elem(i,j)%yc
-
-            ! Finding the slope on the left side of the interface
-            duL = gradU(i,j,1:4)*rL(1) + gradU(i,j,5:8)*rL(2)
-
-            ! Reconstructing primitive states on left of interface
-            select case (this%limiter)
-              case ("none")
-                do k=1,4
-                  this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)
-                end do
-              case ("barth")
-
-                ! Calling barth subroutine to find limiter
-                phi = barth(this,i,j,gradU,umax,umin)
-
-                ! Slope-limited reconstruction
-                do k=1,4
-                  this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*phi(k)
-                end do
-
-              case default
-                write(*,'(3a)') "Slope limiter ", this%limiter, " not recognized."
-                stop
-            end select
-
-          else if (j.eq.(this%grid%nelemj)) then
-
-            ! Only need to reconstruct the right state
-            rR(1) = this%grid%edges_h(i,j)%xm - this%grid%elem(i,j)%xc
-            rR(2) = this%grid%edges_h(i,j)%ym - this%grid%elem(i,j)%yc
-
-            ! Finding the slope on the right side of the interface
-            duR = gradU(i,j,1:4)*rR(1) + gradU(i,j,5:8)*rR(2)
-
-            ! Reconstructing primitive states on right of interface
-            select case (this%limiter)
-              case ("none")
-                do k=1,4
-                  this%grid%edges_h(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)
-                end do
-              case ("barth")
-
-                ! Calling subroutine to compute the barth limiter
-                phi = barth(this,i,j,gradU,umax,umin)
-
-                ! Slope-limited reconstruction
-                do k=1,4
-                  this%grid%edges_h(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)*phi(k)
-                end do
-
-              case default
-                write(*,'(3a)') "Slope limiter ", this%limiter, " not recognized."
-                stop
-            end select
-
-          else
-
-            ! Computing position vectors for face midpoints
-            rL(1) = this%grid%edges_h(i,j+1)%xm - this%grid%elem(i,j)%xc
-            rL(2) = this%grid%edges_h(i,j+1)%ym - this%grid%elem(i,j)%yc
-            rR(1) = this%grid%edges_h(i,j)%xm - this%grid%elem(i,j)%xc
-            rR(2) = this%grid%edges_h(i,j)%ym - this%grid%elem(i,j)%yc
-
-            ! Finding slopes on left and right
-            duL = gradU(i,j,1:4)*rL(1) + gradU(i,j,5:8)*rL(2)
-            duR = gradU(i,j,1:4)*rR(1) + gradU(i,j,5:8)*rR(2)
-
-            ! Reconstructing primitive states on left and right of interface
-            select case (this%limiter)
-              case ("none")
-                do k=1,4
-                  this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)
-                  this%grid%edges_h(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)
-                end do
-              case ("barth")
-
-                ! Calling subroutine to compute the barth limiter
-                phi = barth(this,i,j,gradU,umax,umin)
-
-                ! Slope-limited reconstruction
-                do k=1,4
-                  this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*phi(k)
-                  this%grid%edges_h(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)*phi(k)
-                end do
-
-              case default
-                write(*,'(3a)') "Slope limiter ", this%limiter, " not recognized."
-                stop
-            end select
-
-          end if
-
-        end do
-      end do
-
-      ! Applying boundary conditions
-      call apply_bcs(this)
-
-      ! Must now iterate through all the interior interfaces and solve
-      ! the Riemann problem to find the fluxes
-      ! Vertical faces
-      do j=1,this%grid%nelemj
-        do i=2,this%grid%nelemi
-
-          ! Calling Riemann solver
-          this%grid%edges_v(i,j)%flux = roe(this%grid%edges_v(i,j)%uL,this%grid%edges_v(i,j)%uR,this%grid%elem(i-1,j)%n(:,2))
-          !this%grid%edges_v(i,j)%flux = rotated_rhll(this%grid%edges_v(i,j)%uL,this%grid%edges_v(i,j)%uR,this%grid%elem(i-1,j)%n(:,2))
-
-          ! Checking for NaNs
-          do k=1,4
-            if (isnan(this%grid%edges_v(i,j)%flux(k))) then
-              write(*,'(a)') "NaNs encountered after solving Riemann problem for vertical faces"
-              write(*,'(a,i4,a,i4,a,i4)') "i = ", i, " j = ", j , " k = ", k
-              stop
-            end if
-          end do
-
-        end do
-      end do
-
-      ! Horizontal faces
-      do j=2,this%grid%nelemj
-        do i=1,this%grid%nelemi
-
-          ! Calling Riemann solver
-          this%grid%edges_h(i,j)%flux = roe(this%grid%edges_h(i,j)%uL,this%grid%edges_h(i,j)%uR,this%grid%elem(i,j-1)%n(:,3))
-          !this%grid%edges_h(i,j)%flux = rotated_rhll(this%grid%edges_h(i,j)%uL,this%grid%edges_h(i,j)%uR,this%grid%elem(i,j-1)%n(:,3))
-
-          ! Checking for NaNs
-          do k=1,4
-            if (isnan(this%grid%edges_h(i,j)%flux(k))) then
-              write(*,'(a)') "NaNs encountered after solving Riemann problem for horizontal faces"
-              write(*,'(a,i4,a,i4,a,i4)') "i = ", i, " j = ", j , " k = ", k
-              stop
-            end if
-          end do
-
-        end do
-      end do
+      ! Finding inviscid part of the residual
+      call residual_inv(this,resid)
 
       ! Computing gradient of temperature and velocity
       ! dT/dx_ij = gradU(i,j,1)
@@ -1430,7 +1168,7 @@ module solvers
       end do
       call compute_gradient(this%grid,u,gradU)
 
-      ! Copying gradient of temperature to element objects
+      ! Copying gradients of temperature and velocity to element objects
       do j=1,this%grid%nelemj
         do i=1,this%grid%nelemi
           this%grid%elem(i,j)%dTdx = gradU(i,j,1)
@@ -1440,7 +1178,9 @@ module solvers
         end do
       end do
 
-        ! Computing viscous fluxes for vertical internal faces
+      ! Computing viscous fluxes for vertical internal faces
+      ! The flux for each edge has already been set by the residual_inv subroutine
+      ! Just need to subtract the viscous flux
       do j=1,this%grid%nelemj
         do i=2,this%grid%nelemi
           this%grid%edges_v(i,j)%flux = this%grid%edges_v(i,j)%flux - &
