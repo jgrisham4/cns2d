@@ -171,14 +171,14 @@ determine what source term(s) I should add to the governing equations.
 
 -------------------------
 
-01-01-2016 8:10 pm
+01-01-2017 8:10 pm
 Working on adding an order-of-accuracy check using the method of manufactured
 solutions.  I'm avoiding temporal accuracy for now and using a steady
 solution.
 
 -------------------------
 
-01-01-2016 10:41 pm
+01-01-2017 10:41 pm
 I need to find a good way to add the viscous fluxes to all of the boundary
 conditions.  I could make inviscid bcs 1000 series and viscous 2000.  I should
 also find a way to switch the time steppers between viscous and inviscid.  For
@@ -188,3 +188,9 @@ I need to create a new viscous flux function that takes all of this information
 as inputs instead of using element information.  Pick up in apply_bcs in
 solver.f90 and flux.f90.
 
+-------------------------
+
+01-02-2017 7:13 pm
+I'm almost done with all the modifications necessary for validating the code using
+the method of manufactured solutions.  Running out of steam for the day.  I need
+to pick up in examples/manufactured/ns_validation.f90.

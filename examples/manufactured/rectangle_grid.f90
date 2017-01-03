@@ -1,4 +1,4 @@
-program test_cgns
+program rectangle_grid
   use cgns
   double precision, allocatable :: x(:,:), y(:,:)
   double precision              :: xmin,xmax,ymin,ymax
@@ -8,13 +8,13 @@ program test_cgns
   integer :: imax,jmax,i,j,icelldim,iphysdim,index_base,index_file,index_zone,index_coord,ier,aerr
 
   ! Setting grid inputs
-  imax = 201
-  jmax = 21
-  xmin = -0.1d0
-  xmax =  0.7d0
-  ymin = 0.2d0
-  ymax = 0.8d0
-  fname = "grid.cgns"
+  imax  = 161
+  jmax  = 121
+  xmin  = -0.1d0
+  xmax  = 0.7d0
+  ymin  = 0.2d0
+  ymax  = 0.8d0
+  fname = "grid_161x121.cgns"
 
   ! Allocating memory for arrays
   allocate(x(imax,jmax),stat=aerr)
@@ -76,5 +76,4 @@ program test_cgns
   call cg_close_f(index_file,ier)
   print *, 'Done writing mesh.'
 
-end program test_cgns
-
+end program rectangle_grid

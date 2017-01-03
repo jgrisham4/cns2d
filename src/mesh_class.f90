@@ -38,6 +38,8 @@ module mesh_class
     double precision :: dudx(4)  ! Gradient of u in x-direction
     double precision :: dudy(4)  ! Gradient of u in y-direction
     double precision :: dTdx     ! Gradient of T in x-direction
+    double precision :: dVdx(2)  ! Gradient of velocity in x-direction
+    double precision :: dVdy(2)  ! Gradient of velocity in y-direction
     double precision :: dTdy     ! Gradient of T in y-direction
     double precision :: wi(4,4)  ! Primitive states at interfaces (1-bottom, 2-right,...)
   end type element

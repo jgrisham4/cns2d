@@ -13,7 +13,7 @@
 module mms
   implicit none
   private
-  public :: rho_e,u_e,v_e,et_e,s_continuity,s_xmom,s_ymom,s_energy
+  public :: rho_e,u_e,v_e,et_e,s_continuity,s_xmom,s_ymom,s_energy,dudx_e,dudy_e,dvdx_e,dvdy_e,dTdx_e,dTdy_e
 
   ! Parameters for MMS
   double precision, parameter :: rho0 = 0.5d0
@@ -67,6 +67,70 @@ module mms
       double precision :: r
       r = et0*(1.5 + Cos(x**2 + y**2))
     end function et_e
+
+    !-------------------------------------------------------
+    ! Function for computing du/dx
+    !-------------------------------------------------------
+    pure function dudx_e(x,y) result(r)
+      implicit none
+      double precision, intent(in) :: x,y
+      double precision :: r
+      r = 2*u0*x*Cos(x**2 + y**2)
+    end function dudx_e
+
+    !-------------------------------------------------------
+    ! Function for computing du/dy
+    !-------------------------------------------------------
+    pure function dudy_e(x,y) result(r)
+      implicit none
+      double precision, intent(in) :: x,y
+      double precision :: r
+      r = 2*u0*y*Cos(x**2 + y**2)
+    end function dudy_e
+
+    !-------------------------------------------------------
+    ! Function for computing dv/dx
+    !-------------------------------------------------------
+    pure function dvdx_e(x,y) result(r)
+      implicit none
+      double precision, intent(in) :: x,y
+      double precision :: r
+      r = -2*v0*x*Sin(x**2 + y**2)
+    end function dvdx_e
+
+    !-------------------------------------------------------
+    ! Function for computing dv/dy
+    !-------------------------------------------------------
+    pure function dvdy_e(x,y) result(r)
+      implicit none
+      double precision, intent(in) :: x,y
+      double precision :: r
+      r = -2*v0*y*Sin(x**2 + y**2)
+    end function dvdy_e
+
+    !-------------------------------------------------------
+    ! Function for computing dT/dx
+    !-------------------------------------------------------
+    pure function dTdx_e(x,y) result(r)
+      implicit none
+      double precision, intent(in) :: x,y
+      double precision :: r
+      r = (-2*et0*(-1 + g)*x*Sin(x**2 + y**2))/R - &
+          ((-1 + g)*(-4*v0**2*x*(eps + Cos(x**2 + y**2))*Sin(x**2 + y**2) + &
+          4*u0**2*x*Cos(x**2 + y**2)*(eps + Sin(x**2 + y**2))))/(2.*R)
+    end function dTdx_e
+
+    !-------------------------------------------------------
+    ! Function for computing dT/dy
+    !-------------------------------------------------------
+    pure function dTdy_e(x,y) result(r)
+      implicit none
+      double precision, intent(in) :: x,y
+      double precision :: r
+      r = (-2*et0*(-1 + g)*y*Sin(x**2 + y**2))/R - &
+          ((-1 + g)*(-4*v0**2*y*(eps + Cos(x**2 + y**2))*Sin(x**2 + y**2) + &
+          4*u0**2*y*Cos(x**2 + y**2)*(eps + Sin(x**2 + y**2))))/(2.*R)
+    end function dTdy_e
 
     !-------------------------------------------------------
     ! Function for computing the source term for the

@@ -6,11 +6,11 @@
 !===========================================================
 module flux
   use mesh_class,     only : element
-  use utils,          only : w_to_u
+  use utils,          only : w_to_u,u_to_w
   use gas_properties, only : mu,k
   implicit none
   private
-  public :: fluxax, fluxay, flux_adv, flux_visc
+  public :: fluxax, fluxay, flux_adv, flux_visc, flux_visc_state
 
   ! Constants used in MMS
   double precision, parameter :: k_mms  = 1.0d0
@@ -89,36 +89,14 @@ module flux
 
     !------------------------------------------------------
     ! Function for computing the viscous fluxes along
-    ! a face.
+    ! a face when the state at the face is provided.
     !------------------------------------------------------
-    pure function flux_visc(elemL,elemR,n,g,R) result(f)
+    pure function flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,n) result(f)
       implicit none
-      type(element), intent(in)    :: elemL,elemR
-      double precision, intent(in) :: n(2),g
-      double precision             :: f(4),lambda
+      double precision, intent(in) :: u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,n(2)
+      double precision             :: f(4),m,kval,lambda
       double precision             :: tauxx,tauxy,tauyy
       double precision             :: thetax,thetay
-      double precision             :: u,v,T,TL,TR,wL(4),wR(4),m,kval
-      double precision             :: dudx,dudy,dvdx,dvdy,dTdx,dTdy
-
-      ! Converting from conservative variables to primitive
-      wL = u_to_w(elemL%u,g)
-      wR = u_to_w(elemR%u,g)
-
-      ! Computing temperature
-      TL = wL(4)/(wL(1)*R)
-      TR = wR(4)/(wR(1)*R)
-
-      ! Computing averaged properties at the interface
-      u    = 0.5d0*(wL(2) + wR(2))
-      v    = 0.5d0*(wL(3) + wR(3))
-      T    = 0.5d0*(TL + TR)
-      dudx = 0.5d0*(elemL%dudx + elemR%dudx)
-      dudy = 0.5d0*(elemL%dudy + elemR%dudy)
-      dvdx = 0.5d0*(elemL%dvdx + elemR%dvdx)
-      dvdy = 0.5d0*(elemL%dvdy + elemR%dvdy)
-      dTdx = 0.5d0*(elemL%dTdx + elemR%dTdx)
-      dTdy = 0.5d0*(elemL%dTdy + elemR%dTdy)
 
       ! Using Stokes' Theorem to compute lambda
       !m     = mu(T)
@@ -141,6 +119,44 @@ module flux
       f(2) = n(1)*tauxx + n(2)*tauxy
       f(3) = n(1)*tauxy + n(2)*tauyy
       f(4) = n(1)*thetax + n(2)*thetay
+
+    end function flux_visc_state
+
+
+    !------------------------------------------------------
+    ! Function for computing the viscous fluxes along
+    ! a face when the elements on either side of the
+    ! interface are provided as inputs.
+    !------------------------------------------------------
+    pure function flux_visc(elemL,elemR,n,g,R) result(f)
+      implicit none
+      type(element), intent(in)    :: elemL,elemR
+      double precision, intent(in) :: n(2),g,R
+      double precision             :: f(4),rho
+      double precision             :: u,v,T,TL,TR,wL(4),wR(4)
+      double precision             :: dudx,dudy,dvdx,dvdy,dTdx,dTdy
+
+      ! Converting from conservative variables to primitive
+      wL = u_to_w(elemL%u,g)
+      wR = u_to_w(elemR%u,g)
+
+      ! Computing temperature
+      TL = wL(4)/(wL(1)*R)
+      TR = wR(4)/(wR(1)*R)
+
+      ! Computing averaged properties at the interface
+      u    = 0.5d0*(wL(2) + wR(2))
+      v    = 0.5d0*(wL(3) + wR(3))
+      T    = 0.5d0*(TL + TR)
+      dudx = 0.5d0*(elemL%dVdx(1) + elemR%dVdx(1))
+      dudy = 0.5d0*(elemL%dVdy(1) + elemR%dVdy(1))
+      dvdx = 0.5d0*(elemL%dVdx(2) + elemR%dVdx(2))
+      dvdy = 0.5d0*(elemL%dVdy(2) + elemR%dVdy(2))
+      dTdx = 0.5d0*(elemL%dTdx    + elemR%dTdx)
+      dTdy = 0.5d0*(elemL%dTdy    + elemR%dTdy)
+
+      ! Calling function to compute the viscous fluxes
+      f = flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,n)
 
     end function flux_visc
 

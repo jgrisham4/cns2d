@@ -114,7 +114,7 @@ program cns2d
   end do
 
   ! Initializing solver
-  call initialize(solv,grid,time_step,final_time,g,R,w0,winfty,bcids,limiter)
+  call initialize(solv,grid,time_step,final_time,g,R,w0,winfty,bcids,limiter,viscous_terms)
 
   ! Solving the problem
   if (method.eq."forward_euler") then
