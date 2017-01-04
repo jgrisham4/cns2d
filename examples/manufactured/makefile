@@ -1,5 +1,6 @@
 FC=ifort
-FCFLAGS=-xHost -O2 -ipo -traceback -I/share/CGNS-intel/build/include -I../../src
+#FCFLAGS=-xHost -O2 -ipo -traceback -I/share/CGNS-intel/build/include -I../../src
+FCFLAGS=-g -fpe0 -traceback -I/share/CGNS-intel/build/include -I../../src
 LIBNAME = libcns2d.a
 LFLAGS=-L/share/CGNS-intel/build/lib -L../../lib
 LIBS=-lcns2d -lcgns
@@ -13,7 +14,7 @@ all : $(TARGETS)
 %.o : %.f90
 	$(FC) -c $(FCFLAGS) $<
 
-ns_validation : ns_validation.o
+ns_validation : ns_validation.o ../../lib/libcns2d.a
 	$(FC) $(FCFLAGS) -o $@ $< $(LFLAGS) $(LIBS)
 
 rectangle_grid : rectangle_grid.o

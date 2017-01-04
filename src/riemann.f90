@@ -86,7 +86,12 @@ module riemann
            vyL = uL(3)/uL(1)
            vnL = vxL*nx+vyL*ny
            vtL = vxL*tx+vyL*ty
-            pL = (gam-one)*( uL(4) - half*rhoL*(vxL*vxL+vyL*vyL) )
+            pL = (gam-one)*( uL(4) - half*rhoL*(vxL*vxL+vyL*vyL) )  ! Getting a negative pressure
+            if (pL.lt.0.0d0) then
+              print *, "Warning: Negative pressures in Riemann solver -- left state."
+              write (*,'(a,4(f12.5,x))') "uL = ", uL
+              write (*,'(a,f12.5)'), "p = ", pL
+            end if
             aL = sqrt(gam*pL/rhoL)
             HL = ( uL(4) + pL ) / rhoL
 
@@ -98,9 +103,11 @@ module riemann
            vnR = vxR*nx+vyR*ny
            vtR = vxR*tx+vyR*ty
             pR = (gam-one)*( uR(4) - half*rhoR*(vxR*vxR+vyR*vyR) )
-            !print *, pR
-            ! There was a problem here.  I got a negative pressure..
-            ! Removing barth limiter fixed it.
+            if (pR.lt.0.0d0) then
+              print *, "Warning: Negative pressures in Riemann solver -- right state."
+              write (*,'(a,4(f12.5,x))') "uR = ", uR
+              write (*,'(a,f12.5)'), "p = ", pR
+            end if
             aR = sqrt(gam*pR/rhoR)
             HR = ( uR(4) + pR ) / rhoR
 

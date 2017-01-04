@@ -23,7 +23,7 @@ module solvers
   use mms,        only : s_continuity,s_xmom,s_ymom,s_energy,rho_e,u_e,v_e,et_e,dudx_e,dudy_e,dvdx_e,dvdy_e,dTdx_e,dTdy_e
   implicit none
   private :: apply_bcs
-  public  :: solver, initialize, solve_feuler, solve_rk4, residual_inv, write_results_cgns, write_results_tec
+  public  :: solver,initialize,solve_feuler,solve_rk4,solve_steady,residual_inv,write_results_cgns,write_results_tec
 
   !---------------------------------------------------------
   ! Class for solver
@@ -322,6 +322,99 @@ module solvers
       end if
 
     end subroutine solve_rk4
+
+    !---------------------------------------------------------
+    ! Subroutine for solving a steady problem -- forward
+    ! euler time stepping is used
+    !---------------------------------------------------------
+    subroutine solve_steady(this)
+      implicit none
+      type(solver), intent(inout) :: this
+      integer, intent(in) :: write_freq
+      double precision, allocatable :: u(:,:,:), resid(:,:,:)
+      character (len=30) :: tecname
+      integer :: i,j,k,aer
+
+      ! Allocating memory for the solution and the residual
+      allocate(resid(this%grid%nelemi,this%grid%nelemj,4),stat=aer)
+      if (aer.ne.0) then
+        print *, "Error: can't allocate memory for resid in solve_feuler."
+        stop
+      end if
+
+      ! Writing initial solution
+      tecname = "initial.tec"
+      print *, "Writing data to ", tecname
+      call write_results_tec(this,tecname)
+
+      ! Marching in time
+      if (this%is_visc.eq..true.) then
+        do k=1,this%ntsteps
+
+          ! Printing some information
+          !write(*,'(a,i5,a,es12.5)') "timestep: ", k, " t = ", dble(k)*this%dt
+          ! Need to write iteration and residual of continuity, x-mom, y-mom, and energy
+          write(*,'(a,i6)') "iteration: "
+
+          ! Writing current solution
+          if (mod(k,write_freq).eq.0) then
+            write (tecname, '(a,i0,a)') "sol", (k), ".tec"
+            print *, "Writing data to ", tecname
+            call write_results_tec(this,tecname)
+          end if
+
+          ! Copying old solution
+          do j=1,this%grid%nelemj
+            do i=1,this%grid%nelemi
+              this%grid%elem(i,j)%u0 = this%grid%elem(i,j)%u
+            end do
+          end do
+
+          ! Computing residual
+          call residual_visc(this,resid)
+
+          ! Advancing in time
+          do j=1,this%grid%nelemj
+            do i=1,this%grid%nelemi
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%dt*resid(i,j,:)
+            end do
+          end do
+
+        end do
+      else
+        do k=1,this%ntsteps
+
+          ! Printing some information
+          write(*,'(a,i5,a,es12.5)') "timestep: ", k, " t = ", dble(k)*this%dt
+
+          ! Writing current solution
+          if (mod(k,write_freq).eq.0) then
+            write (tecname, '(a,i0,a)') "sol", (k), ".tec"
+            print *, "Writing data to ", tecname
+            call write_results_tec(this,tecname)
+          end if
+
+          ! Copying old solution
+          do j=1,this%grid%nelemj
+            do i=1,this%grid%nelemi
+              this%grid%elem(i,j)%u0 = this%grid%elem(i,j)%u
+            end do
+          end do
+
+          ! Computing residual
+          call residual_inv(this,resid)
+
+          ! Advancing in time
+          do j=1,this%grid%nelemj
+            do i=1,this%grid%nelemi
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%dt*resid(i,j,:)
+            end do
+          end do
+
+        end do
+      end if
+
+    end subroutine solve_steady
 
     !---------------------------------------------------------
     ! Subroutine for applying boundary conditions
@@ -1031,8 +1124,8 @@ module solvers
             ! Computing position vectors for face midpoints
             rL(1) = this%grid%edges_h(i,j+1)%xm - this%grid%elem(i,j)%xc
             rL(2) = this%grid%edges_h(i,j+1)%ym - this%grid%elem(i,j)%yc
-            rR(1) = this%grid%edges_h(i,j)%xm - this%grid%elem(i,j)%xc
-            rR(2) = this%grid%edges_h(i,j)%ym - this%grid%elem(i,j)%yc
+            rR(1) = this%grid%edges_h(i,j)%xm   - this%grid%elem(i,j)%xc
+            rR(2) = this%grid%edges_h(i,j)%ym   - this%grid%elem(i,j)%yc
 
             ! Finding slopes on left and right
             duL = gradU(i,j,1:4)*rL(1) + gradU(i,j,5:8)*rL(2)
@@ -1076,7 +1169,9 @@ module solvers
         do i=2,this%grid%nelemi
 
           ! Calling Riemann solver
+          !print *, i, j, this%grid%edges_v(i,j)%xm, this%grid%edges_v(i,j)%ym
           this%grid%edges_v(i,j)%flux = roe(this%grid%edges_v(i,j)%uL,this%grid%edges_v(i,j)%uR,this%grid%elem(i-1,j)%n(:,2))
+
           !this%grid%edges_v(i,j)%flux = rotated_rhll(this%grid%edges_v(i,j)%uL,this%grid%edges_v(i,j)%uR,this%grid%elem(i-1,j)%n(:,2))
 
           ! Checking for NaNs
@@ -1084,6 +1179,8 @@ module solvers
             if (isnan(this%grid%edges_v(i,j)%flux(k))) then
               write(*,'(a)') "NaNs encountered after solving Riemann problem for vertical faces"
               write(*,'(a,i4,a,i4,a,i4)') "i = ", i, " j = ", j , " k = ", k
+              write(*,'(2(a,f12.5))') "x_midpoint = ", this%grid%edges_v(i,j)%xm, &
+                " y_midpoint = ", this%grid%edges_v(i,j)%ym
               stop
             end if
           end do
@@ -1104,6 +1201,8 @@ module solvers
             if (isnan(this%grid%edges_h(i,j)%flux(k))) then
               write(*,'(a)') "NaNs encountered after solving Riemann problem for horizontal faces"
               write(*,'(a,i4,a,i4,a,i4)') "i = ", i, " j = ", j , " k = ", k
+              write(*,'(2(a,f12.5))') "x_midpoint = ", this%grid%edges_h(i,j)%xm, &
+                " y_midpoint = ", this%grid%edges_h(i,j)%ym
               stop
             end if
           end do
@@ -1180,7 +1279,7 @@ module solvers
 
       ! Computing viscous fluxes for vertical internal faces
       ! The flux for each edge has already been set by the residual_inv subroutine
-      ! Just need to subtract the viscous flux
+      ! Just need to subtract the viscous flux from the inviscid flux
       do j=1,this%grid%nelemj
         do i=2,this%grid%nelemi
           this%grid%edges_v(i,j)%flux = this%grid%edges_v(i,j)%flux - &
@@ -1193,7 +1292,7 @@ module solvers
       do j=2,this%grid%nelemj
         do i=1,this%grid%nelemi
           this%grid%edges_h(i,j)%flux = this%grid%edges_h(i,j)%flux - &
-            flux_visc(this%grid%elem(i-1,j),this%grid%elem(i,j), &
+            flux_visc(this%grid%elem(i,j-1),this%grid%elem(i,j), &
                       this%grid%elem(i,j)%n(:,3),this%g,this%R)
         end do
       end do

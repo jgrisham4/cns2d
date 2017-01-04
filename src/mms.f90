@@ -195,41 +195,21 @@ module mms
       implicit none
       double precision, intent(in) :: x,y
       double precision :: s
-      s = ((3*et0*(R*rho0*(9*u0*x + 6*eps*u0*x + v0*y + 6*eps*v0*y) + &
-          8*(-1 + g)*k*(x**2 + y**2)) + &
-       4*eps*(6*(-1 + g)*k*(u0**2 - v0**2*(x**2 + y**2)) + &
+      s = ((3*et0*(3*R*u0*x + 4*(-1 + g)*k*(x**2 + y**2)) + &
+       2*eps*(6*(-1 + g)*k*(u0**2 - v0**2*(x**2 + y**2)) + &
           mu*R*(-7*u0**2 + 2*u0*v0*(1 + x*y - 2*y**2) + &
              2*v0**2*(3*x**2 - 2*x*y + 4*y**2))))*Cos(x**2 + y**2) + &
-    2*(12*(-1 + g)*k*(u0**2 - v0**2)*(x**2 + y**2) + &
-       R*(u0*(4*mu*v0 + 3*(3 + 2*eps)*et0*rho0*x) - &
-          4*mu*u0**2*(4*x**2 - 2*x*y + 3*y**2) + &
-          v0*(3*(3 + 2*eps)*et0*rho0*y + 4*mu*v0*(3*x**2 - 2*x*y + 4*y**2))))* &
-            Cos(2*(x**2 + y**2)) + 9*et0*R*rho0*v0*y*Cos(3*(x**2 + y**2)) - &
-    24*et0*k*Sin(x**2 + y**2) + 24*et0*g*k*Sin(x**2 + y**2) - &
-    8*eps*mu*R*u0*v0*Sin(x**2 + y**2) + 24*eps*k*v0**2*Sin(x**2 + y**2) - &
-    24*eps*g*k*v0**2*Sin(x**2 + y**2) + 28*eps*mu*R*v0**2*Sin(x**2 + y**2) - &
-    3*et0*R*rho0*u0*x*Sin(x**2 + y**2) - &
-    18*eps*et0*R*rho0*u0*x*Sin(x**2 + y**2) + &
-    24*eps*k*u0**2*x**2*Sin(x**2 + y**2) - &
-    24*eps*g*k*u0**2*x**2*Sin(x**2 + y**2) + &
-    32*eps*mu*R*u0**2*x**2*Sin(x**2 + y**2) - &
-    16*eps*mu*R*u0*v0*x**2*Sin(x**2 + y**2) - &
-    27*et0*R*rho0*v0*y*Sin(x**2 + y**2) - &
-    18*eps*et0*R*rho0*v0*y*Sin(x**2 + y**2) - &
-    16*eps*mu*R*u0**2*x*y*Sin(x**2 + y**2) + &
-    8*eps*mu*R*u0*v0*x*y*Sin(x**2 + y**2) + &
-    24*eps*k*u0**2*y**2*Sin(x**2 + y**2) - &
-    24*eps*g*k*u0**2*y**2*Sin(x**2 + y**2) + &
-    24*eps*mu*R*u0**2*y**2*Sin(x**2 + y**2) - &
-    12*k*u0**2*Sin(2*(x**2 + y**2)) + 12*g*k*u0**2*Sin(2*(x**2 + y**2)) - &
-    14*mu*R*u0**2*Sin(2*(x**2 + y**2)) + 12*k*v0**2*Sin(2*(x**2 + y**2)) - &
-    12*g*k*v0**2*Sin(2*(x**2 + y**2)) + 14*mu*R*v0**2*Sin(2*(x**2 + y**2)) + &
-    18*et0*R*rho0*u0*x*Sin(2*(x**2 + y**2)) - &
-    16*mu*R*u0*v0*x**2*Sin(2*(x**2 + y**2)) - &
-    18*et0*R*rho0*v0*y*Sin(2*(x**2 + y**2)) + &
-    16*mu*R*u0*v0*x*y*Sin(2*(x**2 + y**2)) - &
-    16*mu*R*u0*v0*y**2*Sin(2*(x**2 + y**2)) + &
-    9*et0*R*rho0*u0*x*Sin(3*(x**2 + y**2)))/(6.*R)
+    2*(3*et0*R*u0*x + 6*(-1 + g)*k*(u0**2 - v0**2)*(x**2 + y**2) + &
+       2*mu*R*(u0*v0 + u0**2*(-4*x**2 + 2*x*y - 3*y**2) + &
+          v0**2*(3*x**2 - 2*x*y + 4*y**2)))*Cos(2*(x**2 + y**2)) - &
+    (et0*(-12*(-1 + g)*k + 3*R*(2*eps*u0*x + (3 + 2*eps)*v0*y)) + &
+       2*eps*(mu*R*(-7*v0**2 + 2*u0*v0*(1 + 2*x**2 - x*y) + &
+             u0**2*(-8*x**2 + 4*x*y - 6*y**2)) + &
+          6*(-1 + g)*k*(v0**2 + u0**2*(x**2 + y**2))) - &
+       2*(6*(-1 + g)*k*(u0**2 - v0**2) - &
+          R*(6*et0*v0*y + mu*(7*u0**2 - 7*v0**2 + &
+                8*u0*v0*(x**2 - x*y + y**2))))*Cos(x**2 + y**2))*&
+     Sin(x**2 + y**2))/(3.*R)
     end function s_energy
 
 end module mms

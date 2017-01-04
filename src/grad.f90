@@ -17,10 +17,12 @@ module grad
   contains
 
   !--------------------------------------------------------
-  ! Subroutine for computing the gradient
-  ! Assuming that the variable we want to find the
-  ! gradient of is contained in the elements which are
-  ! members of the grid.
+  ! Subroutine for computing the gradient of an input
+  ! array named var which has four independent variables
+  !
+  ! Note: This subroutine assumes that memory has been
+  !       allocated for gradVar prior to this subroutine
+  !       being called.
   !--------------------------------------------------------
   subroutine compute_gradient(grid,var,gradVar)
     implicit none

@@ -204,3 +204,21 @@ Getting NaNs in the residual_inv subroutine for vertical faces near the
 upper right corner.  I'm not sure what is wrong.  I need to check the
 residual_visc subroutine along with the flux_visc_state and flux_visc
 functions.
+
+-------------------------
+
+01-03-2017 2:26 pm
+I have tracked down the NaNs to negative pressures inside the Riemann solver.
+I believe this is happening because the orders of magnitude of rho, u, v, E, etc.,
+are too small.  That is, errors in the piecewise linear reconstruction are
+responsible for producing states that have negative pressures.  I added a check
+to the Riemann solver.  I believe I should modify the manufactured solution so that
+the order of magnitude is at least one higher.  Alternatively, if my hypothesis is
+correct, using a finer mesh should fix this issue by improving the accuracy of the
+piecewise linear reconstruction.
+
+-------------------------
+
+01-03-2017 8:32 pm
+I believe I tracked down the bugs.  The code is running without NaNs on a steady
+solution.  I need to finish implementing the solve_steady subrouine.

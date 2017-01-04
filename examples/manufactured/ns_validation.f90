@@ -16,7 +16,8 @@ program ns_validation
   type(solver) :: ns_solver
 
   ! Reading mesh
-  call read_from_file(grid,"grid_41x31.cgns")
+  call read_from_file(grid,"grid_41x21.cgns")
+  !call read_from_file(grid,"grid_161x81.cgns")
 
   ! Preprocessing grid
   call preprocess(grid)
@@ -40,22 +41,26 @@ program ns_validation
       ! Generating pseudo-random noise which will be added to coordinates of cell centers
       call random_number(xerr)  ! Returns number 0 <= xerr < 1
       call random_number(yerr)
-      xerr = xerr*0.01d0
-      yerr = yerr*0.01d0
+      xerr = xerr*0.02d0
+      yerr = yerr*0.02d0
 
       ! Computing the exact solution at the cell center (with noise added)
       xc   = grid%elem(i,j)%xc + xerr
       yc   = grid%elem(i,j)%yc + yerr
-      rhoc = rho_e(xc,yc)
-      uc   = u_e(xc,yc)
-      vc   = v_e(xc,yc)
-      etc  = et_e(xc,yc)
+      rhoc = rho_e(xc,yc)*1.01
+      uc   = u_e(xc,yc)*1.01
+      vc   = v_e(xc,yc)*1.01
+      etc  = et_e(xc,yc)*1.01
 
       ! Constructing the vector of conserved variables
       utmp(1) = rhoc
       utmp(2) = rhoc*uc
       utmp(3) = rhoc*vc
       utmp(4) = etc
+      !utmp(1) = 0.5d0
+      !utmp(2) = 0.5d0*1.0d0
+      !utmp(3) = 0.5d0*0.1d0
+      !utmp(4) = 0.5d0*0.5d0
 
       ! Setting primitive state
       w0(i,j,:) = u_to_w(utmp,g)

@@ -116,12 +116,11 @@ module flux
 
       ! Computing the flux
       f(1) = 0.0d0
-      f(2) = n(1)*tauxx + n(2)*tauxy
-      f(3) = n(1)*tauxy + n(2)*tauyy
+      f(2) = n(1)*tauxx  + n(2)*tauxy
+      f(3) = n(1)*tauxy  + n(2)*tauyy
       f(4) = n(1)*thetax + n(2)*thetay
 
     end function flux_visc_state
-
 
     !------------------------------------------------------
     ! Function for computing the viscous fluxes along
