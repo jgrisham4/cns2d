@@ -1,15 +1,15 @@
 program ns_validation
   use mesh_class, only : mesh,read_from_file,preprocess
-  use solvers,    only : solver,initialize,solve_feuler,solve_rk4
+  use solvers,    only : solver,initialize,solve_steady
   use mms,        only : rho_e,u_e,v_e,et_e
   use utils,      only : u_to_w
   implicit none
-  double precision, parameter :: g = 1.4d0
-  double precision, parameter :: R = 1.0d0
-  double precision :: dt,t_final,xc,yc,xerr,yerr
-  double precision :: rhoc,uc,vc,etc,utmp(4),winfty(4)
+  double precision, parameter   :: g = 1.4d0
+  double precision, parameter   :: R = 1.0d0
+  double precision              :: dt,t_final,xc,yc,xerr,yerr
+  double precision              :: rhoc,uc,vc,etc,utmp(4),winfty(4),tol,cfl
   double precision, allocatable :: w0(:,:,:)
-  integer :: aerr,i,j,bcs(4)
+  integer                       :: aerr,i,j,bcs(4),niter
 
   ! Creating mesh and solver objects
   type(mesh)   :: grid
@@ -30,8 +30,11 @@ program ns_validation
   end if
 
   ! Setting time step and final time
-  dt = 1.0e-12
-  t_final = 1.0e-6
+  cfl     = 0.0d0  ! Not used for now
+  t_final = 0.0d0  ! Not used
+  tol     = 1.0e-10
+  dt      = 1.0e-8
+  niter   = 50000
 
   ! Setting initial guess using random noise added to the initial guess
   winfty(:) = 0.0d0
@@ -72,9 +75,13 @@ program ns_validation
   bcs(:) = 2000
 
   ! Initializing solver
-  call initialize(ns_solver,grid,dt,t_final,g,R,w0,winfty,bcs,"none",.true.)
+  call initialize(ns_solver,grid,dt,t_final,g,R,w0,winfty,bcs,"none",.true.,niter,tol,cfl)
 
   ! Solving the problem
-  call solve_feuler(ns_solver,1000)
+  call solve_steady(ns_solver)
+
+  ! Computing the L2 norm of the error
+
+  ! Writing results to file
 
 end program ns_validation

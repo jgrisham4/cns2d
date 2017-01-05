@@ -5,7 +5,7 @@ LIBNAME = libcns2d
 #SRC_FILES = $(wildcard ../src/*.f90)
 LFLAGS = -L/share/CGNS-intel/build/lib -L../lib
 LIBS = -lcns2d -lcgns
-SRC_FILES = gas_properties.f90 mms.f90 utils.f90 mesh_class.f90 limiters.f90 grad.f90 flux.f90 riemann.f90 solvers.f90
+SRC_FILES = gas_properties.f90 mms.f90 utils.f90 mesh_class.f90 linalg.f90 limiters.f90 grad.f90 flux.f90 riemann.f90 solvers.f90
 OBJ_FILES = $(SRC_FILES:.f90=.o)
 TARGETS = $(LIBNAME) cns2d
 

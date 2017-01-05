@@ -2,15 +2,15 @@ program cns2d
 
   ! Modules
   use mesh_class, only: mesh,read_from_file,preprocess
-  use solvers,    only: solver, initialize,solve_feuler,solve_rk4
+  use solvers,    only: solver, initialize,solve_feuler,solve_rk4,solve_steady
   implicit none
 
   ! Namelist variables
   logical            :: viscous_terms
   character (len=30) :: mesh_file,method,limiter
   double precision   :: u_inf,v_inf,p_inf,rho_inf
-  double precision   :: g,C1,S,final_time,time_step,R
-  integer            :: bcids(4),write_freq
+  double precision   :: g,C1,S,final_time,time_step,R,cfl,tol
+  integer            :: bcids(4),write_freq,niter
 
   ! Local variables
   type(mesh)                    :: grid
@@ -24,7 +24,7 @@ program cns2d
   namelist /mesh_inputs/mesh_file
   namelist /freestream_properties/u_inf,v_inf,p_inf,rho_inf
   namelist /gas_properties/g,C1,S,R
-  namelist /time_advancement/method,final_time,time_step
+  namelist /time_advancement/method,final_time,time_step,niter,tol,cfl
   namelist /boundary_conditions/bcids
   namelist /slope_limiter/limiter
   namelist /output/write_freq
@@ -114,7 +114,7 @@ program cns2d
   end do
 
   ! Initializing solver
-  call initialize(solv,grid,time_step,final_time,g,R,w0,winfty,bcids,limiter,viscous_terms)
+  call initialize(solv,grid,time_step,final_time,g,R,w0,winfty,bcids,limiter,viscous_terms,niter,tol,cfl)
 
   ! Solving the problem
   if (method.eq."forward_euler") then

@@ -9,7 +9,7 @@
 module utils
   implicit none
   private
-  public::w_to_u,u_to_w,reflect,nvec,compute_elem_max,compute_elem_min
+  public :: w_to_u,u_to_w,reflect,nvec,compute_elem_max,compute_elem_min
 
   contains
 
@@ -201,5 +201,4 @@ module utils
       end do
 
     end function compute_elem_min
-
 end module utils

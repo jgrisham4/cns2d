@@ -21,6 +21,7 @@ module solvers
   use grad,       only : compute_gradient
   use riemann,    only : roe,rotated_rhll
   use mms,        only : s_continuity,s_xmom,s_ymom,s_energy,rho_e,u_e,v_e,et_e,dudx_e,dudy_e,dvdx_e,dvdy_e,dTdx_e,dTdy_e
+  use linalg,     only : norml2
   implicit none
   private :: apply_bcs
   public  :: solver,initialize,solve_feuler,solve_rk4,solve_steady,residual_inv,write_results_cgns,write_results_tec
@@ -30,8 +31,11 @@ module solvers
   !---------------------------------------------------------
   type solver
     integer               :: ntsteps   ! Number of time steps
+    integer               :: niter     ! Number of iterations used for steady flow solves
     integer, dimension(4) :: bcids     ! BC identifiers
     double precision      :: dt        ! Time step
+    double precision      :: cfl       ! cfl number - only used for steady flows
+    double precision      :: tol       ! Tolerance used to monitor convergence to steady state
     double precision      :: tfinal    ! Final time
     double precision      :: g         ! Ratio of specific heats
     double precision      :: R         ! Ideal gas constant for air
@@ -47,7 +51,7 @@ module solvers
     ! Subroutine which initializes solution, i.e., allocates
     ! memory and sets up some important variables
     !---------------------------------------------------------
-    subroutine initialize(this,m,delta_t,t_final,gam,R,w0,winf,bcidents,lim,visc)
+    subroutine initialize(this,m,delta_t,t_final,gam,R,w0,winf,bcidents,lim,visc,niter,tol,cfl)
       implicit none
       type(solver),     intent(inout)           :: this
       type(mesh),       intent(in)              :: m
@@ -57,6 +61,9 @@ module solvers
       integer,          intent(in)              :: bcidents(4)
       character (len=*),intent(in)              :: lim
       logical,          intent(in)              :: visc
+      integer,          intent(in)              :: niter
+      double precision, intent(in)              :: tol  ! Tolerance used to monitor convergence
+      double precision, intent(in)              :: cfl
       double precision, allocatable             :: u0(:,:,:)
       integer                                   :: allocate_err,i,j
 
@@ -72,8 +79,11 @@ module solvers
       this%ntsteps = nint(t_final/delta_t)
       this%bcids   = bcidents
       this%limiter = lim
-      this%is_visc    = visc
-      write (*,'(a,i7)') "number of time steps: ", this%ntsteps
+      this%is_visc = visc
+      this%niter   = niter
+      this%tol     = tol
+      this%cfl     = cfl
+      !write (*,'(a,i7)') "number of time steps: ", this%ntsteps
 
       ! Converting initial condition to conserved variables
       ! (includes ghost cells)
@@ -324,21 +334,25 @@ module solvers
     end subroutine solve_rk4
 
     !---------------------------------------------------------
-    ! Subroutine for solving a steady problem -- forward
-    ! euler time stepping is used
+    ! Subroutine for solving a steady problem -- the forward
+    ! Euler method is used to advance in time.
     !---------------------------------------------------------
     subroutine solve_steady(this)
       implicit none
-      type(solver), intent(inout) :: this
-      integer, intent(in) :: write_freq
-      double precision, allocatable :: u(:,:,:), resid(:,:,:)
-      character (len=30) :: tecname
-      integer :: i,j,k,aer
+      type(solver), intent(inout)   :: this
+      double precision, allocatable :: resid(:,:,:), eqn_resids(:,:)
+      character (len=30)            :: tecname
+      integer                       :: i,j,k,l,aer
 
       ! Allocating memory for the solution and the residual
       allocate(resid(this%grid%nelemi,this%grid%nelemj,4),stat=aer)
       if (aer.ne.0) then
-        print *, "Error: can't allocate memory for resid in solve_feuler."
+        print *, "Error: can't allocate memory for resid in solve_steady."
+        stop
+      end if
+      allocate(eqn_resids(this%niter,4),stat=aer)
+      if (aer.ne.0) then
+        print *, "Error: can't allocate memory for eqn_resids in solve_steady."
         stop
       end if
 
@@ -347,21 +361,16 @@ module solvers
       print *, "Writing data to ", tecname
       call write_results_tec(this,tecname)
 
+      ! Setting initial residuals
+      eqn_resids(1,:) = 1.0d0
+      write(*,'(a,i6)') "iteration: ", 0
+      write(*,'(a,4(es12.5,x))') "residuals: ", eqn_resids(1,:)
+
       ! Marching in time
+      k = 1
       if (this%is_visc.eq..true.) then
-        do k=1,this%ntsteps
-
-          ! Printing some information
-          !write(*,'(a,i5,a,es12.5)') "timestep: ", k, " t = ", dble(k)*this%dt
-          ! Need to write iteration and residual of continuity, x-mom, y-mom, and energy
-          write(*,'(a,i6)') "iteration: "
-
-          ! Writing current solution
-          if (mod(k,write_freq).eq.0) then
-            write (tecname, '(a,i0,a)') "sol", (k), ".tec"
-            print *, "Writing data to ", tecname
-            call write_results_tec(this,tecname)
-          end if
+        do while (k.le.this%niter)
+        !do while ((any(eqn_resids(k,:).ge.this%tol)).and.(k.le.this%niter))
 
           ! Copying old solution
           do j=1,this%grid%nelemj
@@ -373,6 +382,11 @@ module solvers
           ! Computing residual
           call residual_visc(this,resid)
 
+          ! Computing the residuals
+          do l=1,4
+            eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
+          end do
+
           ! Advancing in time
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
@@ -380,19 +394,16 @@ module solvers
             end do
           end do
 
+          ! Printing some information
+          write(*,'(a,i6)',advance='no') "iteration: ", k
+          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)
+
+          ! Incrementing counter
+          k = k + 1
+
         end do
       else
-        do k=1,this%ntsteps
-
-          ! Printing some information
-          write(*,'(a,i5,a,es12.5)') "timestep: ", k, " t = ", dble(k)*this%dt
-
-          ! Writing current solution
-          if (mod(k,write_freq).eq.0) then
-            write (tecname, '(a,i0,a)') "sol", (k), ".tec"
-            print *, "Writing data to ", tecname
-            call write_results_tec(this,tecname)
-          end if
+        do while ((any(eqn_resids(k,:).ge.this%tol)).and.(k.le.this%niter))
 
           ! Copying old solution
           do j=1,this%grid%nelemj
@@ -404,6 +415,11 @@ module solvers
           ! Computing residual
           call residual_inv(this,resid)
 
+          ! Computing the residuals
+          do l=1,4
+            eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
+          end do
+
           ! Advancing in time
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
@@ -411,8 +427,27 @@ module solvers
             end do
           end do
 
+          ! Printing some information
+          write(*,'(a,i6)',advance='no') "iteration: ", k
+          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)
+
+          ! Incrementing counter
+          k = k + 1
+
         end do
       end if
+
+      ! Writing final results to file
+      tecname = "solution.tec"
+      print *, "Writing final solution to ", tecname
+      call write_results_tec(this,tecname)
+
+      ! Writing convergence history to file
+      open(2,file="residuals.dat")
+      do i=1,(k-1)
+        write(2,'(i6,4(es12.5,x))') i, eqn_resids(i,:)
+      end do
+      close(2)
 
     end subroutine solve_steady
 
