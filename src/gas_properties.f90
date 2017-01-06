@@ -8,6 +8,13 @@ module gas_properties
   private
   public :: mu, k
 
+  ! Assuming constant Prandtl number
+  double precision, parameter :: Pr = 0.715d0
+
+  ! Constants used in MMS
+  !double precision, parameter :: Pr = 1.05d0  ! MMS
+  !double precision, parameter :: mu_mms = 0.3d0
+
   contains
 
     !---------------------------------------------------------
@@ -19,6 +26,7 @@ module gas_properties
       double precision, intent(in) :: T
       double precision             :: mu
       mu = 1.45d0*T**(3.0d0/2.0d0)/(T+110.0d0)*1.0e-6
+      !mu = mu_mms
     end function mu
 
     !---------------------------------------------------------
@@ -26,11 +34,12 @@ module gas_properties
     ! temperature, Prandtl number and the specific heat at
     ! constant pressure.
     !---------------------------------------------------------
-    pure function k(T,Pr,cp)
+    pure function k(T,g,R)
       implicit none
-      double precision, intent(in) :: T,Pr,cp
-      double precision             :: k
-      k = cp/Pr*mu(T)
+      double precision, intent(in) :: T,g,R
+      double precision             :: k,cp
+      cp = g*R/(g-1.0d0)
+      k = mu(T)*cp/Pr
     end function k
 
 end module gas_properties

@@ -228,3 +228,14 @@ solution.  I need to finish implementing the solve_steady subrouine.
 01-04-2017 11:02 pm
 I finished the solve_steady subroutine, but the convergence is really slow.  I need
 to implement local time stepping now.
+
+-------------------------
+
+01/06/2017 12:32 am
+I'm not sure what is wrong with the manufactured solution.  I'm going to try
+to solve for the boundary layer over a flat plate in the incompressible
+regime.  I can't find any mistakes in what I did with the method of manufactured
+solution.  rho*v looks strange, as does E_t.  I'm not sure what's wrong.  I need
+to either translate the flatplate grid from Plot3D to CGNS or add a function
+to read the mesh from the Plot3D file.  Then, I need to finish implementing the
+no-slip wall BC in solvers.f90.

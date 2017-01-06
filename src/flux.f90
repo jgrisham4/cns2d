@@ -12,10 +12,6 @@ module flux
   private
   public :: fluxax, fluxay, flux_adv, flux_visc, flux_visc_state
 
-  ! Constants used in MMS
-  double precision, parameter :: k_mms  = 1.0d0
-  double precision, parameter :: mu_mms = 0.3d0
-
   contains
 
     !------------------------------------------------------
@@ -91,18 +87,17 @@ module flux
     ! Function for computing the viscous fluxes along
     ! a face when the state at the face is provided.
     !------------------------------------------------------
-    pure function flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,n) result(f)
+    pure function flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,n,g,R) result(f)
       implicit none
       double precision, intent(in) :: u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,n(2)
+      double precision, intent(in) :: g,R
       double precision             :: f(4),m,kval,lambda
       double precision             :: tauxx,tauxy,tauyy
       double precision             :: thetax,thetay
 
       ! Using Stokes' Theorem to compute lambda
-      !m     = mu(T)
-      !k     = k(T)
-      m      = mu_mms        ! ONLY FOR METHOD OF MANUFACTURED SOLUTIONS
-      kval   = k_mms         ! ONLY FOR METHOD OF MANUFACTURED SOLUTIONS
+      m     = mu(T)
+      kval  = k(T,g,R)
       lambda = -2.0d0/3.0d0*m
 
       ! Computing components of shear stress tensor
@@ -155,7 +150,7 @@ module flux
       dTdy = 0.5d0*(elemL%dTdy    + elemR%dTdy)
 
       ! Calling function to compute the viscous fluxes
-      f = flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,n)
+      f = flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,n,g,R)
 
     end function flux_visc
 

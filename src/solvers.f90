@@ -14,13 +14,13 @@
 
 module solvers
   use cgns
-  use mesh_class, only : mesh
-  use utils,      only : u_to_w, w_to_u, compute_elem_max, compute_elem_min
-  use limiters,   only : minmod, vanleer
-  use flux,       only : fluxax, fluxay, flux_adv, flux_visc_state, flux_visc
+  use mesh_class, only : mesh,compute_max_timesteps_visc
+  use utils,      only : u_to_w,w_to_u,compute_elem_max,compute_elem_min
+  use limiters,   only : minmod,vanleer
+  use flux,       only : fluxax,fluxay,flux_adv,flux_visc_state,flux_visc
   use grad,       only : compute_gradient
   use riemann,    only : roe,rotated_rhll
-  use mms,        only : s_continuity,s_xmom,s_ymom,s_energy,rho_e,u_e,v_e,et_e,dudx_e,dudy_e,dvdx_e,dvdy_e,dTdx_e,dTdy_e
+  !use mms,        only : s_continuity,s_xmom,s_ymom,s_energy,rho_e,u_e,v_e,et_e,dudx_e,dudy_e,dvdx_e,dvdy_e,dTdx_e,dTdy_e
   use linalg,     only : norml2
   implicit none
   private :: apply_bcs
@@ -340,7 +340,7 @@ module solvers
     subroutine solve_steady(this)
       implicit none
       type(solver), intent(inout)   :: this
-      double precision, allocatable :: resid(:,:,:), eqn_resids(:,:)
+      double precision, allocatable :: resid(:,:,:), eqn_resids(:,:),tmp(:,:,:)
       character (len=30)            :: tecname
       integer                       :: i,j,k,l,aer
 
@@ -355,11 +355,19 @@ module solvers
         print *, "Error: can't allocate memory for eqn_resids in solve_steady."
         stop
       end if
+      allocate(tmp(this%grid%nelemi,this%grid%nelemj,4),stat=aer)
+      if (aer.ne.0) then
+        print *, "Error: can't allocate memory for tmp in solve_steady."
+        stop
+      end if
 
       ! Writing initial solution
       tecname = "initial.tec"
       print *, "Writing data to ", tecname
       call write_results_tec(this,tecname)
+
+      ! Computing time steps
+      call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
 
       ! Setting initial residuals
       eqn_resids(1,:) = 1.0d0
@@ -382,17 +390,28 @@ module solvers
           ! Computing residual
           call residual_visc(this,resid)
 
-          ! Computing the residuals
-          do l=1,4
-            eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
-          end do
-
           ! Advancing in time
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%dt*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%grid%elem(i,j)%dt_max*resid(i,j,:)
             end do
           end do
+
+          ! Computing the residuals
+          !do l=1,4
+          !  eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
+          !end do
+          do j=1,this%grid%nelemj
+            do i=1,this%grid%nelemi
+              tmp(i,j,:) = this%grid%elem(i,j)%u - this%grid%elem(i,j)%u0
+            end do
+          end do
+          do l=1,4
+            eqn_resids(k,l) = norml2(this%grid,tmp(:,:,l))
+          end do
+
+          ! Updating local time steps
+          call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
 
           ! Printing some information
           write(*,'(a,i6)',advance='no') "iteration: ", k
@@ -423,9 +442,12 @@ module solvers
           ! Advancing in time
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%dt*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%grid%elem(i,j)%dt_max*resid(i,j,:)
             end do
           end do
+
+          ! Updating local time steps
+          !call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
 
           ! Printing some information
           write(*,'(a,i6)',advance='no') "iteration: ", k
@@ -545,9 +567,54 @@ module solvers
 
         end do
 
+      else if (this%bcids(1).eq.1004) then
+
+        ! Enforcing no-slip wall boundary condition
+        do i=1,this%grid%nelemi
+
+          ! Switching between inviscid and viscous wall for x < 0 and x >= 0, respectively
+          if (this%grid%elem(i,j)%xc.lt.0.0d0) then
+
+            ! Setting state in the ghost cells
+            this%grid%elem(i,j-1)%u(1) =  this%grid%elem(i,j)%u(1)
+            this%grid%elem(i,j-1)%u(2) = -this%grid%elem(i,j)%u(2)
+            this%grid%elem(i,j-1)%u(3) = -this%grid%elem(i,j)%u(3)
+            this%grid%elem(i,j-1)%u(4) =  this%grid%elem(i,j)%u(4)
+            this%grid%elem(i,j-2)%u(1) =  this%grid%elem(i,j+1)%u(1)
+            this%grid%elem(i,j-2)%u(2) = -this%grid%elem(i,j+1)%u(2)
+            this%grid%elem(i,j-2)%u(3) = -this%grid%elem(i,j+1)%u(3)
+            this%grid%elem(i,j-2)%u(4) =  this%grid%elem(i,j+1)%u(4)
+
+            ! Finding the gradient using first-order accurate differences
+            ds = sqrt((this%grid%elem(i,j-1)%xc - this%grid%elem(i,j-2)%xc)**2 + &
+                      (this%grid%elem(i,j-1)%yc - this%grid%elem(i,j-2)%yc)**2)
+            duds = (this%grid%elem(i,j-1)%u - this%grid%elem(i,j-2)%u)/ds
+
+            ! Computing the left state of the interface
+            rL(1) = this%grid%edges_h(i,j)%xm - this%grid%elem(i,j-1)%xc
+            rL(2) = this%grid%edges_h(i,j)%ym - this%grid%elem(i,j-1)%yc
+            this%grid%edges_h(i,j)%uL = this%grid%elem(i,j-1)%u + duds*sqrt(rL(1)**2 + rL(2)**2)
+
+            ! Computing the right state of the interface
+            rR(1) = this%grid%edges_h(i,j)%xm - this%grid%elem(i,j)%xc
+            rR(2) = this%grid%edges_h(i,j)%ym - this%grid%elem(i,j)%yc
+            this%grid%edges_h(i,j)%uR = this%grid%elem(i,j)%u + &
+                                        this%grid%elem(i,j)%dudx*rR(1) + &
+                                        this%grid%elem(i,j)%dudy*rR(2)
+
+            ! Solving the Riemann problem at the interface
+            this%grid%edges_h(i,j)%flux = roe(this%grid%edges_h(i,j)%uL,this%grid%edges_h(i,j)%uR,this%grid%elem(i,j-1)%n(:,3))
+
+          else
+
+            ! Need to pick up here and finish implementing the no-slip wall BC.
+
+          end if
+
       else if (this%bcids(1).eq.2000) then
 
         ! Method of manufactured solution BC
+        j = 1
         do i=1,this%grid%nelemi
 
           ! Computing the exact solution at the midpoint of face
@@ -571,8 +638,8 @@ module solvers
 
           ! Computing the primitive variables at the face and computing the flux
           wtmp = u_to_w(utmp,this%g)
-          this%grid%edges_h(i,j)%flux = -(flux_adv(wtmp,this%grid%elem(i,j)%n(:,1),this%g) - &
-            flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,this%grid%elem(i,j)%n(:,1)))
+          this%grid%edges_h(i,j)%flux = flux_adv(wtmp,-this%grid%elem(i,j)%n(:,1),this%g) - &
+            flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,-this%grid%elem(i,j)%n(:,1),this%g,this%R)
 
         end do
 
@@ -681,7 +748,7 @@ module solvers
           ! Computing primitive variables at the face and computing the flux
           wtmp = u_to_w(utmp,this%g)
           this%grid%edges_v(i+1,j)%flux = flux_adv(wtmp,this%grid%elem(i,j)%n(:,2),this%g) - &
-            flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,this%grid%elem(i,j)%n(:,2))
+            flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,this%grid%elem(i,j)%n(:,2),this%g,this%R)
 
         end do
 
@@ -803,7 +870,7 @@ module solvers
           ! Computing primitive variables at the face and computing the flux
           wtmp = u_to_w(utmp,this%g)
           this%grid%edges_h(i,j+1)%flux = flux_adv(wtmp,this%grid%elem(i,j)%n(:,3),this%g) - &
-            flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,this%grid%elem(i,j)%n(:,3))
+            flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,this%grid%elem(i,j)%n(:,3),this%g,this%R)
 
         end do
 
@@ -911,8 +978,8 @@ module solvers
 
           ! Computing the primitive variables at the face and computing the flux
           wtmp = u_to_w(utmp,this%g)
-          this%grid%edges_v(i,j)%flux = -(flux_adv(wtmp,this%grid%elem(i,j)%n(:,4),this%g) - &
-            flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,this%grid%elem(i,j)%n(:,4)))
+          this%grid%edges_v(i,j)%flux = flux_adv(wtmp,-this%grid%elem(i,j)%n(:,4),this%g) - &
+            flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,-this%grid%elem(i,j)%n(:,4),this%g,this%R)
 
         end do
 
@@ -1210,15 +1277,15 @@ module solvers
           !this%grid%edges_v(i,j)%flux = rotated_rhll(this%grid%edges_v(i,j)%uL,this%grid%edges_v(i,j)%uR,this%grid%elem(i-1,j)%n(:,2))
 
           ! Checking for NaNs
-          do k=1,4
-            if (isnan(this%grid%edges_v(i,j)%flux(k))) then
-              write(*,'(a)') "NaNs encountered after solving Riemann problem for vertical faces"
-              write(*,'(a,i4,a,i4,a,i4)') "i = ", i, " j = ", j , " k = ", k
-              write(*,'(2(a,f12.5))') "x_midpoint = ", this%grid%edges_v(i,j)%xm, &
-                " y_midpoint = ", this%grid%edges_v(i,j)%ym
-              stop
-            end if
-          end do
+          !do k=1,4
+          !  if (isnan(this%grid%edges_v(i,j)%flux(k))) then
+          !    write(*,'(a)') "NaNs encountered after solving Riemann problem for vertical faces"
+          !    write(*,'(a,i4,a,i4,a,i4)') "i = ", i, " j = ", j , " k = ", k
+          !    write(*,'(2(a,f12.5))') "x_midpoint = ", this%grid%edges_v(i,j)%xm, &
+          !      " y_midpoint = ", this%grid%edges_v(i,j)%ym
+          !    stop
+          !  end if
+          !end do
 
         end do
       end do
@@ -1232,15 +1299,15 @@ module solvers
           !this%grid%edges_h(i,j)%flux = rotated_rhll(this%grid%edges_h(i,j)%uL,this%grid%edges_h(i,j)%uR,this%grid%elem(i,j-1)%n(:,3))
 
           ! Checking for NaNs
-          do k=1,4
-            if (isnan(this%grid%edges_h(i,j)%flux(k))) then
-              write(*,'(a)') "NaNs encountered after solving Riemann problem for horizontal faces"
-              write(*,'(a,i4,a,i4,a,i4)') "i = ", i, " j = ", j , " k = ", k
-              write(*,'(2(a,f12.5))') "x_midpoint = ", this%grid%edges_h(i,j)%xm, &
-                " y_midpoint = ", this%grid%edges_h(i,j)%ym
-              stop
-            end if
-          end do
+          !do k=1,4
+          !  if (isnan(this%grid%edges_h(i,j)%flux(k))) then
+          !    write(*,'(a)') "NaNs encountered after solving Riemann problem for horizontal faces"
+          !    write(*,'(a,i4,a,i4,a,i4)') "i = ", i, " j = ", j , " k = ", k
+          !    write(*,'(2(a,f12.5))') "x_midpoint = ", this%grid%edges_h(i,j)%xm, &
+          !      " y_midpoint = ", this%grid%edges_h(i,j)%ym
+          !    stop
+          !  end if
+          !end do
 
         end do
       end do
@@ -1332,39 +1399,39 @@ module solvers
         end do
       end do
 
-      !! Computing residual
-      !do j=1,this%grid%nelemj
-      !  do i=1,this%grid%nelemi
-      !    resid(i,j,:) = -1.0d0/(this%grid%elem(i,j)%area)* &
-      !      (-this%grid%edges_h(i,j)%flux*this%grid%edges_h(i,j)%length + &
-      !      this%grid%edges_h(i,j+1)%flux*this%grid%edges_h(i,j+1)%length - &
-      !      this%grid%edges_v(i,j)%flux*this%grid%edges_v(i,j)%length + &
-      !      this%grid%edges_v(i+1,j)%flux*this%grid%edges_v(i+1,j)%length)
-      !  end do
-      !end do
-
-      ! Computing residual - METHOD OF MANUFACTURED SOLUTIONS
+      ! Computing residual
       do j=1,this%grid%nelemj
         do i=1,this%grid%nelemi
-
-          ! Computing source terms
-          xtmp   = this%grid%elem(i,j)%xc
-          ytmp   = this%grid%elem(i,j)%yc
-          src(1) = s_continuity(xtmp,ytmp)
-          src(2) = s_xmom(xtmp,ytmp)
-          src(3) = s_ymom(xtmp,ytmp)
-          src(4) = s_energy(xtmp,ytmp)
-
-          ! Forming residual
-          resid(i,j,:) = -1.0d0/(this%grid%elem(i,j)%area)* &
-            (-this%grid%edges_h(i,j)%flux*this%grid%edges_h(i,j)%length + &
+          resid(i,j,:) = -1.0d0/(this%grid%elem(i,j)%area)*                 &
+            (-this%grid%edges_h(i,j)%flux*this%grid%edges_h(i,j)%length +   &
             this%grid%edges_h(i,j+1)%flux*this%grid%edges_h(i,j+1)%length - &
-            this%grid%edges_v(i,j)%flux*this%grid%edges_v(i,j)%length + &
-            this%grid%edges_v(i+1,j)%flux*this%grid%edges_v(i+1,j)%length - &
-            src*this%grid%elem(i,j)%area)
-
+            this%grid%edges_v(i,j)%flux*this%grid%edges_v(i,j)%length +     &
+            this%grid%edges_v(i+1,j)%flux*this%grid%edges_v(i+1,j)%length)
         end do
       end do
+
+      ! Computing residual - METHOD OF MANUFACTURED SOLUTIONS
+      !do j=1,this%grid%nelemj
+      !  do i=1,this%grid%nelemi
+
+      !    ! Computing source terms
+      !    xtmp   = this%grid%elem(i,j)%xc
+      !    ytmp   = this%grid%elem(i,j)%yc
+      !    src(1) = s_continuity(xtmp,ytmp)
+      !    src(2) = s_xmom(xtmp,ytmp)
+      !    src(3) = s_ymom(xtmp,ytmp)
+      !    src(4) = s_energy(xtmp,ytmp)
+
+      !    ! Forming residual
+      !    resid(i,j,:) = -1.0d0/(this%grid%elem(i,j)%area)*                 &
+      !      (-this%grid%edges_h(i,j)%flux*this%grid%edges_h(i,j)%length +   &
+      !      this%grid%edges_h(i,j+1)%flux*this%grid%edges_h(i,j+1)%length - &
+      !      this%grid%edges_v(i,j)%flux*this%grid%edges_v(i,j)%length +     &
+      !      this%grid%edges_v(i+1,j)%flux*this%grid%edges_v(i+1,j)%length - &
+      !      src*this%grid%elem(i,j)%area)
+
+      !  end do
+      !end do
 
     end subroutine residual_visc
 

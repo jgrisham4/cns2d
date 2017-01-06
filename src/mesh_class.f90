@@ -4,10 +4,11 @@
 
 module mesh_class
   use cgns
-  use utils, only : reflect, nvec
+  use utils,          only : reflect, nvec, u_to_w
+  use gas_properties, only : mu, k
   implicit none
   private
-  public :: mesh,element,read_from_file,write_to_tec,preprocess
+  public :: mesh,element,read_from_file,write_to_tec,preprocess,compute_max_timesteps_visc
 
   !---------------------------------------------------------
   ! Edge class definition
@@ -42,6 +43,7 @@ module mesh_class
     double precision :: dVdy(2)  ! Gradient of velocity in y-direction
     double precision :: dTdy     ! Gradient of T in y-direction
     double precision :: wi(4,4)  ! Primitive states at interfaces (1-bottom, 2-right,...)
+    double precision :: dt_max   ! Max allowable time step for the element
   end type element
 
   !---------------------------------------------------------
@@ -568,5 +570,66 @@ module mesh_class
       print *, "Done preprocessing mesh."
 
     end subroutine preprocess
+
+    !-------------------------------------------------------
+    ! Subroutine for computing the max time step for each
+    ! element.  This subroutine assumes that the
+    ! conservative variables are set for the element.
+    !-------------------------------------------------------
+    subroutine compute_max_timesteps_visc(grid,g,R,cfl)
+      implicit none
+      type(mesh), intent(inout)    :: grid                 ! Mesh object
+      double precision, intent(in) :: g                    ! Ratio of specific heats
+      double precision, intent(in) :: R                    ! Gas constant
+      double precision, intent(in) :: cfl                  ! CFL number
+      double precision             :: dS_x,dS_y            ! Averaged face area
+      double precision             :: nhat_x(2),nhat_y(2)  ! Averaged normal vectors
+      double precision             :: lambda_cx,lambda_cy  ! Spectral radii of conv. flux Jac.
+      double precision             :: lambda_vx,lambda_vy  ! Spectral radii of visc. flux Jac.
+      double precision             :: c                    ! Local speed of sound
+      double precision             :: w(4)                 ! Vector of primitive variables
+      double precision             :: cp,Pr,T,m,term1
+      integer                      :: i,j
+
+      ! Looping over elements
+      do j=1,grid%nelemj
+        do i=1,grid%nelemi
+
+          ! Converting conservative to primitive
+          w = u_to_w(grid%elem(i,j)%u,g)
+
+          ! Computing the speed of sound for the element
+          c = sqrt(g*w(4)/w(1))
+
+          ! Finding averaged normal vectors
+          nhat_x = 0.5d0*(grid%elem(i,j)%n(:,2) - grid%elem(i,j)%n(:,4))
+          nhat_y = 0.5d0*(grid%elem(i,j)%n(:,3) - grid%elem(i,j)%n(:,1))
+
+          ! Finding averaged face areas
+          dS_x = 0.5d0*(grid%edges_h(i,j)%length + grid%edges_h(i+1,j)%length)
+          dS_y = 0.5d0*(grid%edges_v(i,j)%length + grid%edges_v(i,j+1)%length)
+
+          ! Computing abs(max(eigenvalue of inviscid flux Jacobian)) also known as
+          ! spectral radii of inviscid flux Jacobian
+          lambda_cx = (abs(w(2)*nhat_x(1) + w(3)*nhat_x(2)) + c)*dS_x
+          lambda_cy = (abs(w(2)*nhat_y(1) + w(3)*nhat_y(2)) + c)*dS_y
+
+          ! Computing an approximation to the spectral radii of the viscous flux
+          ! Jacobian (Section 6.1.4 in CFD book by Blazek)
+          cp = g*R/(g-1.0d0)
+          T  = w(4)/(w(1)*R)
+          m  = mu(T)
+          Pr = m*cp/k(T,g,R)
+          term1 = max(4.0d0/(3.0d0*w(1)),g/w(1))*(m/Pr)
+          lambda_vx = term1*dS_x**2/grid%elem(i,j)%area
+          lambda_vy = term1*dS_y**2/grid%elem(i,j)%area
+
+          ! Computing time step
+          grid%elem(i,j)%dt_max = cfl*grid%elem(i,j)%area/(lambda_cx+lambda_cy+lambda_vx+lambda_vy)
+
+        end do
+      end do
+
+    end subroutine compute_max_timesteps_visc
 
 end module mesh_class

@@ -30,10 +30,10 @@ program ns_validation
   end if
 
   ! Setting time step and final time
-  cfl     = 0.0d0  ! Not used for now
+  dt      = 1.0d0  ! Not used
   t_final = 0.0d0  ! Not used
+  cfl     = 0.0001d0
   tol     = 1.0e-10
-  dt      = 1.0e-8
   niter   = 50000
 
   ! Setting initial guess using random noise added to the initial guess
