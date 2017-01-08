@@ -239,3 +239,28 @@ solution.  rho*v looks strange, as does E_t.  I'm not sure what's wrong.  I need
 to either translate the flatplate grid from Plot3D to CGNS or add a function
 to read the mesh from the Plot3D file.  Then, I need to finish implementing the
 no-slip wall BC in solvers.f90.
+
+-------------------------
+
+01/07/2017 6:55 pm
+The compressible Navier-Stokes solver isn't converging.  I implemented no-slip
+wall BCs for the bottom wall only.  I used the Green-Gauss method for computing
+the gradient at the wall.  It is not converging.  I think I'm going to try local
+time stepping for the compression ramp problem and see what happens.
+
+-------------------------
+
+01/07/2017 9:40 pm
+The local time stepping doesn't seem to be working even for the inviscid cases.
+I'm not sure that it is implemented correctly.  I think I should try a multi-stage
+scheme instead of forward Euler.  I can also add the implicit residual smoothing
+relatively easily.  I need to check the values of the gradient at the wall for
+the no-slip condition too.
+
+-------------------------
+
+01/07/2017 11:56 pm
+Working on implementing Upwind Implicit Residual Smoothing (UIRS).  Need to pick
+up in acceleration.f90.  I tried a 3-stage method using the "optimized" stage
+coefficients given in the book by Blazek.  It is still not working.  I'm not
+sure what is wrong...

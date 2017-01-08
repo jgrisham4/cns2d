@@ -8,7 +8,7 @@
 
 &freestream_properties
   rho_inf = 1.255864e-1   ! kg/m^3
-  u_inf   = 680.348146    ! m/s
+  u_inf   = 1020.522219   ! m/s
   v_inf   = 0.0d0         ! m/s
   p_inf   = 10132.50      ! Pa
 /
@@ -26,7 +26,7 @@
   time_step  = 1.0d0         ! Seconds -- not used for steady flow solves
   niter      = 10000         ! Number of iterations -- only used for steady flows
   tol        = 1.0e-10       ! Used to monitor convergence -- only used for steady flow solves
-  cfl        = 0.0000001d0         ! Only used for steady flow solves
+  cfl        = 0.2d0         ! Only used for steady flow solves
 /
 
 &boundary_conditions

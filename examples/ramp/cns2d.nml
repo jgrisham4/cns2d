@@ -14,19 +14,23 @@
 /
 
 &gas_properties
-  g = 1.4d0        ! Ratio of specific heats
-  C1 = 1.458e-6    ! Constant for Sutherland's law
-  S = 110.0d0      ! Constant for Sutherland's law
+  g  = 1.4d0        ! Ratio of specific heats
+  R  = 287.0d0      ! Gas constant
+  C1 = 1.458e-6     ! Constant for Sutherland's law
+  S  = 110.0d0      ! Constant for Sutherland's law
 /
 
 &time_advancement
-  method     = "forward_euler"   ! Options are rk4 or forward_euler
-  final_time = 1.0e-8            ! Seconds
-  time_step  = 1.0e-12           ! Seconds
+  method     = "steady"          ! Options are rk4 or forward_euler or steady
+  final_time = 0.0d0             ! Seconds
+  time_step  = 1.0e-8           ! Seconds
+  niter      = 10000
+  tol        = 1.0e-10
+  cfl        = 0.01d0
 /
 
 &boundary_conditions
-  bcids(1) = 1003   ! bottom - strongly enforced slip wall
+  bcids(1) = 1002   ! bottom - slip wall
   bcids(2) = 1001   ! right  - extrapolate
   bcids(3) = 1000   ! top    - freestream
   bcids(4) = 1000   ! left   - freestream

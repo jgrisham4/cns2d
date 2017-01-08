@@ -14,13 +14,13 @@
 
 module solvers
   use cgns
-  use mesh_class, only : mesh,compute_max_timesteps_visc
-  use utils,      only : u_to_w,w_to_u,compute_elem_max,compute_elem_min
+  use mesh_class, only : mesh,compute_max_timesteps_visc,compute_max_timesteps_inv
+  use utils,      only : u_to_w,w_to_u,compute_elem_max,compute_elem_min,nvec
   use limiters,   only : minmod,vanleer
   use flux,       only : fluxax,fluxay,flux_adv,flux_visc_state,flux_visc
   use grad,       only : compute_gradient
   use riemann,    only : roe,rotated_rhll
-  !use mms,        only : s_continuity,s_xmom,s_ymom,s_energy,rho_e,u_e,v_e,et_e,dudx_e,dudy_e,dvdx_e,dvdy_e,dTdx_e,dTdy_e
+  use mms,        only : s_continuity,s_xmom,s_ymom,s_energy,rho_e,u_e,v_e,et_e,dudx_e,dudy_e,dvdx_e,dvdy_e,dTdx_e,dTdy_e
   use linalg,     only : norml2
   implicit none
   private :: apply_bcs
@@ -344,6 +344,11 @@ module solvers
       character (len=30)            :: tecname
       integer                       :: i,j,k,l,aer
 
+      ! Parameters used in multi-stage time-stepping
+      double precision, parameter   :: a1 = 0.1481d0
+      double precision, parameter   :: a2 = 0.4000d0
+      double precision, parameter   :: a3 = 1.0000d0
+
       ! Allocating memory for the solution and the residual
       allocate(resid(this%grid%nelemi,this%grid%nelemj,4),stat=aer)
       if (aer.ne.0) then
@@ -367,7 +372,11 @@ module solvers
       call write_results_tec(this,tecname)
 
       ! Computing time steps
-      call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
+      if (this%is_visc.eq..true.) then
+        call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
+      else
+        call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
+      end if
 
       ! Setting initial residuals
       eqn_resids(1,:) = 1.0d0
@@ -387,27 +396,36 @@ module solvers
             end do
           end do
 
-          ! Computing residual
+          ! Stage 1
           call residual_visc(this,resid)
-
-          ! Advancing in time
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%grid%elem(i,j)%dt_max*resid(i,j,:)
+              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%dt*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%grid%elem(i,j)%dt_max*resid(i,j,:)
+            end do
+          end do
+
+          ! Stage 2
+          call residual_visc(this,resid)
+          do j=1,this%grid%nelemj
+            do i=1,this%grid%nelemi
+              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%dt*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%grid%elem(i,j)%dt_max*resid(i,j,:)
+            end do
+          end do
+
+          ! Stage 3
+          call residual_visc(this,resid)
+          do j=1,this%grid%nelemj
+            do i=1,this%grid%nelemi
+              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%dt*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%grid%elem(i,j)%dt_max*resid(i,j,:)
             end do
           end do
 
           ! Computing the residuals
-          !do l=1,4
-          !  eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
-          !end do
-          do j=1,this%grid%nelemj
-            do i=1,this%grid%nelemi
-              tmp(i,j,:) = this%grid%elem(i,j)%u - this%grid%elem(i,j)%u0
-            end do
-          end do
           do l=1,4
-            eqn_resids(k,l) = norml2(this%grid,tmp(:,:,l))
+            eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
           end do
 
           ! Updating local time steps
@@ -422,7 +440,8 @@ module solvers
 
         end do
       else
-        do while ((any(eqn_resids(k,:).ge.this%tol)).and.(k.le.this%niter))
+        !do while ((all(eqn_resids(k,:).ge.this%tol)).and.(k.le.this%niter))
+        do while (k.le.this%niter)
 
           ! Copying old solution
           do j=1,this%grid%nelemj
@@ -431,23 +450,40 @@ module solvers
             end do
           end do
 
-          ! Computing residual
+          ! Stage 1
           call residual_inv(this,resid)
+          do j=1,this%grid%nelemj
+            do i=1,this%grid%nelemi
+              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%dt*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%grid%elem(i,j)%dt_max*resid(i,j,:)
+            end do
+          end do
+
+          ! Stage 2
+          call residual_inv(this,resid)
+          do j=1,this%grid%nelemj
+            do i=1,this%grid%nelemi
+              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%dt*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%grid%elem(i,j)%dt_max*resid(i,j,:)
+            end do
+          end do
+
+          ! Stage 3
+          call residual_inv(this,resid)
+          do j=1,this%grid%nelemj
+            do i=1,this%grid%nelemi
+              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%dt*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%grid%elem(i,j)%dt_max*resid(i,j,:)
+            end do
+          end do
 
           ! Computing the residuals
           do l=1,4
             eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
           end do
 
-          ! Advancing in time
-          do j=1,this%grid%nelemj
-            do i=1,this%grid%nelemi
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%grid%elem(i,j)%dt_max*resid(i,j,:)
-            end do
-          end do
-
           ! Updating local time steps
-          !call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
+          call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
 
           ! Printing some information
           write(*,'(a,i6)',advance='no') "iteration: ", k
@@ -473,23 +509,26 @@ module solvers
 
     end subroutine solve_steady
 
-    !---------------------------------------------------------
+    !-------------------------------------------------------------------------------------
     ! Subroutine for applying boundary conditions
     ! 1000 - farfield         (primitives specified)
     ! 1001 - extrapolate      (no information needed)
     ! 1002 - slip wall weak   (no information needed)
     ! 1003 - slip wall strong (no information needed)
-    ! 1004 - no-slip wall     (wall temperature, assumed adiabatic)
+    ! 1004 - no-slip wall     (assumed adiabatic) -- only implemented for bndry 1
     ! 2000 - mms solution     (Dirichlet along walls--state is set)
-    !---------------------------------------------------------
+    !-------------------------------------------------------------------------------------
     subroutine apply_bcs(this)
       implicit none
       type(solver), intent(inout)    :: this
       double precision, dimension(4) :: wextrap,uextrap,utmp,wtmp
-      double precision, dimension(4) :: duds
-      double precision               :: pw,ds,rL(2),rR(2),xtmp,ytmp
+      double precision, dimension(4) :: duds,w1,w2,w3,w4
+      double precision               :: n(4,2),length(4),area,um(4,2),dx,dy,nodes(4,2)
+      double precision               :: pw,ds,rL(2),rR(2),xtmp,ytmp,gradu(2),gradv(2)
       double precision               :: u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy
-      integer                        :: i,j
+      double precision               :: x1,x2,x3,x4
+      double precision               :: y1,y2,y3,y4
+      integer                        :: i,j,k,l
 
       !===============================================
       ! Bottom boundary (inward pointing normal)
@@ -569,21 +608,23 @@ module solvers
 
       else if (this%bcids(1).eq.1004) then
 
+        ! Seting state in ghost cells
+        do i=1,this%grid%nelemi
+          this%grid%elem(i,j-1)%u(1) =  this%grid%elem(i,j)%u(1)
+          this%grid%elem(i,j-1)%u(2) = -this%grid%elem(i,j)%u(2)
+          this%grid%elem(i,j-1)%u(3) = -this%grid%elem(i,j)%u(3)
+          this%grid%elem(i,j-1)%u(4) =  this%grid%elem(i,j)%u(4)
+          this%grid%elem(i,j-2)%u(1) =  this%grid%elem(i,j+1)%u(1)
+          this%grid%elem(i,j-2)%u(2) = -this%grid%elem(i,j+1)%u(2)
+          this%grid%elem(i,j-2)%u(3) = -this%grid%elem(i,j+1)%u(3)
+          this%grid%elem(i,j-2)%u(4) =  this%grid%elem(i,j+1)%u(4)
+        end do
+
         ! Enforcing no-slip wall boundary condition
         do i=1,this%grid%nelemi
 
           ! Switching between inviscid and viscous wall for x < 0 and x >= 0, respectively
           if (this%grid%elem(i,j)%xc.lt.0.0d0) then
-
-            ! Setting state in the ghost cells
-            this%grid%elem(i,j-1)%u(1) =  this%grid%elem(i,j)%u(1)
-            this%grid%elem(i,j-1)%u(2) = -this%grid%elem(i,j)%u(2)
-            this%grid%elem(i,j-1)%u(3) = -this%grid%elem(i,j)%u(3)
-            this%grid%elem(i,j-1)%u(4) =  this%grid%elem(i,j)%u(4)
-            this%grid%elem(i,j-2)%u(1) =  this%grid%elem(i,j+1)%u(1)
-            this%grid%elem(i,j-2)%u(2) = -this%grid%elem(i,j+1)%u(2)
-            this%grid%elem(i,j-2)%u(3) = -this%grid%elem(i,j+1)%u(3)
-            this%grid%elem(i,j-2)%u(4) =  this%grid%elem(i,j+1)%u(4)
 
             ! Finding the gradient using first-order accurate differences
             ds = sqrt((this%grid%elem(i,j-1)%xc - this%grid%elem(i,j-2)%xc)**2 + &
@@ -607,9 +648,110 @@ module solvers
 
           else
 
-            ! Need to pick up here and finish implementing the no-slip wall BC.
+            ! Finding the gradient using first-order accurate differences
+            ds = sqrt((this%grid%elem(i,j-1)%xc - this%grid%elem(i,j-2)%xc)**2 + &
+                      (this%grid%elem(i,j-1)%yc - this%grid%elem(i,j-2)%yc)**2)
+            duds = (this%grid%elem(i,j-1)%u - this%grid%elem(i,j-2)%u)/ds
+
+            ! Computing the left state of the interface
+            rL(1) = this%grid%edges_h(i,j)%xm - this%grid%elem(i,j-1)%xc
+            rL(2) = this%grid%edges_h(i,j)%ym - this%grid%elem(i,j-1)%yc
+            this%grid%edges_h(i,j)%uL = this%grid%elem(i,j-1)%u + duds*sqrt(rL(1)**2 + rL(2)**2)
+
+            ! Computing the right state of the interface
+            rR(1) = this%grid%edges_h(i,j)%xm - this%grid%elem(i,j)%xc
+            rR(2) = this%grid%edges_h(i,j)%ym - this%grid%elem(i,j)%yc
+            this%grid%edges_h(i,j)%uR = this%grid%elem(i,j)%u + &
+                                        this%grid%elem(i,j)%dudx*rR(1) + &
+                                        this%grid%elem(i,j)%dudy*rR(2)
+
+            ! Solving the Riemann problem at the interface
+            this%grid%edges_h(i,j)%flux = roe(this%grid%edges_h(i,j)%uL,this%grid%edges_h(i,j)%uR,this%grid%elem(i,j-1)%n(:,3))
+
+            ! Computing the gradients in the ghost cell using Green's theorem
+            if (i.ne.1) then
+
+              ! Trailing edge (assuming extrapolate conditions are used)
+              if (i.eq.this%grid%nelemi) then
+                this%grid%elem(i+1,j)%u   = this%grid%elem(i,j)%u
+                this%grid%elem(i+1,j-1)%u = this%grid%elem(i,j-1)%u
+                this%grid%elem(i+1,j-2)%u = this%grid%elem(i,j-2)%u
+              end if
+
+              ! Figuring out the nodes of the auxiliary volume
+              x1 = 0.5d0*(this%grid%x(i,j)   + this%grid%x(i,j-1))
+              y1 = 0.5d0*(this%grid%y(i,j)   + this%grid%y(i,j-1))
+              x2 = 0.5d0*(this%grid%x(i+1,j) + this%grid%x(i+1,j-1))
+              y2 = 0.5d0*(this%grid%y(i+1,j) + this%grid%y(i+1,j-1))
+              x3 = 0.5d0*(this%grid%x(i+1,j) + this%grid%x(i+1,j+1))
+              y3 = 0.5d0*(this%grid%y(i+1,j) + this%grid%y(i+1,j+1))
+              x4 = 0.5d0*(this%grid%x(i,j)   + this%grid%x(i,j+1))
+              y4 = 0.5d0*(this%grid%y(i,j)   + this%grid%y(i,j+1))
+
+              ! Computing the face normals of the auxiliary control volume
+              n(1,:) = nvec(y2-y1,x1-x2)
+              n(2,:) = nvec(y3-y2,x2-x3)
+              n(3,:) = nvec(y4-y3,x3-x4)
+              n(4,:) = nvec(y1-y4,x4-x1)
+
+              ! Computing the length of each face
+              length(1) = sqrt((x2-x1)**2+(y2-y1)**2)
+              length(2) = sqrt((x3-x2)**2+(y3-y2)**2)
+              length(3) = sqrt((x4-x3)**2+(y4-y3)**2)
+              length(4) = sqrt((x1-x4)**2+(y1-y4)**2)
+
+              ! Computing the area of the auxiliary control volume
+              area = 0.5d0*((x1-x3)*(y2-y4)+(x4-x2)*(y1-y3))
+
+              ! Velocities at the bottom midpoint (face 1)
+              um(1,1)  = this%grid%elem(i,j-1)%u(2)/this%grid%elem(i,j-1)%u(1)
+              um(1,2)  = this%grid%elem(i,j-1)%u(3)/this%grid%elem(i,j-1)%u(1)
+
+              ! Velocities at the right midpoint (face 2)
+              w1 = u_to_w(this%grid%elem(i,j-1)%u,this%g)
+              w2 = u_to_w(this%grid%elem(i+1,j-1)%u,this%g)
+              w3 = u_to_w(this%grid%elem(i+1,j)%u,this%g)
+              w4 = u_to_w(this%grid%elem(i,j)%u,this%g)
+              um(2,1) = 0.25d0*(w1(2) + w2(2) + w3(2) + w4(2))
+              um(2,2) = 0.25d0*(w1(3) + w2(3) + w3(3) + w4(3))
+
+              ! Velocities at the top midpoint (face 3)
+              um(3,1) = this%grid%elem(i,j)%u(2)/this%grid%elem(i,j)%u(1)
+              um(3,2) = this%grid%elem(i,j)%u(3)/this%grid%elem(i,j)%u(1)
+
+              ! Velocities at the left midpoint (face 4)
+              w2 = w1
+              w3 = w4
+              w1 = u_to_w(this%grid%elem(i-1,j-1)%u,this%g)
+              w4 = u_to_w(this%grid%elem(i-1,j)%u,this%g)
+              um(4,1) = 0.25d0*(w1(2) + w2(2) + w3(2) + w4(2))
+              um(4,2) = 0.25d0*(w1(3) + w2(3) + w3(3) + w4(3))
+
+              ! Computing the gradient of velocity
+              gradu(:) = 0.0d0
+              gradv(:) = 0.0d0
+              do k=1,4
+                gradu = gradu + 1.0d0/area*(um(k,1)*n(k,:)*length(k))
+                gradv = gradv + 1.0d0/area*(um(k,2)*n(k,:)*length(k))
+              end do
+
+              ! Finding average T at the face
+              T = w3(4)/(w3(1)*this%R)
+
+              ! Now have the velocity gradient at the boundary
+              ! Can now compute the viscous fluxes
+              this%grid%edges_h(i,j)%flux = this%grid%edges_h(i,j)%flux - &
+                flux_visc_state(0.0d0,0.0d0,T,gradu(1),gradu(2),gradv(1),gradv(2),0.0d0,0.0d0,-this%grid%elem(i,j)%n(:,1),this%g,this%R)
+
+            else
+
+              ! Near the leading edge
+              print *, "Warning: No-slip BC is not enforced here..."
+
+            end if
 
           end if
+        end do
 
       else if (this%bcids(1).eq.2000) then
 

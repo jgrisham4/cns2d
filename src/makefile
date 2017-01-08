@@ -1,6 +1,6 @@
 FC=ifort
-#FCFLAGS=-xHost -O2 -ipo -traceback -I/share/CGNS-intel/build/include
-FCFLAGS=-g -fpe0 -traceback -I/share/CGNS-intel/build/include -I../src/
+FCFLAGS=-xHost -O2 -ipo -traceback -I/share/CGNS-intel/build/include
+#FCFLAGS=-g -fpe0 -traceback -I/share/CGNS-intel/build/include -I../src/
 LIBNAME = libcns2d
 #SRC_FILES = $(wildcard ../src/*.f90)
 LFLAGS = -L/share/CGNS-intel/build/lib -L../lib
