@@ -39,7 +39,7 @@ test gradient
   dx(1) = 1.0d0/50.0d0
   dx(2) = 1.0d0/100.0d0
   dx(3) = 1.0d0/200.0d0
-  
+
   ! Looping over meshes
   do k=1,3
 

@@ -5,7 +5,7 @@ character (len=30) :: mesh_file
 double precision, parameter :: pi = 3.1415927
 double precision, parameter :: theta = 12.0d0
 
-setup 
+setup
 
   mesh_file = "../tests/simple.cgns"
 
@@ -48,7 +48,7 @@ test mesh_preprocess
 
   ! Reading simple 3x3 mesh
   call read_from_file(grid,mesh_file)
-  
+
   ! Preprocessing mesh
   call preprocess(grid)
 
@@ -89,10 +89,10 @@ test mesh_preprocess_rotated
 
   ! Computing theta in radians
   th = theta*pi/180.0d0
-  
+
   ! Reading simple 3x3 mesh
   call read_from_file(grid,"../tests/rotated.cgns")
-  
+
   ! Preprocessing mesh
   call preprocess(grid)
 

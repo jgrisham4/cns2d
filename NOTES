@@ -264,3 +264,20 @@ Working on implementing Upwind Implicit Residual Smoothing (UIRS).  Need to pick
 up in acceleration.f90.  I tried a 3-stage method using the "optimized" stage
 coefficients given in the book by Blazek.  It is still not working.  I'm not
 sure what is wrong...
+
+-------------------------
+
+01/08/2017 9:49 pm
+I finished implementing UIRS.  There was a bug of some sort in the call to the
+thomas algorithm subroutine.  The lower diagonal was allocated as ld(2:n) where
+n is the number of rows of the matrix.  This caused something strange that I
+cannot explain.  When I changed the allocation of ld to ld(1:n), but I only
+filled in the values from (2:n), everything works.  I'm in the process of writing
+unit tests for everything I can think of.  I'm not sure what the problem is.  The
+unsteady cases seem to work perfectly, but the steady cases won't converge.  I've
+added local time stepping and implicit residual smoothing in an effort to improve
+the convergence, but it is not working, even for the inviscid cases.  There has to
+be some bug somewhere.  See TODO for a list of what needs to be done.  I think the
+approximations for the spectral radii of the viscous flux Jacobian and inviscid
+flux Jacobian are wrong.  I have to use CFL numbers on the order of 1x10^(-4)
+in order to avoid the solver blowing up right away.

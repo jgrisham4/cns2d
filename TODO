@@ -1,6 +1,7 @@
-- Add subroutine to compute the max possible time step.
+- Write unit tests for everything I can possibly
+  think of.
 
-- Add implicit residual smoothing to accelerate convergence.
+- Check spatial order of accuracy of Euler solver using Ringleb flow.
 
 - Parallelize loops using OpenMP.
 

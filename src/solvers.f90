@@ -1,4 +1,4 @@
-!===========================================================
+!===============================================================================
 ! This module contains a simple solver for the 2D Euler
 ! equations and Navier-Stokes equations on curvilinear
 ! meshes using an upwind second-order accurate finite
@@ -10,18 +10,19 @@
 !
 ! Author: James Grisham
 ! Date: 01-01-2017
-!===========================================================
+!===============================================================================
 
 module solvers
   use cgns
-  use mesh_class, only : mesh,compute_max_timesteps_visc,compute_max_timesteps_inv
-  use utils,      only : u_to_w,w_to_u,compute_elem_max,compute_elem_min,nvec
-  use limiters,   only : minmod,vanleer
-  use flux,       only : fluxax,fluxay,flux_adv,flux_visc_state,flux_visc
-  use grad,       only : compute_gradient
-  use riemann,    only : roe,rotated_rhll
-  use mms,        only : s_continuity,s_xmom,s_ymom,s_energy,rho_e,u_e,v_e,et_e,dudx_e,dudy_e,dvdx_e,dvdy_e,dTdx_e,dTdy_e
-  use linalg,     only : norml2
+  use mesh_class,   only : mesh,compute_max_timesteps_visc,compute_max_timesteps_inv
+  use utils,        only : u_to_w,w_to_u,compute_elem_max,compute_elem_min,nvec
+  use limiters,     only : minmod,vanleer
+  use flux,         only : fluxax,fluxay,flux_adv,flux_visc_state,flux_visc
+  use grad,         only : compute_gradient
+  use riemann,      only : roe,rotated_rhll
+  use mms,          only : s_continuity,s_xmom,s_ymom,s_energy,rho_e,u_e,v_e,et_e,dudx_e,dudy_e,dvdx_e,dvdy_e,dTdx_e,dTdy_e
+  use linalg,       only : norml2
+  use acceleration, only : irs_upwind
   implicit none
   private :: apply_bcs
   public  :: solver,initialize,solve_feuler,solve_rk4,solve_steady,residual_inv,write_results_cgns,write_results_tec
@@ -340,9 +341,12 @@ module solvers
     subroutine solve_steady(this)
       implicit none
       type(solver), intent(inout)   :: this
-      double precision, allocatable :: resid(:,:,:), eqn_resids(:,:),tmp(:,:,:)
+      double precision, allocatable :: resid(:,:,:), eqn_resids(:,:),tmp(:,:,:),rbar(:,:,:)
       character (len=30)            :: tecname
       integer                       :: i,j,k,l,aer
+
+      ! Parameter used in upwind implicit residual smoothing
+      double precision, parameter :: eps = 4.0d0
 
       ! Parameters used in multi-stage time-stepping
       double precision, parameter   :: a1 = 0.1481d0
@@ -363,6 +367,11 @@ module solvers
       allocate(tmp(this%grid%nelemi,this%grid%nelemj,4),stat=aer)
       if (aer.ne.0) then
         print *, "Error: can't allocate memory for tmp in solve_steady."
+        stop
+      end if
+      allocate(rbar,mold=resid,stat=aer)
+      if (aer.ne.0) then
+        print *, "Error: can't allocate memory for rbar in solve_steady."
         stop
       end if
 
@@ -398,6 +407,8 @@ module solvers
 
           ! Stage 1
           call residual_visc(this,resid)
+          call irs_upwind(this%grid,eps,resid,this%g,rbar)
+          resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%dt*resid(i,j,:)
@@ -407,6 +418,8 @@ module solvers
 
           ! Stage 2
           call residual_visc(this,resid)
+          call irs_upwind(this%grid,eps,resid,this%g,rbar)
+          resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%dt*resid(i,j,:)
@@ -416,6 +429,8 @@ module solvers
 
           ! Stage 3
           call residual_visc(this,resid)
+          call irs_upwind(this%grid,eps,resid,this%g,rbar)
+          resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%dt*resid(i,j,:)
@@ -452,28 +467,34 @@ module solvers
 
           ! Stage 1
           call residual_inv(this,resid)
+          call irs_upwind(this%grid,eps,resid,this%g,rbar)
+          resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
-              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%dt*resid(i,j,:)
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%grid%elem(i,j)%dt_max*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%dt*resid(i,j,:)
+              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%grid%elem(i,j)%dt_max*resid(i,j,:)
             end do
           end do
 
           ! Stage 2
           call residual_inv(this,resid)
+          call irs_upwind(this%grid,eps,resid,this%g,rbar)
+          resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
-              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%dt*resid(i,j,:)
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%grid%elem(i,j)%dt_max*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%dt*resid(i,j,:)
+              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%grid%elem(i,j)%dt_max*resid(i,j,:)
             end do
           end do
 
           ! Stage 3
           call residual_inv(this,resid)
+          call irs_upwind(this%grid,eps,resid,this%g,rbar)
+          resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
-              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%dt*resid(i,j,:)
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%grid%elem(i,j)%dt_max*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%dt*resid(i,j,:)
+              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%grid%elem(i,j)%dt_max*resid(i,j,:)
             end do
           end do
 

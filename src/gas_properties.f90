@@ -9,7 +9,7 @@ module gas_properties
   public :: mu, k
 
   ! Assuming constant Prandtl number
-  double precision, parameter :: Pr = 0.715d0
+  double precision, parameter :: Pr = 0.72d0
 
   ! Constants used in MMS
   !double precision, parameter :: Pr = 1.05d0  ! MMS
