@@ -13,11 +13,12 @@ rex = np.genfromtxt(data_files[2])
 
 # Plotting density
 fig1 = plt.figure()
-plt.plot(r1d[:, 0], r1d[:, 1], "sk", label="1d")
-plt.plot(r2d[:, 0], r2d[:, 1], "ob", label="2d")
+plt.plot(r1d[:, 0], r1d[:, 1], "sb", label="1d", ms=7)
+plt.plot(r2d[:, 0], r2d[:, 1], "og", label="2d")
 plt.plot(rex[:, 0], rex[:, 1], "-r", label="Exact")
 plt.xlabel(r"$x$ [m]")
 plt.ylabel(r"density [kg/m$^3$]")
+plt.ylim([0.1,1.1])
 plt.legend(loc=3)
 
 # Saving plot

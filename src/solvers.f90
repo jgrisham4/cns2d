@@ -25,7 +25,7 @@ module solvers
   use acceleration, only : irs_upwind
   implicit none
   private :: apply_bcs
-  public  :: solver,initialize,solve_feuler,solve_rk4,solve_steady,residual_inv,write_results_cgns,write_results_tec
+  public  :: solver,initialize,solve_feuler,solve_rk4,solve_steady,residual_inv,write_results_cgns,write_results_tec,residual_inv_fo
 
   !---------------------------------------------------------
   ! Class for solver
@@ -1487,6 +1487,89 @@ module solvers
       end do
 
     end subroutine residual_inv
+
+    !---------------------------------------------------------
+    ! Subroutine for computing the residual for Euler eqs
+    !---------------------------------------------------------
+    subroutine residual_inv_fo(this,resid)
+      implicit none
+      type(solver), intent(inout)     :: this
+      double precision, intent(inout) :: resid(:,:,:)
+      double precision                :: duL(4),duR(4),phi(4)
+      double precision, dimension(4)  :: fx,fy,uextrap,wextrap,wtmp
+      double precision, dimension(2)  :: rL,rR,r
+      double precision, allocatable   :: u(:,:,:),gradU(:,:,:),umax(:,:,:),umin(:,:,:)
+      integer                         :: i,j,k,l,err
+
+      ! Allocating memory for gradient of state at cell centers
+      allocate(gradU(this%grid%nelemi,this%grid%nelemj,8),stat=err)
+      if (err.ne.0) then
+        print *, "Error: Can't allocate memory for gradU in residual_inv_fo."
+        stop
+      end if
+      allocate(u(this%grid%nelemi,this%grid%nelemj,4),stat=err)
+      if (err.ne.0) then
+        print *, "Error: can't allocate memory for u in residual_inv_fo."
+        stop
+      end if
+      allocate(umax(this%grid%nelemi,this%grid%nelemj,4),stat=err)
+      if (err.ne.0) then
+        print *, "Error: can't allocate memory for umax in residual_inv_fo."
+        stop
+      end if
+      allocate(umin(this%grid%nelemi,this%grid%nelemj,4),stat=err)
+      if (err.ne.0) then
+        print *, "Error: can't allocate memory for umin in residual_inv_fo."
+        stop
+      end if
+
+      ! Copying the last solution into u
+      do j=1,this%grid%nelemj
+        do i=1,this%grid%nelemi
+          u(i,j,:) = this%grid%elem(i,j)%u
+        end do
+      end do
+
+      ! Applying boundary conditions
+      call apply_bcs(this)
+
+      ! Must now iterate through all the interior interfaces and solve
+      ! the Riemann problem to find the fluxes
+      ! Vertical faces
+      do j=1,this%grid%nelemj
+        do i=2,this%grid%nelemi
+
+          ! Calling Riemann solver
+          !print *, i, j, this%grid%edges_v(i,j)%xm, this%grid%edges_v(i,j)%ym
+          this%grid%edges_v(i,j)%flux = roe(this%grid%elem(i-1,j)%u,this%grid%elem(i,j)%u,this%grid%elem(i-1,j)%n(:,2))
+          !this%grid%edges_v(i,j)%flux = rotated_rhll(this%grid%edges_v(i,j)%uL,this%grid%edges_v(i,j)%uR,this%grid%elem(i-1,j)%n(:,2))
+
+        end do
+      end do
+
+      ! Horizontal faces
+      do j=2,this%grid%nelemj
+        do i=1,this%grid%nelemi
+
+          ! Calling Riemann solver
+          this%grid%edges_h(i,j)%flux = roe(this%grid%elem(i,j-1)%u,this%grid%elem(i,j)%u,this%grid%elem(i,j-1)%n(:,3))
+          !this%grid%edges_h(i,j)%flux = rotated_rhll(this%grid%edges_h(i,j)%uL,this%grid%edges_h(i,j)%uR,this%grid%elem(i,j-1)%n(:,3))
+
+        end do
+      end do
+
+      ! Computing residual
+      do j=1,this%grid%nelemj
+        do i=1,this%grid%nelemi
+          resid(i,j,:) = -1.0d0/(this%grid%elem(i,j)%area)* &
+            (-this%grid%edges_h(i,j)%flux*this%grid%edges_h(i,j)%length + &
+            this%grid%edges_h(i,j+1)%flux*this%grid%edges_h(i,j+1)%length - &
+            this%grid%edges_v(i,j)%flux*this%grid%edges_v(i,j)%length + &
+            this%grid%edges_v(i+1,j)%flux*this%grid%edges_v(i+1,j)%length)
+        end do
+      end do
+
+    end subroutine residual_inv_fo
 
     !---------------------------------------------------------
     ! Subroutine for computing the residual for Navier-Stokes

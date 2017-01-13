@@ -14,8 +14,8 @@ program isentropic_vortex
   type(solver) :: esolver
 
   ! Reading mesh
-  !call read_from_file(grid,"iv800.cgns")
-  call read_from_file(grid,"iv200.cgns")
+  call read_from_file(grid,"iv800.cgns")
+  !call read_from_file(grid,"iv200.cgns")
 
   ! Preprocessing mesh
   call preprocess(grid)
@@ -74,6 +74,6 @@ program isentropic_vortex
 
   ! Solving problem
   !call solve_feuler(esolver,1000)
-  call solve_rk4(esolver,100)
+  call solve_rk4(esolver,50)
 
 end program isentropic_vortex

@@ -281,3 +281,10 @@ be some bug somewhere.  See TODO for a list of what needs to be done.  I think t
 approximations for the spectral radii of the viscous flux Jacobian and inviscid
 flux Jacobian are wrong.  I have to use CFL numbers on the order of 1x10^(-4)
 in order to avoid the solver blowing up right away.
+
+-------------------------
+
+01/12/2017 4:20 pm
+Implemented first-order spatial accuracy by using constant extrapolation instead of
+piecewise linear.  Need to test it and add a way to turn it on and add it to the
+namelist.

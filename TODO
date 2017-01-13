@@ -1,3 +1,12 @@
+- Split solvers.f90 into solver_class.f90, euler.f90 and navierstokes.f90.
+  The solve methods will have to be defined inside the euler and navierstokes
+  files to avoid circular references.
+
+- Add tests for utils (find_elem_min and find_elem_max), etc.  This could
+  be done relatively easily by creating a simple mesh, assigning a field
+  over the mesh and calling the method to make sure it finds the proper
+  max and min.
+
 - Write unit tests for everything I can possibly
   think of.
 

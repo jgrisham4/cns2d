@@ -19,6 +19,7 @@ def import_cfd_data(fname):
 y_loc = 10.0
 t = 10.0
 fnames = ["iv_profile_t10_{}.csv".format(n) for n in [500, 800]]
+#fnames = ["iv_profile_t10.csv"]
 x_0 = -10.0
 y_0 = -10.0
 g = 1.4
