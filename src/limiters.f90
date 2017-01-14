@@ -56,4 +56,70 @@ module limiters
       end if
     end function vanleer
 
+    !-------------------------------------------------------
+    ! Subroutine for the Barth-Jespersen limiter
+    !-------------------------------------------------------
+    pure function barth(s,i,j,gradu,umax,umin) result(ph)
+      implicit none
+      type(solver), intent(in)                  :: s
+      integer, intent(in)                       :: i,j
+      double precision, allocatable, intent(in) :: gradu(:,:,:),umax(:,:,:),umin(:,:,:)
+      double precision                          :: ph(4)
+      double precision                          :: rvec(2),unodes(4,4),phibar(4,4)
+      integer                                   :: k,l
+
+      ! Node numbering:
+      !
+      !  4           3
+      !   o---------o
+      !   |         |
+      !   |    +    |
+      !   |         |
+      !   o---------o
+      !  1           2
+
+      ! Extrapolating state to vertices of element
+      ! Point 1
+      rvec(1) = s%grid%x(i,j) - s%grid%elem(i,j)%xc
+      rvec(2) = s%grid%y(i,j) - s%grid%elem(i,j)%yc
+      unodes(:,1) = s%grid%elem(i,j)%u + gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
+
+      ! Point 2
+      rvec(1) = s%grid%x(i+1,j) - s%grid%elem(i,j)%xc
+      rvec(2) = s%grid%y(i+1,j) - s%grid%elem(i,j)%yc
+      unodes(:,2) = s%grid%elem(i,j)%u + gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
+
+      ! Point 3
+      rvec(1) = s%grid%x(i+1,j+1) - s%grid%elem(i,j)%xc
+      rvec(2) = s%grid%y(i+1,j+1) - s%grid%elem(i,j)%yc
+      unodes(:,3) = s%grid%elem(i,j)%u + gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
+
+      ! Point 4
+      rvec(1) = s%grid%x(i,j+1) - s%grid%elem(i,j)%xc
+      rvec(2) = s%grid%y(i,j+1) - s%grid%elem(i,j)%yc
+      unodes(:,4) = s%grid%elem(i,j)%u + gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
+
+      ! Finding value of limiter at each vertex
+      ! k - vertex, l - variables
+      do k=1,4
+        do l=1,4
+          if (unodes(l,k)-s%grid%elem(i,j)%u(l).gt.0.0d0) then
+            phibar(l,k) = min(1.0d0,(umax(i,j,l)-s%grid%elem(i,j)%u(l))/(unodes(l,k)-s%grid%elem(i,j)%u(l)))
+          else if (unodes(l,k)-s%grid%elem(i,j)%u(l).lt.0.0d0) then
+            phibar(l,k) = min(1.0d0,(umin(i,j,l)-s%grid%elem(i,j)%u(l))/(unodes(l,k)-s%grid%elem(i,j)%u(l)))
+          else
+            phibar(l,k) = 1.0d0
+          end if
+        end do
+      end do
+
+      ! Finding the final value of the limiter for each conserved variable
+      do k=1,4
+        ph(k) = minval(phibar(k,:))
+      end do
+
+    end function barth
+
+
+
 end module limiters
