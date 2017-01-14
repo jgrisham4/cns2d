@@ -1,6 +1,9 @@
 !==========================================================
 ! This module contains functions for computing gas
 ! properties.
+!
+! Author: James Grisham
+! Date: 01/13/2017
 !==========================================================
 
 module gas_properties

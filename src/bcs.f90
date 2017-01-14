@@ -1,10 +1,38 @@
+!===============================================================================
+! This module contains a subroutine for applying boundary conditions to the
+! boundary fluxes.
+!
+! Boundary conditions:
+! 1000 - Farfield
+! 1001 - Extrapolate
+! 1002 - Weakly enforced slip wall
+! 1003 - Strongly enforced slip wall
+! 1004 - No-slip wall (only implemented for boundary 1)
+! 2000 - Method of manufactured solution
+!
+! NOTES:
+! - The no-slip wall BC is only implemented for the bottom boundary.  Any of
+!   the boundary that is to the left of x=0 is set as an inviscid wall.  Any
+!   of the boundary where x>=0 is set to viscous wall.
+!
+! Author: James Grisham
+! Date: 01/13/2017
+!===============================================================================
 
 module bcs
-  use something, only : some
+  use solver_class, only : solver
+  use mms,          only : s_continuity,s_xmom,s_ymom,s_energy,rho_e,u_e,v_e,et_e,dudx_e,dudy_e,dvdx_e,dvdy_e,dTdx_e,dTdy_e
+  use flux,         only : flux_adv,flux_visc_state
+  use riemann,      only : roe
+  use utils,        only : u_to_w,nvec
   implicit none
+  public :: apply_bcs
 
   contains
 
+    !---------------------------------------------------------------------------
+    ! Subroutine for applying boundary conditions
+    !---------------------------------------------------------------------------
     subroutine apply_bcs(this)
       implicit none
       type(solver), intent(inout)    :: this
@@ -620,3 +648,5 @@ module bcs
       end if
 
     end subroutine apply_bcs
+
+end module bcs

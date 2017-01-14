@@ -1,19 +1,24 @@
-!===========================================================
+!===============================================================================
 ! This module contains different limiters for use in the
-! FVM solver
-!===========================================================
+! FVM solver.  Because the reconstruction is done in an
+! unstructured manner, only the barth limiter is used.
+!
+! Author: James Grisham
+! Date: 01/13/2017
+!===============================================================================
 
 module limiters
+  use solver_class,    only : solver
   use ieee_arithmetic, only : ieee_is_finite
   implicit none
   private
-  public :: minmod, vanleer
+  public :: minmod, vanleer, barth
 
   contains
 
-    !------------------------------------------------------
+    !---------------------------------------------------------------------------
     ! minmod limiter
-    !------------------------------------------------------
+    !---------------------------------------------------------------------------
     double precision function minmod(r) result(phi)
       implicit none
       double precision, intent(in) :: r
@@ -26,9 +31,9 @@ module limiters
       end if
     end function minmod
 
-    !------------------------------------------------------
+    !---------------------------------------------------------------------------
     ! Another version of the minmod limiter
-    !------------------------------------------------------
+    !---------------------------------------------------------------------------
     double precision function minmod2(a,b) result(sigma)
       implicit none
       double precision, intent(in) :: a,b
@@ -41,9 +46,9 @@ module limiters
       end if
     end function minmod2
 
-    !------------------------------------------------------
+    !---------------------------------------------------------------------------
     ! van Leer limiter
-    !------------------------------------------------------
+    !---------------------------------------------------------------------------
     double precision function vanleer(r) result(phi)
       implicit none
       double precision, intent(in) :: r
@@ -56,9 +61,13 @@ module limiters
       end if
     end function vanleer
 
-    !-------------------------------------------------------
+    !---------------------------------------------------------------------------
     ! Subroutine for the Barth-Jespersen limiter
-    !-------------------------------------------------------
+    !
+    ! NOTES:
+    ! - This function assumes that the gradient of the
+    !   conserved variables has already been computed.
+    !---------------------------------------------------------------------------
     pure function barth(s,i,j,gradu,umax,umin) result(ph)
       implicit none
       type(solver), intent(in)                  :: s
@@ -119,7 +128,5 @@ module limiters
       end do
 
     end function barth
-
-
 
 end module limiters

@@ -288,3 +288,21 @@ in order to avoid the solver blowing up right away.
 Implemented first-order spatial accuracy by using constant extrapolation instead of
 piecewise linear.  Need to test it and add a way to turn it on and add it to the
 namelist.
+
+
+-------------------------
+
+01/13/2017 9:50 pm
+I'm not sure that my implementation of first-order accuracy is correct.  I just changed
+the inviscid residual subroutine so that it uses constant extrapolation instead of
+piecewise linear.  Good news is that the compute_timestep_inv is correct.  I checked
+it on a uniform grid using two different methods and I got the same result.  The bug
+must be somewhere else.  How is it that the code works perfectly for unsteady cases,
+but it explodes for steady cases?  How could this be possible?  What are the differences
+between the steady and unsteady cases?  The time marching is the only real difference.
+
+-------------------------
+
+01/13/2017 11:47 pm
+No matter what, the x-momentum diverges in the ramp case.  I believe something might
+be wrong with the implementation somehow.  I need to keep writing unit tests.

@@ -1,61 +1,27 @@
-!===========================================================
+!===============================================================================
 ! This module contains functions for solving the Riemann
 ! problem.  It also contains a function which is used to
 ! compute the actual value of the flux when provided with
 ! the vector of primitive variables.
-!===========================================================
+!
+! Author: James Grisham
+! Date: 01/13/2017
+!===============================================================================
+
 module flux
   use mesh_class,     only : element
   use utils,          only : w_to_u,u_to_w
   use gas_properties, only : mu,k
   implicit none
   private
-  public :: fluxax, fluxay, flux_adv, flux_visc, flux_visc_state
+  public :: flux_adv, flux_visc, flux_visc_state
 
   contains
 
-    !------------------------------------------------------
-    ! Function for computing the x-flux term for the Euler
-    ! equations (i.e., the advective flux).
-    !
-    ! parameters:
-    ! - w: vector of primitive variables.
-    ! - g: ratio of specific heats
-    !------------------------------------------------------
-    pure function fluxax(w,g) result(f)
-      implicit none
-      double precision, intent(in) :: w(4),g
-      double precision             :: f(4),u(4)
-      u = w_to_u(w,g)
-      f(1) = w(1)*w(2)
-      f(2) = w(1)*w(2)**2 + w(4)
-      f(3) = w(1)*w(2)*w(3)
-      f(4) = w(2)*(u(4)+w(4))
-    end function fluxax
-
-    !------------------------------------------------------
-    ! Function for computing the y-flux term for the Euler
-    ! equations (i.e., the advective flux).
-    !
-    ! parameters:
-    ! - w: vector of primitive variables.
-    ! - g: ratio of specific heats
-    !------------------------------------------------------
-    pure function fluxay(w,g) result(f)
-      implicit none
-      double precision, intent(in) :: w(4),g
-      double precision             :: f(4),u(4)
-      u = w_to_u(w,g)
-      f(1) = w(1)*w(3)
-      f(2) = w(1)*w(2)*w(3)
-      f(3) = w(1)*w(3)**2 + w(4)
-      f(4) = w(3)*(u(4)+w(4))
-    end function fluxay
-
-    !------------------------------------------------------
+    !---------------------------------------------------------------------------
     ! Function for computing the advective fluxes along
     ! a face.
-    !------------------------------------------------------
+    !---------------------------------------------------------------------------
     pure function flux_adv(w,n,g) result(f)
       implicit none
       double precision, intent(in) :: w(4),n(2),g
@@ -83,10 +49,10 @@ module flux
 
     end function flux_adv
 
-    !------------------------------------------------------
+    !---------------------------------------------------------------------------
     ! Function for computing the viscous fluxes along
     ! a face when the state at the face is provided.
-    !------------------------------------------------------
+    !---------------------------------------------------------------------------
     pure function flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,n,g,R) result(f)
       implicit none
       double precision, intent(in) :: u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,n(2)
@@ -117,11 +83,11 @@ module flux
 
     end function flux_visc_state
 
-    !------------------------------------------------------
+    !---------------------------------------------------------------------------
     ! Function for computing the viscous fluxes along
     ! a face when the elements on either side of the
     ! interface are provided as inputs.
-    !------------------------------------------------------
+    !---------------------------------------------------------------------------
     pure function flux_visc(elemL,elemR,n,g,R) result(f)
       implicit none
       type(element), intent(in)    :: elemL,elemR

@@ -1,6 +1,7 @@
 program isentropic_vortex
   use mesh_class,   only : mesh,read_from_file,preprocess
-  use solvers, only : solver,initialize,solve_feuler,solve_rk4,solve_steady
+  use solver_class, only : solver,initialize
+  use temporal,     only : solve_feuler,solve_rk4,solve_steady,solve_steady_fe
   implicit none
   double precision :: a,rho_inf,p_inf,u_inf,v_inf,x0,y0,K,xb,yb,rb,temp,g
   double precision :: rgas,t_inf,a_inf,winfty(4),beta_r,y_shock
@@ -80,12 +81,12 @@ program isentropic_vortex
   bcs(4) = 1000
 
   ! Initializing solver
-  call initialize(esolver,grid,dt,tfinal,1.4d0,287.0d0,w0,winfty,bcs,"barth",.false.,10000,1.0d-10,0.1d0)
+  call initialize(esolver,grid,dt,tfinal,1.4d0,287.0d0,w0,winfty,bcs,"barth",.false.,10000,500,1.0d-10,0.001d0)
   !call initialize(esolver,grid,dt,tfinal,1.4d0,w0,winfty,bcs,"none")
 
   ! Solving problem
   !call solve_feuler(esolver,1000)
   !call solve_rk4(esolver,500)
-  call solve_steady(esolver)
+  call solve_steady_fe(esolver)
 
 end program isentropic_vortex

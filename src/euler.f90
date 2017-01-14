@@ -7,20 +7,19 @@
 
 module euler
   use solver_class, only : solver
-  use utils,        only : u_to_w,w_to_u,compute_elem_max,compute_elem_min,nvec
-  use limiters,     only : minmod,vanleer
-  use flux,         only : fluxax,fluxay,flux_adv,flux_visc_state,flux_visc
+  use utils,        only : compute_elem_max,compute_elem_min
+  use limiters,     only : barth
   use grad,         only : compute_gradient
   use riemann,      only : roe,rotated_rhll
-  use linalg,       only : norml2
-  use acceleration, only : irs_upwind
+  use bcs,          only : apply_bcs
   implicit none
+  public :: residual_inv,residual_inv_fo
 
   contains
 
-    !---------------------------------------------------------
+    !---------------------------------------------------------------------------
     ! Subroutine for computing the residual for Euler eqs
-    !---------------------------------------------------------
+    !---------------------------------------------------------------------------
     subroutine residual_inv(this,resid)
       implicit none
       type(solver), intent(inout)     :: this
@@ -351,14 +350,14 @@ module euler
 
     end subroutine residual_inv
 
-    !---------------------------------------------------------
+    !---------------------------------------------------------------------------
     ! Subroutine for computing the residual for Euler eqs
     ! This subroutine is modified from the above to compute
     ! the first-order accurate residual.  This is accomplished
     ! by removing the piecewise linear reconstruction at the
     ! interface and replacing it with constant extrapolation
     ! or zero-th order interpolation.
-    !---------------------------------------------------------
+    !---------------------------------------------------------------------------
     subroutine residual_inv_fo(this,resid)
       implicit none
       type(solver), intent(inout)     :: this

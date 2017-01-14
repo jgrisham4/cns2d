@@ -1,6 +1,6 @@
-!===========================================================
+!===============================================================================
 ! This module contains the definition for the mesh class.
-!===========================================================
+!===============================================================================
 
 module mesh_class
   use cgns
@@ -8,11 +8,11 @@ module mesh_class
   use gas_properties, only : mu, k
   implicit none
   private
-  public :: mesh,element,read_from_file,write_to_tec,preprocess,compute_max_timesteps_visc,compute_max_timesteps_inv
+  public :: mesh,element,read_from_file,write_to_tec,preprocess,compute_max_timesteps_inv,compute_max_timesteps_visc
 
-  !---------------------------------------------------------
+  !-----------------------------------------------------------------------------
   ! Edge class definition
-  !---------------------------------------------------------
+  !-----------------------------------------------------------------------------
   type edge
     double precision :: length  ! length of interface
     double precision :: xm,ym   ! x- and y-coordinates of midpoint
@@ -21,9 +21,9 @@ module mesh_class
     double precision :: flux(4) ! value of the flux at the interface (i.e., f.n)
   end type edge
 
-  !---------------------------------------------------------
+  !-----------------------------------------------------------------------------
   ! Element class definition
-  !---------------------------------------------------------
+  !-----------------------------------------------------------------------------
   type element
     double precision :: xc,yc    ! Coordinates of cell centroid
     double precision :: area     ! Area of the cell
@@ -46,9 +46,9 @@ module mesh_class
     double precision :: dt_max   ! Max allowable time step for the element
   end type element
 
-  !---------------------------------------------------------
+  !-----------------------------------------------------------------------------
   ! Mesh class definition
-  !---------------------------------------------------------
+  !-----------------------------------------------------------------------------
   type mesh
     integer                       :: imax,jmax      ! Number of nodes in i and j
     integer                       :: nelemi,nelemj  ! Number of elements in i and j
@@ -60,10 +60,10 @@ module mesh_class
 
   contains
 
-    !-------------------------------------------------------
+    !---------------------------------------------------------------------------
     ! Subroutine for reading the mesh from a CGNS file
     ! This only reads x,y values from CGNS file
-    !-------------------------------------------------------
+    !---------------------------------------------------------------------------
     subroutine read_from_file(this,file_name)
       implicit none
       type(mesh), intent(inout)     :: this
@@ -158,9 +158,9 @@ module mesh_class
 
     end subroutine read_from_file
 
-    !-------------------------------------------------------
+    !---------------------------------------------------------------------------
     ! Subroutine for writing the mesh to a Tecplot file
-    !-------------------------------------------------------
+    !---------------------------------------------------------------------------
     subroutine write_to_tec(this,file_name)
       implicit none
       type(mesh), intent(in) :: this
@@ -182,10 +182,10 @@ module mesh_class
 
     end subroutine write_to_tec
 
-    !-------------------------------------------------------
+    !---------------------------------------------------------------------------
     ! Subroutine for preprocessing the mesh
     ! (i.e., computing geometric quantities and metrics)
-    !-------------------------------------------------------
+    !---------------------------------------------------------------------------
     subroutine preprocess(this)
       implicit none
       type(mesh), intent(inout)     :: this        ! mesh object
@@ -571,11 +571,11 @@ module mesh_class
 
     end subroutine preprocess
 
-    !-------------------------------------------------------
+    !---------------------------------------------------------------------------
     ! Subroutine for computing the max time step for each
     ! element.  This subroutine assumes that the
     ! conservative variables are set for the element.
-    !-------------------------------------------------------
+    !---------------------------------------------------------------------------
     subroutine compute_max_timesteps_inv(grid,g,R,cfl)
       implicit none
       type(mesh), intent(inout)    :: grid                 ! Mesh object
@@ -588,6 +588,7 @@ module mesh_class
       double precision             :: c                    ! Local speed of sound
       double precision             :: w(4)                 ! Vector of primitive variables
       double precision             :: cp,Pr,T,m,term1
+      !double precision             :: dt_u,dx,dy
       integer                      :: i,j
 
       ! Looping over elements
@@ -605,8 +606,8 @@ module mesh_class
           c = sqrt(g*w(4)/w(1))
 
           ! Finding averaged normal vectors
-          nhat_x = 0.5d0*(grid%elem(i,j)%n(:,4) - grid%elem(i,j)%n(:,2))
-          nhat_y = 0.5d0*(grid%elem(i,j)%n(:,1) - grid%elem(i,j)%n(:,3))
+          nhat_x = 0.5d0*(grid%elem(i,j)%n(:,2) - grid%elem(i,j)%n(:,4))
+          nhat_y = 0.5d0*(grid%elem(i,j)%n(:,3) - grid%elem(i,j)%n(:,1))
 
           ! Finding averaged face areas
           dS_x = 0.5d0*(grid%edges_h(i,j)%length + grid%edges_h(i+1,j)%length)
@@ -617,19 +618,27 @@ module mesh_class
           lambda_cx = (abs(w(2)*nhat_x(1) + w(3)*nhat_x(2)) + c)*dS_x
           lambda_cy = (abs(w(2)*nhat_y(1) + w(3)*nhat_y(2)) + c)*dS_y
 
+          ! Computing the max timestep another way
+          !dx = grid%edges_h(i,j)%length
+          !dy = grid%edges_v(i,j)%length
+          !dt_u = cfl*grid%elem(i,j)%area/((abs(w(2))+c)*dx + (abs(w(3))+c)*dy)
+
           ! Computing time step
           grid%elem(i,j)%dt_max = cfl*grid%elem(i,j)%area/(lambda_cx+lambda_cy)
+
+          ! Printing a check
+          !write(*,'(2(a,es15.7))') "dt_max = ", grid%elem(i,j)%dt_max, " dt_max,uniform = ", dt_u
 
         end do
       end do
 
     end subroutine compute_max_timesteps_inv
 
-    !-------------------------------------------------------
+    !---------------------------------------------------------------------------
     ! Subroutine for computing the max time step for each
     ! element.  This subroutine assumes that the
     ! conservative variables are set for the element.
-    !-------------------------------------------------------
+    !---------------------------------------------------------------------------
     subroutine compute_max_timesteps_visc(grid,g,R,cfl)
       implicit none
       type(mesh), intent(inout)    :: grid                 ! Mesh object

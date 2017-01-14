@@ -1,8 +1,15 @@
-program cns2d
+!===============================================================================
+! This is the main program that reads inputs from the namelist cns2d.nml.
+! It calls the necessary subroutines to run the solver.
+!
+! Author: James Grisham
+! Date: 01/13/2017
+!===============================================================================
 
-  ! Modules
-  use mesh_class, only: mesh,read_from_file,preprocess
-  use solvers,    only: solver, initialize,solve_feuler,solve_rk4,solve_steady
+program cns2d
+  use mesh_class,   only : mesh,read_from_file,preprocess
+  use solver_class, only : solver,initialize
+  use temporal,     only : solve_feuler,solve_rk4,solve_steady,solve_steady_fe
   implicit none
 
   ! Namelist variables
@@ -10,7 +17,7 @@ program cns2d
   character (len=30) :: mesh_file,method,limiter
   double precision   :: u_inf,v_inf,p_inf,rho_inf
   double precision   :: g,C1,S,final_time,time_step,R,cfl,tol
-  integer            :: bcids(4),write_freq,niter
+  integer            :: bcids(4),write_freq,niter,niterfo
 
   ! Local variables
   type(mesh)                    :: grid
@@ -24,7 +31,7 @@ program cns2d
   namelist /mesh_inputs/mesh_file
   namelist /freestream_properties/u_inf,v_inf,p_inf,rho_inf
   namelist /gas_properties/g,C1,S,R
-  namelist /time_advancement/method,final_time,time_step,niter,tol,cfl
+  namelist /time_advancement/method,final_time,time_step,niter,tol,cfl,niterfo
   namelist /boundary_conditions/bcids
   namelist /slope_limiter/limiter
   namelist /output/write_freq
@@ -114,7 +121,7 @@ program cns2d
   end do
 
   ! Initializing solver
-  call initialize(solv,grid,time_step,final_time,g,R,w0,winfty,bcids,limiter,viscous_terms,niter,tol,cfl)
+  call initialize(solv,grid,time_step,final_time,g,R,w0,winfty,bcids,limiter,viscous_terms,niter,niterfo,tol,cfl)
 
   ! Solving the problem
   if (method.eq."forward_euler") then
@@ -122,7 +129,7 @@ program cns2d
   else if (method.eq."rk4") then
     call solve_rk4(solv,write_freq)
   else if (method.eq."steady") then
-    call solve_steady(solv)
+    call solve_steady_fe(solv)
   else
     print *, "Error: Time advancement method ", method, " not recognized."
     stop

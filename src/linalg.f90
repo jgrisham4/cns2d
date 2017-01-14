@@ -1,3 +1,10 @@
+!===============================================================================
+! This module contains some linear algebra related subroutines.
+!
+! Author: James Grisham
+! Date: 01/13/2017
+!===============================================================================
+
 module linalg
   use mesh_class, only : mesh
   implicit none

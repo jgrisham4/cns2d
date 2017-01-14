@@ -1,38 +1,26 @@
 !===============================================================================
-! This module contains a simple solver for the 2D Euler
-! equations and Navier-Stokes equations on curvilinear
-! meshes using an upwind second-order accurate finite
-! volume method. The discretization makes use of Roe flux
-! difference splitting, piecewise linear reconstruction,
-! the barth slope limiter, first-order accuracy in time
-! using the forward Euler method or fourth-order accuracy
-! in time using a Runge Kutta 4 method.
+! This module contains the data structure for the solver.  It contains field
+! data in the mesh member and solver settings.  There are methods for
+! initializing the solver and for writing results to a file.
 !
 ! Author: James Grisham
 ! Date: 01-01-2017
 !===============================================================================
 
-module solvers
+module solver_class
   use cgns
-  use mesh_class,   only : mesh,compute_max_timesteps_visc,compute_max_timesteps_inv
-  use utils,        only : u_to_w,w_to_u,compute_elem_max,compute_elem_min,nvec
-  use limiters,     only : minmod,vanleer
-  use flux,         only : fluxax,fluxay,flux_adv,flux_visc_state,flux_visc
-  use grad,         only : compute_gradient
-  use riemann,      only : roe,rotated_rhll
-  use mms,          only : s_continuity,s_xmom,s_ymom,s_energy,rho_e,u_e,v_e,et_e,dudx_e,dudy_e,dvdx_e,dvdy_e,dTdx_e,dTdy_e
-  use linalg,       only : norml2
-  use acceleration, only : irs_upwind
+  use mesh_class,   only : mesh
+  use utils,        only : w_to_u
   implicit none
-  private :: apply_bcs
-  public  :: solver,initialize,solve_feuler,solve_rk4,solve_steady,residual_inv,write_results_cgns,write_results_tec,residual_inv_fo
+  public  :: solver,initialize,write_results_cgns,write_results_tec
 
-  !---------------------------------------------------------
+  !-----------------------------------------------------------------------------
   ! Class for solver
-  !---------------------------------------------------------
+  !-----------------------------------------------------------------------------
   type solver
     integer               :: ntsteps   ! Number of time steps
     integer               :: niter     ! Number of iterations used for steady flow solves
+    integer               :: niterfo   ! Number of first-order iterations
     integer, dimension(4) :: bcids     ! BC identifiers
     double precision      :: dt        ! Time step
     double precision      :: cfl       ! cfl number - only used for steady flows
@@ -48,11 +36,11 @@ module solvers
 
   contains
 
-    !---------------------------------------------------------
+    !---------------------------------------------------------------------------
     ! Subroutine which initializes solution, i.e., allocates
     ! memory and sets up some important variables
-    !---------------------------------------------------------
-    subroutine initialize(this,m,delta_t,t_final,gam,R,w0,winf,bcidents,lim,visc,niter,tol,cfl)
+    !---------------------------------------------------------------------------
+    subroutine initialize(this,m,delta_t,t_final,gam,R,w0,winf,bcidents,lim,visc,niter,nfo,tol,cfl)
       implicit none
       type(solver),     intent(inout)           :: this
       type(mesh),       intent(in)              :: m
@@ -63,6 +51,7 @@ module solvers
       character (len=*),intent(in)              :: lim
       logical,          intent(in)              :: visc
       integer,          intent(in)              :: niter
+      integer,          intent(in)              :: nfo
       double precision, intent(in)              :: tol  ! Tolerance used to monitor convergence
       double precision, intent(in)              :: cfl
       double precision, allocatable             :: u0(:,:,:)
@@ -82,6 +71,7 @@ module solvers
       this%limiter = lim
       this%is_visc = visc
       this%niter   = niter
+      this%niterfo = nfo
       this%tol     = tol
       this%cfl     = cfl
       !write (*,'(a,i7)') "number of time steps: ", this%ntsteps
@@ -108,9 +98,9 @@ module solvers
     end subroutine initialize
 
 
-    !---------------------------------------------------------
+    !---------------------------------------------------------------------------
     ! Subroutine for writing results out to a CGNS file
-    !---------------------------------------------------------
+    !---------------------------------------------------------------------------
     subroutine write_results_cgns(this, file_name)
       implicit none
       type(solver), intent(inout)  :: this
@@ -148,9 +138,9 @@ module solvers
 
     end subroutine write_results_cgns
 
-    !---------------------------------------------------------
+    !---------------------------------------------------------------------------
     ! Subroutine for writing results out to a Tecplot file
-    !---------------------------------------------------------
+    !---------------------------------------------------------------------------
     subroutine write_results_tec(this, file_name)
       implicit none
       type(solver), intent(in)  :: this
@@ -204,4 +194,4 @@ module solvers
 
     end subroutine write_results_tec
 
-end module solvers
+end module solver_class

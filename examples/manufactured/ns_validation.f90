@@ -35,6 +35,7 @@ program ns_validation
   cfl     = 0.0001d0
   tol     = 1.0e-10
   niter   = 50000
+  niterfo = 1000   ! First-order iterations
 
   ! Setting initial guess using random noise added to the initial guess
   winfty(:) = 0.0d0
@@ -75,7 +76,7 @@ program ns_validation
   bcs(:) = 2000
 
   ! Initializing solver
-  call initialize(ns_solver,grid,dt,t_final,g,R,w0,winfty,bcs,"none",.true.,niter,tol,cfl)
+  call initialize(ns_solver,grid,dt,t_final,g,R,w0,winfty,bcs,"none",.true.,niter,niterfo,tol,cfl)
 
   ! Solving the problem
   call solve_steady(ns_solver)
