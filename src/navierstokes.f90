@@ -11,7 +11,6 @@ module navierstokes
   use flux,         only : flux_visc
   use grad,         only : compute_gradient
   use euler,        only : residual_inv,residual_inv_fo
-  !use mms,          only : s_continuity,s_xmom,s_ymom,s_energy,rho_e,u_e,v_e,et_e,dudx_e,dudy_e,dvdx_e,dvdy_e,dTdx_e,dTdy_e
   implicit none
   public :: residual_visc,residual_visc_fo
 

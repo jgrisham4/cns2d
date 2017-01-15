@@ -77,7 +77,7 @@ module solver_class
       !write (*,'(a,i7)') "number of time steps: ", this%ntsteps
 
       ! Converting initial condition to conserved variables
-      ! (includes ghost cells)
+      ! (doesn't include ghost cells)
       allocate(u0,mold=w0)
       do j=1,this%grid%nelemj
         do i=1,this%grid%nelemi

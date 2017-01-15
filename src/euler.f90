@@ -19,10 +19,12 @@ module euler
 
     !---------------------------------------------------------------------------
     ! Subroutine for computing the residual for Euler eqs
+    ! This subroutine only computes and returns the residual.  It does not
+    ! update the solution.
     !---------------------------------------------------------------------------
     subroutine residual_inv(this,resid)
       implicit none
-      type(solver), intent(inout)     :: this
+      type(solver),     intent(inout) :: this
       double precision, intent(inout) :: resid(:,:,:)
       double precision                :: duL(4),duR(4),phi(4)
       double precision, dimension(4)  :: fx,fy,uextrap,wextrap,wtmp
@@ -88,7 +90,8 @@ module euler
             rL(2) = this%grid%edges_v(i+1,j)%ym - this%grid%elem(i,j)%yc
 
             ! Finding grad(u) . r_L on the left side of the interface
-            duL = gradU(i,j,1:4)*rL(1) + gradU(i,j,5:8)*rL(2)
+            !duL = gradU(i,j,1:4)*rL(1) + gradU(i,j,5:8)*rL(2)
+            duL = this%grid%elem(i,j)%dudx*rL(1) + this%grid%elem(i,j)%dudy*rL(2)
 
             ! Reconstructing state on left of interface
             select case (this%limiter)
@@ -118,7 +121,8 @@ module euler
             rR(2) = this%grid%edges_v(i,j)%ym - this%grid%elem(i,j)%yc
 
             ! Finding the slope on the right side of the interface
-            duR = gradU(i,j,1:4)*rR(1) + gradU(i,j,5:8)*rR(2)
+            !duR = gradU(i,j,1:4)*rR(1) + gradU(i,j,5:8)*rR(2)
+            duR = this%grid%elem(i,j)%dudx*rR(1) + this%grid%elem(i,j)%dudy*rR(2)
 
             ! Reconstructing primitive states on right of interface
             select case (this%limiter)
@@ -151,10 +155,12 @@ module euler
 
             ! Finding slopes on left and right
             ! The below is grad(u) . r_L and grad(u) . r_R
-            duL = gradU(i,j,1:4)*rL(1) + gradU(i,j,5:8)*rL(2)
-            duR = gradU(i,j,1:4)*rR(1) + gradU(i,j,5:8)*rR(2)
+            !duL = gradU(i,j,1:4)*rL(1) + gradU(i,j,5:8)*rL(2)
+            !duR = gradU(i,j,1:4)*rR(1) + gradU(i,j,5:8)*rR(2)
+            duL = this%grid%elem(i,j)%dudx*rL(1) + this%grid%elem(i,j)%dudy*rL(2)
+            duR = this%grid%elem(i,j)%dudx*rR(1) + this%grid%elem(i,j)%dudy*rR(2)
 
-            ! Reconstructing primitive states on left and right of interface
+            ! Reconstructing states on left and right of interface
             select case (this%limiter)
               case ("none")
                 do k=1,4
@@ -193,7 +199,8 @@ module euler
             rL(2) = this%grid%edges_h(i,j+1)%ym - this%grid%elem(i,j)%yc
 
             ! Finding the slope on the left side of the interface
-            duL = gradU(i,j,1:4)*rL(1) + gradU(i,j,5:8)*rL(2)
+            !duL = gradU(i,j,1:4)*rL(1) + gradU(i,j,5:8)*rL(2)
+            duL = this%grid%elem(i,j)%dudx*rL(1) + this%grid%elem(i,j)%dudy*rL(2)
 
             ! Reconstructing primitive states on left of interface
             select case (this%limiter)
@@ -223,7 +230,8 @@ module euler
             rR(2) = this%grid%edges_h(i,j)%ym - this%grid%elem(i,j)%yc
 
             ! Finding the slope on the right side of the interface
-            duR = gradU(i,j,1:4)*rR(1) + gradU(i,j,5:8)*rR(2)
+            !duR = gradU(i,j,1:4)*rR(1) + gradU(i,j,5:8)*rR(2)
+            duR = this%grid%elem(i,j)%dudx*rR(1) + this%grid%elem(i,j)%dudy*rR(2)
 
             ! Reconstructing primitive states on right of interface
             select case (this%limiter)
@@ -255,10 +263,12 @@ module euler
             rR(2) = this%grid%edges_h(i,j)%ym   - this%grid%elem(i,j)%yc
 
             ! Finding slopes on left and right
-            duL = gradU(i,j,1:4)*rL(1) + gradU(i,j,5:8)*rL(2)
-            duR = gradU(i,j,1:4)*rR(1) + gradU(i,j,5:8)*rR(2)
+            !duL = gradU(i,j,1:4)*rL(1) + gradU(i,j,5:8)*rL(2)
+            !duR = gradU(i,j,1:4)*rR(1) + gradU(i,j,5:8)*rR(2)
+            duL = this%grid%elem(i,j)%dudx*rL(1) + this%grid%elem(i,j)%dudy*rL(2)
+            duR = this%grid%elem(i,j)%dudx*rR(1) + this%grid%elem(i,j)%dudy*rR(2)
 
-            ! Reconstructing primitive states on left and right of interface
+            ! Reconstructing states on left and right of interface
             select case (this%limiter)
               case ("none")
                 do k=1,4
@@ -296,7 +306,6 @@ module euler
         do i=2,this%grid%nelemi
 
           ! Calling Riemann solver
-          !print *, i, j, this%grid%edges_v(i,j)%xm, this%grid%edges_v(i,j)%ym
           this%grid%edges_v(i,j)%flux = roe(this%grid%edges_v(i,j)%uL,this%grid%edges_v(i,j)%uR,this%grid%elem(i-1,j)%n(:,2))
 
           !this%grid%edges_v(i,j)%flux = rotated_rhll(this%grid%edges_v(i,j)%uL,this%grid%edges_v(i,j)%uR,this%grid%elem(i-1,j)%n(:,2))

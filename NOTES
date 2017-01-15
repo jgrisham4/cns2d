@@ -306,3 +306,10 @@ between the steady and unsteady cases?  The time marching is the only real diffe
 01/13/2017 11:47 pm
 No matter what, the x-momentum diverges in the ramp case.  I believe something might
 be wrong with the implementation somehow.  I need to keep writing unit tests.
+
+-------------------------
+
+01/14/2017 10:55 pm
+I somehow got the MMS NS solution to converge when using first-order spatial
+accuracy.  I changed something though and now it is broken.  It is returning NaNs.
+
