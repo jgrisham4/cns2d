@@ -148,49 +148,49 @@ module solver_class
       integer ::i,j,k
 
         ! Writing result to file
-        open(2,file=file_name)
-        write(2,'(a,i5,a)') 'title="Step ', (k-1), '"'
-        write(2,'(a)') 'variables="x","y","rho","rhou","rhov","E"'
-        write(2,'(a,i5,a,i5)') 'zone i=', this%grid%imax, ' j=', this%grid%jmax
-        write(2,'(a)') 'datapacking=block'
-        write(2,'(a)') 'varlocation=([3,4,5,6]=cellcentered)'
+        open(105,file=file_name)
+        write(105,'(a)') 'title="cns2d-results"'
+        write(105,'(a)') 'variables="x","y","rho","rhou","rhov","E"'
+        write(105,'(a,i5,a,i5)') 'zone i=', this%grid%imax, ' j=', this%grid%jmax
+        write(105,'(a)') 'datapacking=block'
+        write(105,'(a)') 'varlocation=([3,4,5,6]=cellcentered)'
         do j=1,this%grid%jmax
           do i=1,this%grid%imax
-            write(2,'(es25.10)',advance='no') this%grid%x(i,j)
+            write(105,'(es25.10)',advance='no') this%grid%x(i,j)
           end do
-          write(2,'(a)') " "
+          write(105,'(a)') " "
         end do
         do j=1,this%grid%jmax
           do i=1,this%grid%imax
-            write(2,'(es25.10)',advance='no') this%grid%y(i,j)
+            write(105,'(es25.10)',advance='no') this%grid%y(i,j)
           end do
-          write(2,'(a)') " "
+          write(105,'(a)') " "
         end do
         do j=1,this%grid%nelemj
           do i=1,this%grid%nelemi
-            write(2,'(es25.10)',advance='no') this%grid%elem(i,j)%u(1)
+            write(105,'(es25.10)',advance='no') this%grid%elem(i,j)%u(1)
           end do
-          write(2,'(a)') " "
+          write(105,'(a)') " "
         end do
         do j=1,this%grid%nelemj
           do i=1,this%grid%nelemi
-            write(2,'(es25.10)',advance='no') this%grid%elem(i,j)%u(2)
+            write(105,'(es25.10)',advance='no') this%grid%elem(i,j)%u(2)
           end do
-          write(2,'(a)') " "
+          write(105,'(a)') " "
         end do
         do j=1,this%grid%nelemj
           do i=1,this%grid%nelemi
-            write(2,'(es25.10)',advance='no') this%grid%elem(i,j)%u(3)
+            write(105,'(es25.10)',advance='no') this%grid%elem(i,j)%u(3)
           end do
-          write(2,'(a)') " "
+          write(105,'(a)') " "
         end do
         do j=1,this%grid%nelemj
           do i=1,this%grid%nelemi
-            write(2,'(es25.10)',advance='no') this%grid%elem(i,j)%u(4)
+            write(105,'(es25.10)',advance='no') this%grid%elem(i,j)%u(4)
           end do
-          write(2,'(a)') " "
+          write(105,'(a)') " "
         end do
-        close(2)
+        close(105)
 
     end subroutine write_results_tec
 

@@ -101,11 +101,7 @@ module utils
       ! Looping over all elements
       do j=1,nj
         do i=1,ni
-          if ((i.ne.1).and.(i.ne.ni).and.(j.ne.1).and.(j.ne.nj)) then
-            do k=1,4
-              um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i-1,j,k),u(i,j-1,k))
-            end do
-          else if ((i.eq.1).and.(j.eq.1)) then
+          if ((i.eq.1).and.(j.eq.1)) then
             do k=1,4
               um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i,j+1,k))
             end do
@@ -137,6 +133,10 @@ module utils
             do k=1,4
               um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i-1,j,k),u(i,j-1,k))
             end do
+          else
+            do k=1,4
+              um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i-1,j,k),u(i,j-1,k))
+            end do
           end if
         end do
       end do
@@ -160,11 +160,7 @@ module utils
       ! Looping over all elements
       do j=1,nj
         do i=1,ni
-          if ((i.ne.1).and.(i.ne.ni).and.(j.ne.1).and.(j.ne.nj)) then
-            do k=1,4
-              um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i-1,j,k),u(i,j-1,k))
-            end do
-          else if ((i.eq.1).and.(j.eq.1)) then
+          if ((i.eq.1).and.(j.eq.1)) then
             do k=1,4
               um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i,j+1,k))
             end do
@@ -195,6 +191,10 @@ module utils
           else if (j.eq.nj) then
             do k=1,4
               um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i-1,j,k),u(i,j-1,k))
+            end do
+          else
+            do k=1,4
+              um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i-1,j,k),u(i,j-1,k))
             end do
           end if
         end do

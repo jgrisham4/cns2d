@@ -31,11 +31,11 @@ program ns_validation
   end if
 
   ! Setting time step and final time
-  dt      = 1.0e-12  ! Not used
-  t_final = 0.0d0  ! Not used
-  cfl     = 0.1d0
+  dt      = 1.0e-6
+  t_final = 0.0d0
+  cfl     = 0.001d0
   tol     = 1.0e-10
-  niter   = 8000
+  niter   = 4000
   niterfo = 2000   ! First-order iterations
 
   ! Setting initial guess using random noise added to the initial guess
@@ -46,16 +46,16 @@ program ns_validation
       ! Generating pseudo-random noise which will be added to coordinates of cell centers
       call random_number(xerr)  ! Returns number 0 <= xerr < 1
       call random_number(yerr)
-      xerr = xerr*0.01d0 - 0.005d0
-      yerr = yerr*0.01d0 - 0.005d0
+      xerr = xerr*0.02d0 - 0.01d0
+      yerr = yerr*0.02d0 - 0.01d0
 
       ! Computing the exact solution at the cell center (with noise added)
       xc   = grid%elem(i,j)%xc + xerr
       yc   = grid%elem(i,j)%yc + yerr
-      rhoc = rho_e(xc,yc)
-      uc   = u_e(xc,yc)
-      vc   = v_e(xc,yc)
-      etc  = et_e(xc,yc)
+      rhoc = rho_e(xc,yc)*1.01
+      uc   = u_e(xc,yc)*1.01
+      vc   = v_e(xc,yc)*1.01
+      etc  = et_e(xc,yc)*1.01
 
       ! Constructing the vector of conserved variables
       utmp(1) = rhoc
@@ -80,10 +80,10 @@ program ns_validation
   bcs(4) = 2000
 
   ! Initializing solver
-  call initialize(ns_solver,grid,dt,t_final,g,R,w0,winfty,bcs,"none",.true.,niter,niterfo,tol,cfl)
+  call initialize(ns_solver,grid,dt,t_final,g,R,w0,winfty,bcs,"barth",.true.,niter,niterfo,tol,cfl)
 
   ! Solving the problem
-  call solve_steady_fe(ns_solver)
+  call solve_steady(ns_solver)
 
   ! Computing the L2 norm of the error
 

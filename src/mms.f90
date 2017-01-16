@@ -21,7 +21,7 @@ module mms
   double precision, parameter :: v0   = 0.1d0
   double precision, parameter :: et0  = 0.5d0
   double precision, parameter :: g    = 1.4d0
-  double precision, parameter :: R    = 1.0d0
+  double precision, parameter :: Rgas = 1.0d0
   double precision, parameter :: k    = 1.0d0
   double precision, parameter :: mu   = 0.3d0
   double precision, parameter :: eps  = 0.5d0
@@ -115,9 +115,9 @@ module mms
       implicit none
       double precision, intent(in) :: x,y
       double precision :: r
-      r = (-2*et0*(-1 + g)*x*Sin(x**2 + y**2))/R - &
+      r = (-2*et0*(-1 + g)*x*Sin(x**2 + y**2))/Rgas - &
           ((-1 + g)*(-4*v0**2*x*(eps + Cos(x**2 + y**2))*Sin(x**2 + y**2) + &
-          4*u0**2*x*Cos(x**2 + y**2)*(eps + Sin(x**2 + y**2))))/(2.*R)
+          4*u0**2*x*Cos(x**2 + y**2)*(eps + Sin(x**2 + y**2))))/(2.*Rgas)
     end function dTdx_e
 
     !-------------------------------------------------------
@@ -127,9 +127,9 @@ module mms
       implicit none
       double precision, intent(in) :: x,y
       double precision :: r
-      r = (-2*et0*(-1 + g)*y*Sin(x**2 + y**2))/R - &
+      r = (-2*et0*(-1 + g)*y*Sin(x**2 + y**2))/Rgas - &
           ((-1 + g)*(-4*v0**2*y*(eps + Cos(x**2 + y**2))*Sin(x**2 + y**2) + &
-          4*u0**2*y*Cos(x**2 + y**2)*(eps + Sin(x**2 + y**2))))/(2.*R)
+          4*u0**2*y*Cos(x**2 + y**2)*(eps + Sin(x**2 + y**2))))/(2.*Rgas)
     end function dTdy_e
 
     !-------------------------------------------------------
@@ -195,21 +195,21 @@ module mms
       implicit none
       double precision, intent(in) :: x,y
       double precision :: s
-      s = ((3*et0*(3*R*u0*x + 4*(-1 + g)*k*(x**2 + y**2)) + &
+      s = ((3*et0*(3*Rgas*u0*x + 4*(-1 + g)*k*(x**2 + y**2)) + &
        2*eps*(6*(-1 + g)*k*(u0**2 - v0**2*(x**2 + y**2)) + &
-          mu*R*(-7*u0**2 + 2*u0*v0*(1 + x*y - 2*y**2) + &
+          mu*Rgas*(-7*u0**2 + 2*u0*v0*(1 + x*y - 2*y**2) + &
              2*v0**2*(3*x**2 - 2*x*y + 4*y**2))))*Cos(x**2 + y**2) + &
-    2*(3*et0*R*u0*x + 6*(-1 + g)*k*(u0**2 - v0**2)*(x**2 + y**2) + &
-       2*mu*R*(u0*v0 + u0**2*(-4*x**2 + 2*x*y - 3*y**2) + &
+    2*(3*et0*Rgas*u0*x + 6*(-1 + g)*k*(u0**2 - v0**2)*(x**2 + y**2) + &
+       2*mu*Rgas*(u0*v0 + u0**2*(-4*x**2 + 2*x*y - 3*y**2) + &
           v0**2*(3*x**2 - 2*x*y + 4*y**2)))*Cos(2*(x**2 + y**2)) - &
-    (et0*(-12*(-1 + g)*k + 3*R*(2*eps*u0*x + (3 + 2*eps)*v0*y)) + &
-       2*eps*(mu*R*(-7*v0**2 + 2*u0*v0*(1 + 2*x**2 - x*y) + &
+    (et0*(-12*(-1 + g)*k + 3*Rgas*(2*eps*u0*x + (3 + 2*eps)*v0*y)) + &
+       2*eps*(mu*Rgas*(-7*v0**2 + 2*u0*v0*(1 + 2*x**2 - x*y) + &
              u0**2*(-8*x**2 + 4*x*y - 6*y**2)) + &
           6*(-1 + g)*k*(v0**2 + u0**2*(x**2 + y**2))) - &
        2*(6*(-1 + g)*k*(u0**2 - v0**2) - &
-          R*(6*et0*v0*y + mu*(7*u0**2 - 7*v0**2 + &
+          Rgas*(6*et0*v0*y + mu*(7*u0**2 - 7*v0**2 + &
                 8*u0*v0*(x**2 - x*y + y**2))))*Cos(x**2 + y**2))*&
-     Sin(x**2 + y**2))/(3.*R)
+     Sin(x**2 + y**2))/(3.*Rgas)
     end function s_energy
 
 end module mms

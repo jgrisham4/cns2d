@@ -129,11 +129,13 @@ program cns2d
   else if (method.eq."rk4") then
     call solve_rk4(solv,write_freq)
   else if (method.eq."steady") then
-    !call solve_steady_fe(solv)
     call solve_steady(solv)
+    !call solve_steady_fe(solv)
   else
     print *, "Error: Time advancement method ", method, " not recognized."
     stop
   end if
+
+  print *, "cns2d done."
 
 end program cns2d

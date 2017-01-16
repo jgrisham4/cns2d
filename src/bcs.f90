@@ -295,8 +295,8 @@ module bcs
 
           ! Computing the primitive variables at the face and computing the flux
           wtmp = u_to_w(utmp,this%g)
-          this%grid%edges_h(i,j)%flux = flux_adv(wtmp,-this%grid%elem(i,j)%n(:,1),this%g) - &
-            flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,-this%grid%elem(i,j)%n(:,1),this%g,this%R)
+          this%grid%edges_h(i,j)%flux = -flux_adv(wtmp,this%grid%elem(i,j)%n(:,1),this%g) + &
+            flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,this%grid%elem(i,j)%n(:,1),this%g,this%R)
 
         end do
 
@@ -635,8 +635,8 @@ module bcs
 
           ! Computing the primitive variables at the face and computing the flux
           wtmp = u_to_w(utmp,this%g)
-          this%grid%edges_v(i,j)%flux = flux_adv(wtmp,-this%grid%elem(i,j)%n(:,4),this%g) - &
-            flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,-this%grid%elem(i,j)%n(:,4),this%g,this%R)
+          this%grid%edges_v(i,j)%flux = -flux_adv(wtmp,this%grid%elem(i,j)%n(:,4),this%g) + &
+            flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,this%grid%elem(i,j)%n(:,4),this%g,this%R)
 
         end do
 

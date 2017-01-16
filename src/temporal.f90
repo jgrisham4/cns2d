@@ -7,7 +7,7 @@
 !===============================================================================
 
 module temporal
-  use mesh_class,   only : compute_max_timesteps_inv,compute_max_timesteps_visc
+  !use mesh_class,   only : compute_max_timesteps_inv,compute_max_timesteps_visc
   use solver_class, only : solver,write_results_tec
   use euler,        only : residual_inv_fo, residual_inv
   use navierstokes, only : residual_visc_fo, residual_visc
@@ -251,10 +251,12 @@ module temporal
     !---------------------------------------------------------
     subroutine solve_steady(this)
       implicit none
-      type(solver), intent(inout)   :: this
-      double precision, allocatable :: resid(:,:,:), eqn_resids(:,:),tmp(:,:,:),rbar(:,:,:)
-      character (len=30)            :: tecname
-      integer                       :: i,j,k,l,aer
+      type(solver), intent(inout)    :: this
+      double precision, allocatable  :: resid(:,:,:),eqn_resids(:,:)
+      double precision, dimension(4) :: eqn_resids0
+      !double precision, allocatable :: rbar(:,:,:)
+      character (len=30)             :: tecname
+      integer                        :: i,j,k,l,aer
 
       ! Parameter used in upwind implicit residual smoothing
       double precision, parameter :: eps = 4.0d0
@@ -270,21 +272,16 @@ module temporal
         print *, "Error: can't allocate memory for resid in solve_steady."
         stop
       end if
-      allocate(eqn_resids(this%niter,4),stat=aer)
+      allocate(eqn_resids(this%niter+this%niterfo,4),stat=aer)
       if (aer.ne.0) then
         print *, "Error: can't allocate memory for eqn_resids in solve_steady."
         stop
       end if
-      allocate(tmp(this%grid%nelemi,this%grid%nelemj,4),stat=aer)
-      if (aer.ne.0) then
-        print *, "Error: can't allocate memory for tmp in solve_steady."
-        stop
-      end if
-      allocate(rbar,mold=resid,stat=aer)
-      if (aer.ne.0) then
-        print *, "Error: can't allocate memory for rbar in solve_steady."
-        stop
-      end if
+      !allocate(rbar,mold=resid,stat=aer)
+      !if (aer.ne.0) then
+      !  print *, "Error: can't allocate memory for rbar in solve_steady."
+      !  stop
+      !end if
 
       ! Writing initial solution
       tecname = "initial.tec"
@@ -292,16 +289,17 @@ module temporal
       call write_results_tec(this,tecname)
 
       ! Computing time steps
-      if (this%is_visc.eq..true.) then
-        call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
-      else
-        call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
-      end if
+      !if (this%is_visc.eq..true.) then
+      !  call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
+      !else
+      !  call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
+      !end if
 
       ! Setting initial residuals
       eqn_resids(1,:) = 1.0d0
-      write(*,'(a,i6)') "iteration: ", 0
-      write(*,'(a,4(es12.5,x))') "residuals: ", eqn_resids(1,:)
+      eqn_resids0(:) = 1.0d0
+      !write(*,'(a,i6)',advance='no') "iteration: ", 0
+      !write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(1,:)
 
       ! Marching in time
       k = 1
@@ -355,12 +353,17 @@ module temporal
             eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
           end do
 
+          ! Getting initial residual
+          if (k.eq.1) then
+            eqn_resids0(:) = eqn_resids(k,:)
+          end if
+
           ! Updating local time steps
           !call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
 
           ! Printing some information
           write(*,'(a,i6)',advance='no') "iteration: ", k
-          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)
+          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)/eqn_resids0
 
           ! Incrementing counter
           k = k + 1
@@ -416,12 +419,17 @@ module temporal
             eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
           end do
 
+          ! Getting initial residual
+          if (k.eq.1) then
+            eqn_resids0(:) = eqn_resids(k,:)
+          end if
+
           ! Updating local time steps
           !call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
 
           ! Printing some information
           write(*,'(a,i6)',advance='no') "iteration: ", k
-          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)
+          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)/eqn_resids0
 
           ! Incrementing counter
           k = k + 1
@@ -477,12 +485,17 @@ module temporal
             eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
           end do
 
+          ! Getting initial residual
+          if (k.eq.1) then
+            eqn_resids0(:) = eqn_resids(k,:)
+          end if
+
           ! Updating local time steps
           !call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
 
           ! Printing some information
           write(*,'(a,i6)',advance='no') "iteration: ", k
-          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)
+          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)/eqn_resids0
 
           ! Incrementing counter
           k = k + 1
@@ -538,12 +551,17 @@ module temporal
             eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
           end do
 
+          ! Getting initial residual
+          if (k.eq.1) then
+            eqn_resids0(:) = eqn_resids(k,:)
+          end if
+
           ! Updating local time steps
           !call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
 
           ! Printing some information
           write(*,'(a,i6)',advance='no') "iteration: ", k
-          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)
+          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)/eqn_resids0
 
           ! Incrementing counter
           k = k + 1
@@ -559,7 +577,7 @@ module temporal
       ! Writing convergence history to file
       open(2,file="residuals.dat")
       do i=1,(k-1)
-        write(2,'(i6,4(es12.5,x))') i, eqn_resids(i,:)
+        write(2,'(i6,4(es12.5,x))') i, eqn_resids(i,:)/eqn_resids0
       end do
       close(2)
 
@@ -571,10 +589,12 @@ module temporal
     !---------------------------------------------------------
     subroutine solve_steady_fe(this)
       implicit none
-      type(solver), intent(inout)   :: this
-      double precision, allocatable :: resid(:,:,:), eqn_resids(:,:),tmp(:,:,:),rbar(:,:,:)
-      character (len=30)            :: tecname
-      integer                       :: i,j,k,l,aer
+      type(solver), intent(inout)    :: this
+      double precision, allocatable  :: resid(:,:,:),eqn_resids(:,:)
+      double precision, dimension(4) :: eqn_resids0
+      !double precision, allocatable :: rbar(:,:,:)
+      character (len=30)             :: tecname
+      integer                        :: i,j,k,l,aer
 
       ! Parameter used in upwind implicit residual smoothing
       double precision, parameter :: eps = 4.0d0
@@ -590,21 +610,16 @@ module temporal
         print *, "Error: can't allocate memory for resid in solve_steady."
         stop
       end if
-      allocate(eqn_resids(this%niter,4),stat=aer)
+      allocate(eqn_resids(this%niter+this%niterfo,4),stat=aer)
       if (aer.ne.0) then
         print *, "Error: can't allocate memory for eqn_resids in solve_steady."
         stop
       end if
-      allocate(tmp(this%grid%nelemi,this%grid%nelemj,4),stat=aer)
-      if (aer.ne.0) then
-        print *, "Error: can't allocate memory for tmp in solve_steady."
-        stop
-      end if
-      allocate(rbar,mold=resid,stat=aer)
-      if (aer.ne.0) then
-        print *, "Error: can't allocate memory for rbar in solve_steady."
-        stop
-      end if
+      !allocate(rbar,mold=resid,stat=aer)
+      !if (aer.ne.0) then
+      !  print *, "Error: can't allocate memory for rbar in solve_steady."
+      !  stop
+      !end if
 
       ! Writing initial solution
       tecname = "initial.tec"
@@ -612,16 +627,17 @@ module temporal
       call write_results_tec(this,tecname)
 
       ! Computing time steps
-      if (this%is_visc.eq..true.) then
-        call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
-      else
-        call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
-      end if
+      !if (this%is_visc.eq..true.) then
+      !  call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
+      !else
+      !  call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
+      !end if
 
       ! Setting initial residuals
       eqn_resids(1,:) = 1.0d0
-      write(*,'(a,i6)') "iteration: ", 0
-      write(*,'(a,4(es12.5,x))') "residuals: ", eqn_resids(1,:)
+      eqn_resids0(:) = 1.0d0
+      write(*,'(a,i6)',advance='no') "iteration: ", 0
+      write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(1,:)/eqn_resids0
 
       ! Marching in time
       k = 1
@@ -653,12 +669,17 @@ module temporal
             eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
           end do
 
+          ! Getting initial residual used for normalization
+          if (k.eq.1) then
+            eqn_resids0(:) = eqn_resids(k,:)
+          end if
+
           ! Updating local time steps
-          call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
+          !call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
 
           ! Printing some information
           write(*,'(a,i6)',advance='no') "iteration: ", k
-          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)
+          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)/eqn_resids0
 
           ! Incrementing counter
           k = k + 1
@@ -692,12 +713,17 @@ module temporal
             eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
           end do
 
+          ! Getting initial residual used for normalization
+          if (k.eq.1) then
+            eqn_resids0(:) = eqn_resids(k,:)
+          end if
+
           ! Updating local time steps
-          call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
+          !call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
 
           ! Printing some information
           write(*,'(a,i6)',advance='no') "iteration: ", k
-          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)
+          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)/eqn_resids0
 
           ! Incrementing counter
           k = k + 1
@@ -731,12 +757,17 @@ module temporal
             eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
           end do
 
+          ! Getting initial residual used for normalization
+          if (k.eq.1) then
+            eqn_resids0(:) = eqn_resids(k,:)
+          end if
+
           ! Updating local time steps
-          call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
+          !call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
 
           ! Printing some information
           write(*,'(a,i6)',advance='no') "iteration: ", k
-          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)
+          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)/eqn_resids0
 
           ! Incrementing counter
           k = k + 1
@@ -770,12 +801,17 @@ module temporal
             eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
           end do
 
+          ! Getting initial residual used for normalization
+          if (k.eq.1) then
+            eqn_resids0(:) = eqn_resids(k,:)
+          end if
+
           ! Updating local time steps
-          call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
+          !call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
 
           ! Printing some information
           write(*,'(a,i6)',advance='no') "iteration: ", k
-          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)
+          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)/eqn_resids0
 
           ! Incrementing counter
           k = k + 1
@@ -791,9 +827,10 @@ module temporal
       ! Writing convergence history to file
       open(9,file="residuals.dat")
       do i=1,(k-1)
-        write(9,'(i6,4(es12.5,x))') i, eqn_resids(i,:)
+        write(9,'(i6,4(es12.5,x))') i, eqn_resids(i,:)/eqn_resids0
       end do
       close(9)
+      print *, "Done."
 
     end subroutine solve_steady_fe
 

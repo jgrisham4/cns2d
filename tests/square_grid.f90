@@ -9,13 +9,13 @@ program test_cgns
   integer :: imax,jmax,i,j,icelldim,iphysdim,index_base,index_file,index_zone,index_coord,ier,aerr
 
   ! Setting grid inputs
-  imax = 200
-  jmax = 200
+  imax = 300
+  jmax = 300
   xmin = 0.0d0
   xmax = 1.0d0
   ymin = 0.0d0
   ymax = 1.0d0
-  fname = "ramp200.cgns"
+  fname = "ramp300.cgns"
 
   ! Allocating memory for arrays
   allocate(x(imax,jmax),stat=aerr)

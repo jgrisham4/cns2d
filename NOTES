@@ -289,7 +289,6 @@ Implemented first-order spatial accuracy by using constant extrapolation instead
 piecewise linear.  Need to test it and add a way to turn it on and add it to the
 namelist.
 
-
 -------------------------
 
 01/13/2017 9:50 pm
@@ -312,4 +311,16 @@ be wrong with the implementation somehow.  I need to keep writing unit tests.
 01/14/2017 10:55 pm
 I somehow got the MMS NS solution to converge when using first-order spatial
 accuracy.  I changed something though and now it is broken.  It is returning NaNs.
+I need to figure out what I did to mess everything up.  I believe residual smoothing
+was being used.
+
+-------------------------
+
+01/15/2017 10:15 pm
+I found one bug in the MMS stuff.  I was using R for the gas constant and r for the
+result.  Since Fortran is case-insensitive, the behavior was wrong.  I believe there
+is still a bug in the MMS or NS solution somewhere.  The y-momentum residuals blow
+up after a while.  UIRS causes the residuals to diverge more.  Haven't tested local
+time stepping yet.
+
 

@@ -129,4 +129,18 @@ module limiters
 
     end function barth
 
+    !---------------------------------------------------------------------------
+    ! Subroutine for the Venkatakrishnan's limiter
+    !---------------------------------------------------------------------------
+    !pure function venkatakrishnan() result(ph)
+    !  implicit none
+    !  type(solver), intent(in)                  :: s
+    !  integer, intent(in)                       :: i,j
+    !  double precision, allocatable, intent(in) :: gradu(:,:,:),umax(:,:,:),umin(:,:,:)
+    !  double precision                          :: ph(4)
+    !  double precision                          :: rvec(2),unodes(4,4),phibar(4,4)
+    !  integer                                   :: k,l
+
+    !end function venkatakrishnan
+
 end module limiters

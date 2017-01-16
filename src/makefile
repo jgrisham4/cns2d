@@ -1,6 +1,6 @@
 FC=ifort
-FCFLAGS=-xHost -O2 -ipo -traceback -I/share/CGNS-intel/build/include
-#FCFLAGS=-g -fpe0 -traceback -I/share/CGNS-intel/build/include -I../src/
+FCFLAGS=-fast -fp-model strict -traceback -I/share/CGNS-intel/build/include
+#FCFLAGS=-g -fpe0 -traceback -I/share/CGNS-intel/build/include -I../src/ -check noarg_temp_created
 LIBNAME = libcns2d
 #SRC_FILES = $(wildcard ../src/*.f90)
 LFLAGS = -L/share/CGNS-intel/build/lib -L../lib
@@ -26,5 +26,5 @@ precns2d : precns2d.o $(LIBNAME)
 	$(FC) -o $@ $< $(FCFLAGS) $(LFLAGS) $(LIBS)
 
 clean :
-	rm -rf *.o *.out *.mod cns2d
+	rm -rf *.o *.out *.mod cns2d precns2d
 	rm -rf ../lib/*
