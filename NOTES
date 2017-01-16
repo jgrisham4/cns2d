@@ -323,4 +323,21 @@ is still a bug in the MMS or NS solution somewhere.  The y-momentum residuals bl
 up after a while.  UIRS causes the residuals to diverge more.  Haven't tested local
 time stepping yet.
 
+-------------------------
+
+01/16/2017 11:14 am
+Found more issues in the MMS exact solutions and in the source terms.  Local time
+stepping now speeds up the convergence.  Now, I need to update mms.f90 using the new
+exact solutions and source terms in cns2d/misc/tmp/*.  I need to use sed to replace
+\[Rho\] and \[Gamma\] with rho and g.
+
+-------------------------
+
+01/16/2017 3:31 pm
+I am close, but not quite there yet.  I updated the source and exact solutions using
+the new results, but it still isn't converging quite right.  I need to double check
+the following:
+- Exact solutions
+- Enforcement of boundary conditions
+- Viscous fluxes
 

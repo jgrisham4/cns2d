@@ -9,7 +9,7 @@
 program cns2d
   use mesh_class,   only : mesh,read_from_file,preprocess
   use solver_class, only : solver,initialize
-  use temporal,     only : solve_feuler,solve_rk4,solve_steady,solve_steady_fe
+  use temporal,     only : solve_feuler,solve_rk4,solve_steady
   implicit none
 
   ! Namelist variables

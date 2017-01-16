@@ -150,7 +150,7 @@ module solver_class
         ! Writing result to file
         open(105,file=file_name)
         write(105,'(a)') 'title="cns2d-results"'
-        write(105,'(a)') 'variables="x","y","rho","rhou","rhov","E"'
+        write(105,'(a)') 'variables="x","y","rho","rhou","rhov","rhoE"'
         write(105,'(a,i5,a,i5)') 'zone i=', this%grid%imax, ' j=', this%grid%jmax
         write(105,'(a)') 'datapacking=block'
         write(105,'(a)') 'varlocation=([3,4,5,6]=cellcentered)'

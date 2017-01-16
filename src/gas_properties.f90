@@ -28,8 +28,8 @@ module gas_properties
       implicit none
       double precision, intent(in) :: T
       double precision             :: mu
-      mu = 1.45d0*T**(3.0d0/2.0d0)/(T+110.0d0)*1.0e-6
-      !mu = mu_mms
+      !mu = 1.45d0*T**(3.0d0/2.0d0)/(T+110.0d0)*1.0e-6
+      mu = mu_mms
     end function mu
 
     !---------------------------------------------------------

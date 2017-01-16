@@ -279,7 +279,7 @@ module bcs
           ytmp = this%grid%edges_h(i,j)%ym
           u    = u_e(xtmp,ytmp)
           v    = v_e(xtmp,ytmp)
-          T    = (this%g-1.0d0)/this%R*(et_e(xtmp,ytmp)-0.5d0*(u**2+v**2))
+          T    = (this%g-1.0d0)/this%R*(et_e(xtmp,ytmp)/rho_e(xtmp,ytmp)-0.5d0*(u**2+v**2))
           dudx = dudx_e(xtmp,ytmp)
           dudy = dudy_e(xtmp,ytmp)
           dvdx = dvdx_e(xtmp,ytmp)
@@ -388,7 +388,7 @@ module bcs
           ytmp = this%grid%edges_v(i+1,j)%ym
           u    = u_e(xtmp,ytmp)
           v    = v_e(xtmp,ytmp)
-          T    = (this%g-1.0d0)/this%R*(et_e(xtmp,ytmp)-0.5d0*(u**2+v**2))
+          T    = (this%g-1.0d0)/this%R*(et_e(xtmp,ytmp)/rho_e(xtmp,ytmp)-0.5d0*(u**2+v**2))
           dudx = dudx_e(xtmp,ytmp)
           dudy = dudy_e(xtmp,ytmp)
           dvdx = dvdx_e(xtmp,ytmp)
@@ -510,7 +510,7 @@ module bcs
           ytmp = this%grid%edges_h(i,j+1)%ym
           u    = u_e(xtmp,ytmp)
           v    = v_e(xtmp,ytmp)
-          T    = (this%g-1.0d0)/this%R*(et_e(xtmp,ytmp)-0.5d0*(u**2+v**2))
+          T    = (this%g-1.0d0)/this%R*(et_e(xtmp,ytmp)/rho_e(xtmp,ytmp)-0.5d0*(u**2+v**2))
           dudx = dudx_e(xtmp,ytmp)
           dudy = dudy_e(xtmp,ytmp)
           dvdx = dvdx_e(xtmp,ytmp)
@@ -619,7 +619,7 @@ module bcs
           ytmp = this%grid%edges_v(i,j)%ym
           u    = u_e(xtmp,ytmp)
           v    = v_e(xtmp,ytmp)
-          T    = (this%g-1.0d0)/this%R*(et_e(xtmp,ytmp)-0.5d0*(u**2+v**2))
+          T    = (this%g-1.0d0)/this%R*(et_e(xtmp,ytmp)/rho_e(xtmp,ytmp)-0.5d0*(u**2+v**2))
           dudx = dudx_e(xtmp,ytmp)
           dudy = dudy_e(xtmp,ytmp)
           dvdx = dvdx_e(xtmp,ytmp)

@@ -9,7 +9,7 @@
 program precns2d
   use mesh_class,   only : mesh,read_from_file,preprocess,compute_max_timesteps_inv,compute_max_timesteps_visc
   use solver_class, only : solver,initialize
-  use temporal,     only : solve_feuler,solve_rk4,solve_steady,solve_steady_fe
+  use temporal,     only : solve_feuler,solve_rk4,solve_steady
   implicit none
   logical                       :: viscous_terms
   character (len=30)            :: mesh_file,method,limiter

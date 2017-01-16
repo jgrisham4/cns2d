@@ -7,7 +7,7 @@
 !===============================================================================
 
 module temporal
-  !use mesh_class,   only : compute_max_timesteps_inv,compute_max_timesteps_visc
+  use mesh_class,   only : compute_max_timesteps_inv,compute_max_timesteps_visc
   use solver_class, only : solver,write_results_tec
   use euler,        only : residual_inv_fo, residual_inv
   use navierstokes, only : residual_visc_fo, residual_visc
@@ -15,7 +15,8 @@ module temporal
   !use acceleration, only : irs_upwind
 
   ! Subroutines and functions
-  public :: solve_feuler, solve_rk4, solve_steady, solve_steady_fe
+  !public :: solve_feuler, solve_rk4, solve_steady, solve_steady_fe
+  public :: solve_feuler, solve_rk4, solve_steady
 
   contains
 
@@ -259,7 +260,7 @@ module temporal
       integer                        :: i,j,k,l,aer
 
       ! Parameter used in upwind implicit residual smoothing
-      double precision, parameter :: eps = 4.0d0
+      !double precision, parameter :: eps = 4.0d0
 
       ! Parameters used in multi-stage time-stepping
       double precision, parameter   :: a1 = 0.1481d0
@@ -289,11 +290,11 @@ module temporal
       call write_results_tec(this,tecname)
 
       ! Computing time steps
-      !if (this%is_visc.eq..true.) then
-      !  call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
-      !else
-      !  call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
-      !end if
+      if (this%is_visc.eq..true.) then
+        call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
+      else
+        call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
+      end if
 
       ! Setting initial residuals
       eqn_resids(1,:) = 1.0d0
@@ -321,10 +322,13 @@ module temporal
           !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%dt*resid(i,j,:)
-              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%grid%elem(i,j)%dt_max*resid(i,j,:)
+              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%dt*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%grid%elem(i,j)%dt_max*resid(i,j,:)
             end do
           end do
+
+          ! Updating local time steps
+          call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
 
           ! Stage 2
           call residual_visc_fo(this,resid)
@@ -332,10 +336,13 @@ module temporal
           !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%dt*resid(i,j,:)
-              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%grid%elem(i,j)%dt_max*resid(i,j,:)
+              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%dt*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%grid%elem(i,j)%dt_max*resid(i,j,:)
             end do
           end do
+
+          ! Updating local time steps
+          call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
 
           ! Stage 3
           call residual_visc_fo(this,resid)
@@ -343,8 +350,8 @@ module temporal
           !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%dt*resid(i,j,:)
-              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%grid%elem(i,j)%dt_max*resid(i,j,:)
+              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%dt*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%grid%elem(i,j)%dt_max*resid(i,j,:)
             end do
           end do
 
@@ -359,7 +366,7 @@ module temporal
           end if
 
           ! Updating local time steps
-          !call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
+          call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
 
           ! Printing some information
           write(*,'(a,i6)',advance='no') "iteration: ", k
@@ -387,10 +394,13 @@ module temporal
           !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%dt*resid(i,j,:)
-              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%grid%elem(i,j)%dt_max*resid(i,j,:)
+              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%dt*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%grid%elem(i,j)%dt_max*resid(i,j,:)
             end do
           end do
+
+          ! Updating local time steps
+          call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
 
           ! Stage 2
           call residual_visc(this,resid)
@@ -398,10 +408,13 @@ module temporal
           !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%dt*resid(i,j,:)
-              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%grid%elem(i,j)%dt_max*resid(i,j,:)
+              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%dt*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%grid%elem(i,j)%dt_max*resid(i,j,:)
             end do
           end do
+
+          ! Updating local time steps
+          call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
 
           ! Stage 3
           call residual_visc(this,resid)
@@ -409,8 +422,8 @@ module temporal
           !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%dt*resid(i,j,:)
-              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%grid%elem(i,j)%dt_max*resid(i,j,:)
+              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%dt*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%grid%elem(i,j)%dt_max*resid(i,j,:)
             end do
           end do
 
@@ -425,7 +438,7 @@ module temporal
           end if
 
           ! Updating local time steps
-          !call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
+          call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
 
           ! Printing some information
           write(*,'(a,i6)',advance='no') "iteration: ", k
@@ -453,10 +466,13 @@ module temporal
           !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%dt*resid(i,j,:)
-              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%grid%elem(i,j)%dt_max*resid(i,j,:)
+              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%dt*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%grid%elem(i,j)%dt_max*resid(i,j,:)
             end do
           end do
+
+          ! Updating local time steps
+          call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
 
           ! Stage 2
           call residual_inv_fo(this,resid)
@@ -464,10 +480,13 @@ module temporal
           !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%dt*resid(i,j,:)
-              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%grid%elem(i,j)%dt_max*resid(i,j,:)
+              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%dt*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%grid%elem(i,j)%dt_max*resid(i,j,:)
             end do
           end do
+
+          ! Updating local time steps
+          call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
 
           ! Stage 3
           call residual_inv_fo(this,resid)
@@ -475,8 +494,8 @@ module temporal
           !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%dt*resid(i,j,:)
-              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%grid%elem(i,j)%dt_max*resid(i,j,:)
+              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%dt*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%grid%elem(i,j)%dt_max*resid(i,j,:)
             end do
           end do
 
@@ -491,7 +510,7 @@ module temporal
           end if
 
           ! Updating local time steps
-          !call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
+          call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
 
           ! Printing some information
           write(*,'(a,i6)',advance='no') "iteration: ", k
@@ -519,10 +538,13 @@ module temporal
           !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%dt*resid(i,j,:)
-              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%grid%elem(i,j)%dt_max*resid(i,j,:)
+              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%dt*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%grid%elem(i,j)%dt_max*resid(i,j,:)
             end do
           end do
+
+          ! Updating local time steps
+          call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
 
           ! Stage 2
           call residual_inv(this,resid)
@@ -530,10 +552,13 @@ module temporal
           !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%dt*resid(i,j,:)
-              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%grid%elem(i,j)%dt_max*resid(i,j,:)
+              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%dt*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%grid%elem(i,j)%dt_max*resid(i,j,:)
             end do
           end do
+
+          ! Updating local time steps
+          call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
 
           ! Stage 3
           call residual_inv(this,resid)
@@ -541,8 +566,8 @@ module temporal
           !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%dt*resid(i,j,:)
-              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%grid%elem(i,j)%dt_max*resid(i,j,:)
+              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%dt*resid(i,j,:)
+              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%grid%elem(i,j)%dt_max*resid(i,j,:)
             end do
           end do
 
@@ -557,7 +582,7 @@ module temporal
           end if
 
           ! Updating local time steps
-          !call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
+          call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
 
           ! Printing some information
           write(*,'(a,i6)',advance='no') "iteration: ", k
@@ -587,251 +612,251 @@ module temporal
     ! Subroutine for solving a steady problem -- the forward
     ! Euler method is used to advance in time.
     !---------------------------------------------------------
-    subroutine solve_steady_fe(this)
-      implicit none
-      type(solver), intent(inout)    :: this
-      double precision, allocatable  :: resid(:,:,:),eqn_resids(:,:)
-      double precision, dimension(4) :: eqn_resids0
-      !double precision, allocatable :: rbar(:,:,:)
-      character (len=30)             :: tecname
-      integer                        :: i,j,k,l,aer
+    !subroutine solve_steady_fe(this)
+    !  implicit none
+    !  type(solver), intent(inout)    :: this
+    !  double precision, allocatable  :: resid(:,:,:),eqn_resids(:,:)
+    !  double precision, dimension(4) :: eqn_resids0
+    !  !double precision, allocatable :: rbar(:,:,:)
+    !  character (len=30)             :: tecname
+    !  integer                        :: i,j,k,l,aer
 
-      ! Parameter used in upwind implicit residual smoothing
-      double precision, parameter :: eps = 4.0d0
+    !  ! Parameter used in upwind implicit residual smoothing
+    !  double precision, parameter :: eps = 4.0d0
 
-      ! Parameters used in multi-stage time-stepping
-      double precision, parameter   :: a1 = 0.1481d0
-      double precision, parameter   :: a2 = 0.4000d0
-      double precision, parameter   :: a3 = 1.0000d0
+    !  ! Parameters used in multi-stage time-stepping
+    !  double precision, parameter   :: a1 = 0.1481d0
+    !  double precision, parameter   :: a2 = 0.4000d0
+    !  double precision, parameter   :: a3 = 1.0000d0
 
-      ! Allocating memory for the solution and the residual
-      allocate(resid(this%grid%nelemi,this%grid%nelemj,4),stat=aer)
-      if (aer.ne.0) then
-        print *, "Error: can't allocate memory for resid in solve_steady."
-        stop
-      end if
-      allocate(eqn_resids(this%niter+this%niterfo,4),stat=aer)
-      if (aer.ne.0) then
-        print *, "Error: can't allocate memory for eqn_resids in solve_steady."
-        stop
-      end if
-      !allocate(rbar,mold=resid,stat=aer)
-      !if (aer.ne.0) then
-      !  print *, "Error: can't allocate memory for rbar in solve_steady."
-      !  stop
-      !end if
+    !  ! Allocating memory for the solution and the residual
+    !  allocate(resid(this%grid%nelemi,this%grid%nelemj,4),stat=aer)
+    !  if (aer.ne.0) then
+    !    print *, "Error: can't allocate memory for resid in solve_steady."
+    !    stop
+    !  end if
+    !  allocate(eqn_resids(this%niter+this%niterfo,4),stat=aer)
+    !  if (aer.ne.0) then
+    !    print *, "Error: can't allocate memory for eqn_resids in solve_steady."
+    !    stop
+    !  end if
+    !  !allocate(rbar,mold=resid,stat=aer)
+    !  !if (aer.ne.0) then
+    !  !  print *, "Error: can't allocate memory for rbar in solve_steady."
+    !  !  stop
+    !  !end if
 
-      ! Writing initial solution
-      tecname = "initial.tec"
-      print *, "Writing data to ", tecname
-      call write_results_tec(this,tecname)
+    !  ! Writing initial solution
+    !  tecname = "initial.tec"
+    !  print *, "Writing data to ", tecname
+    !  call write_results_tec(this,tecname)
 
-      ! Computing time steps
-      !if (this%is_visc.eq..true.) then
-      !  call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
-      !else
-      !  call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
-      !end if
+    !  ! Computing time steps
+    !  !if (this%is_visc.eq..true.) then
+    !  !  call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
+    !  !else
+    !  !  call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
+    !  !end if
 
-      ! Setting initial residuals
-      eqn_resids(1,:) = 1.0d0
-      eqn_resids0(:) = 1.0d0
-      write(*,'(a,i6)',advance='no') "iteration: ", 0
-      write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(1,:)/eqn_resids0
+    !  ! Setting initial residuals
+    !  eqn_resids(1,:) = 1.0d0
+    !  eqn_resids0(:) = 1.0d0
+    !  write(*,'(a,i6)',advance='no') "iteration: ", 0
+    !  write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(1,:)/eqn_resids0
 
-      ! Marching in time
-      k = 1
-      if (this%is_visc.eq..true.) then
+    !  ! Marching in time
+    !  k = 1
+    !  if (this%is_visc.eq..true.) then
 
-        ! First-order iterations
-        do while (k.le.this%niterfo)
+    !    ! First-order iterations
+    !    do while (k.le.this%niterfo)
 
-          ! Copying old solution
-          do j=1,this%grid%nelemj
-            do i=1,this%grid%nelemi
-              this%grid%elem(i,j)%u0 = this%grid%elem(i,j)%u
-            end do
-          end do
+    !      ! Copying old solution
+    !      do j=1,this%grid%nelemj
+    !        do i=1,this%grid%nelemi
+    !          this%grid%elem(i,j)%u0 = this%grid%elem(i,j)%u
+    !        end do
+    !      end do
 
-          ! Advancing the solution in time
-          call residual_visc_fo(this,resid)
-!          call irs_upwind(this%grid,eps,resid,this%g,rbar)
-!          resid = rbar
-          do j=1,this%grid%nelemj
-            do i=1,this%grid%nelemi
-              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%grid%elem(i,j)%dt_max*resid(i,j,:)
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%dt*resid(i,j,:)
-            end do
-          end do
+    !      ! Advancing the solution in time
+    !      call residual_visc_fo(this,resid)
+!   !       call irs_upwind(this%grid,eps,resid,this%g,rbar)
+!   !       resid = rbar
+    !      do j=1,this%grid%nelemj
+    !        do i=1,this%grid%nelemi
+    !          !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%grid%elem(i,j)%dt_max*resid(i,j,:)
+    !          this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%dt*resid(i,j,:)
+    !        end do
+    !      end do
 
-          ! Computing the residuals
-          do l=1,4
-            eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
-          end do
+    !      ! Computing the residuals
+    !      do l=1,4
+    !        eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
+    !      end do
 
-          ! Getting initial residual used for normalization
-          if (k.eq.1) then
-            eqn_resids0(:) = eqn_resids(k,:)
-          end if
+    !      ! Getting initial residual used for normalization
+    !      if (k.eq.1) then
+    !        eqn_resids0(:) = eqn_resids(k,:)
+    !      end if
 
-          ! Updating local time steps
-          !call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
+    !      ! Updating local time steps
+    !      !call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
 
-          ! Printing some information
-          write(*,'(a,i6)',advance='no') "iteration: ", k
-          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)/eqn_resids0
+    !      ! Printing some information
+    !      write(*,'(a,i6)',advance='no') "iteration: ", k
+    !      write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)/eqn_resids0
 
-          ! Incrementing counter
-          k = k + 1
+    !      ! Incrementing counter
+    !      k = k + 1
 
-        end do
+    !    end do
 
-        ! Switching to second-order spatial accuracy
-        do while (k.le.(this%niter+this%niterfo))
-        !do while ((any(eqn_resids(k,:).ge.this%tol)).and.(k.le.this%niter))
+    !    ! Switching to second-order spatial accuracy
+    !    do while (k.le.(this%niter+this%niterfo))
+    !    !do while ((any(eqn_resids(k,:).ge.this%tol)).and.(k.le.this%niter))
 
-          ! Copying old solution
-          do j=1,this%grid%nelemj
-            do i=1,this%grid%nelemi
-              this%grid%elem(i,j)%u0 = this%grid%elem(i,j)%u
-            end do
-          end do
+    !      ! Copying old solution
+    !      do j=1,this%grid%nelemj
+    !        do i=1,this%grid%nelemi
+    !          this%grid%elem(i,j)%u0 = this%grid%elem(i,j)%u
+    !        end do
+    !      end do
 
-          ! Advancing in time using forward Euler
-          call residual_visc(this,resid)
-!          call irs_upwind(this%grid,eps,resid,this%g,rbar)
-!          resid = rbar
-          do j=1,this%grid%nelemj
-            do i=1,this%grid%nelemi
-              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%grid%elem(i,j)%dt_max*resid(i,j,:)
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%dt*resid(i,j,:)
-            end do
-          end do
+    !      ! Advancing in time using forward Euler
+    !      call residual_visc(this,resid)
+!   !       call irs_upwind(this%grid,eps,resid,this%g,rbar)
+!   !       resid = rbar
+    !      do j=1,this%grid%nelemj
+    !        do i=1,this%grid%nelemi
+    !          !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%grid%elem(i,j)%dt_max*resid(i,j,:)
+    !          this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%dt*resid(i,j,:)
+    !        end do
+    !      end do
 
-          ! Computing the residuals
-          do l=1,4
-            eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
-          end do
+    !      ! Computing the residuals
+    !      do l=1,4
+    !        eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
+    !      end do
 
-          ! Getting initial residual used for normalization
-          if (k.eq.1) then
-            eqn_resids0(:) = eqn_resids(k,:)
-          end if
+    !      ! Getting initial residual used for normalization
+    !      if (k.eq.1) then
+    !        eqn_resids0(:) = eqn_resids(k,:)
+    !      end if
 
-          ! Updating local time steps
-          !call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
+    !      ! Updating local time steps
+    !      !call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
 
-          ! Printing some information
-          write(*,'(a,i6)',advance='no') "iteration: ", k
-          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)/eqn_resids0
+    !      ! Printing some information
+    !      write(*,'(a,i6)',advance='no') "iteration: ", k
+    !      write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)/eqn_resids0
 
-          ! Incrementing counter
-          k = k + 1
+    !      ! Incrementing counter
+    !      k = k + 1
 
-        end do
-      else
+    !    end do
+    !  else
 
-        ! Inviscid first-order spatial accuracy
-        do while (k.le.this%niterfo)
+    !    ! Inviscid first-order spatial accuracy
+    !    do while (k.le.this%niterfo)
 
-          ! Copying old solution
-          do j=1,this%grid%nelemj
-            do i=1,this%grid%nelemi
-              this%grid%elem(i,j)%u0 = this%grid%elem(i,j)%u
-            end do
-          end do
+    !      ! Copying old solution
+    !      do j=1,this%grid%nelemj
+    !        do i=1,this%grid%nelemi
+    !          this%grid%elem(i,j)%u0 = this%grid%elem(i,j)%u
+    !        end do
+    !      end do
 
-          ! Advancing the solution in time using forward Euler
-          call residual_inv_fo(this,resid)
-!          call irs_upwind(this%grid,eps,resid,this%g,rbar)
-!          resid = rbar
-          do j=1,this%grid%nelemj
-            do i=1,this%grid%nelemi
-              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%grid%elem(i,j)%dt_max*resid(i,j,:)
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%dt*resid(i,j,:)
-            end do
-          end do
+    !      ! Advancing the solution in time using forward Euler
+    !      call residual_inv_fo(this,resid)
+!   !       call irs_upwind(this%grid,eps,resid,this%g,rbar)
+!   !       resid = rbar
+    !      do j=1,this%grid%nelemj
+    !        do i=1,this%grid%nelemi
+    !          !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%grid%elem(i,j)%dt_max*resid(i,j,:)
+    !          this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%dt*resid(i,j,:)
+    !        end do
+    !      end do
 
-          ! Computing the residuals
-          do l=1,4
-            eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
-          end do
+    !      ! Computing the residuals
+    !      do l=1,4
+    !        eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
+    !      end do
 
-          ! Getting initial residual used for normalization
-          if (k.eq.1) then
-            eqn_resids0(:) = eqn_resids(k,:)
-          end if
+    !      ! Getting initial residual used for normalization
+    !      if (k.eq.1) then
+    !        eqn_resids0(:) = eqn_resids(k,:)
+    !      end if
 
-          ! Updating local time steps
-          !call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
+    !      ! Updating local time steps
+    !      !call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
 
-          ! Printing some information
-          write(*,'(a,i6)',advance='no') "iteration: ", k
-          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)/eqn_resids0
+    !      ! Printing some information
+    !      write(*,'(a,i6)',advance='no') "iteration: ", k
+    !      write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)/eqn_resids0
 
-          ! Incrementing counter
-          k = k + 1
+    !      ! Incrementing counter
+    !      k = k + 1
 
-        end do
+    !    end do
 
-        ! Switching to second-order spatial accuracy
-        !do while ((all(eqn_resids(k,:).ge.this%tol)).and.(k.le.this%niter))
-        do while (k.le.(this%niter+this%niterfo))
+    !    ! Switching to second-order spatial accuracy
+    !    !do while ((all(eqn_resids(k,:).ge.this%tol)).and.(k.le.this%niter))
+    !    do while (k.le.(this%niter+this%niterfo))
 
-          ! Copying old solution
-          do j=1,this%grid%nelemj
-            do i=1,this%grid%nelemi
-              this%grid%elem(i,j)%u0 = this%grid%elem(i,j)%u
-            end do
-          end do
+    !      ! Copying old solution
+    !      do j=1,this%grid%nelemj
+    !        do i=1,this%grid%nelemi
+    !          this%grid%elem(i,j)%u0 = this%grid%elem(i,j)%u
+    !        end do
+    !      end do
 
-          ! Advancing the solution in time using forward Euler
-          call residual_inv(this,resid)
-!          call irs_upwind(this%grid,eps,resid,this%g,rbar)
-!          resid = rbar
-          do j=1,this%grid%nelemj
-            do i=1,this%grid%nelemi
-              !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%grid%elem(i,j)%dt_max*resid(i,j,:)
-              this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%dt*resid(i,j,:)
-            end do
-          end do
+    !      ! Advancing the solution in time using forward Euler
+    !      call residual_inv(this,resid)
+!   !       call irs_upwind(this%grid,eps,resid,this%g,rbar)
+!   !       resid = rbar
+    !      do j=1,this%grid%nelemj
+    !        do i=1,this%grid%nelemi
+    !          !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%grid%elem(i,j)%dt_max*resid(i,j,:)
+    !          this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + this%dt*resid(i,j,:)
+    !        end do
+    !      end do
 
-          ! Computing the residuals
-          do l=1,4
-            eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
-          end do
+    !      ! Computing the residuals
+    !      do l=1,4
+    !        eqn_resids(k,l) = norml2(this%grid,resid(:,:,l))
+    !      end do
 
-          ! Getting initial residual used for normalization
-          if (k.eq.1) then
-            eqn_resids0(:) = eqn_resids(k,:)
-          end if
+    !      ! Getting initial residual used for normalization
+    !      if (k.eq.1) then
+    !        eqn_resids0(:) = eqn_resids(k,:)
+    !      end if
 
-          ! Updating local time steps
-          !call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
+    !      ! Updating local time steps
+    !      !call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
 
-          ! Printing some information
-          write(*,'(a,i6)',advance='no') "iteration: ", k
-          write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)/eqn_resids0
+    !      ! Printing some information
+    !      write(*,'(a,i6)',advance='no') "iteration: ", k
+    !      write(*,'(a,4(es12.5,x))') " residuals: ", eqn_resids(k,:)/eqn_resids0
 
-          ! Incrementing counter
-          k = k + 1
+    !      ! Incrementing counter
+    !      k = k + 1
 
-        end do
-      end if
+    !    end do
+    !  end if
 
-      ! Writing final results to file
-      tecname = "solution.tec"
-      print *, "Writing final solution to ", tecname
-      call write_results_tec(this,tecname)
+    !  ! Writing final results to file
+    !  tecname = "solution.tec"
+    !  print *, "Writing final solution to ", tecname
+    !  call write_results_tec(this,tecname)
 
-      ! Writing convergence history to file
-      open(9,file="residuals.dat")
-      do i=1,(k-1)
-        write(9,'(i6,4(es12.5,x))') i, eqn_resids(i,:)/eqn_resids0
-      end do
-      close(9)
-      print *, "Done."
+    !  ! Writing convergence history to file
+    !  open(9,file="residuals.dat")
+    !  do i=1,(k-1)
+    !    write(9,'(i6,4(es12.5,x))') i, eqn_resids(i,:)/eqn_resids0
+    !  end do
+    !  close(9)
+    !  print *, "Done."
 
-    end subroutine solve_steady_fe
+    !end subroutine solve_steady_fe
 
 end module temporal
