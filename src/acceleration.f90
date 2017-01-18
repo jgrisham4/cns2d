@@ -97,6 +97,7 @@ module acceleration
       double precision, allocatable                     :: r_bar1(:,:,:)
       double precision, allocatable                     :: mach(:,:)
       double precision, allocatable, dimension(:)       :: ld,d,ud,rhs,rslice
+      double precision                                  :: eps_i,eps_j
       integer                                           :: i,j,k,aer,rshape(3)
 
       ! Allocating memory for the smoothed residual
@@ -142,6 +143,10 @@ module acceleration
 
           ! Assembling system based on Mach number in i-direction
           do i=2,grid%nelemi-1
+
+            ! Computing smoothing coefficient epsilon_i
+            eps_i = eps*min(grid%elem(i,j)%lambda_ci/grid%elem(i,j)%lambda_cj,1.0d0)
+
             rhs(i) = resid(i,j,k)
             if (mach(i,j).gt.1.0d0) then
               ld(i) = -eps
@@ -174,8 +179,8 @@ module acceleration
       deallocate(rhs)
       deallocate(rslice)
       allocate(d(grid%nelemj))
-      allocate(ld(2:grid%nelemj))
-      allocate(ud(grid%nelemi-1))
+      allocate(ld(grid%nelemj))
+      allocate(ud(grid%nelemj-1))
       allocate(rhs(grid%nelemj))
       allocate(rslice(grid%nelemj))
 
@@ -200,6 +205,10 @@ module acceleration
 
           ! Assembling the system based on the Mach number in the j-direction
           do j=2,grid%nelemj-1
+
+            ! Scaling the smoothing coefficient
+            eps_j = eps*min(grid%elem(i,j)%lambda_cj/grid%elem(i,j)%lambda_ci,1.0d0)
+
             rhs(j) = r_bar1(i,j,k)
             if (mach(i,j).gt.1.0d0) then
               ld(j)  = -eps

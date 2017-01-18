@@ -25,25 +25,27 @@ module mesh_class
   ! Element class definition
   !-----------------------------------------------------------------------------
   type element
-    double precision :: xc,yc    ! Coordinates of cell centroid
-    double precision :: area     ! Area of the cell
-    double precision :: n(2,4)   ! Face normals
-    double precision :: dxdxi    ! dx/dxi
-    double precision :: dydxi    ! dy/dxi
-    double precision :: dxdeta   ! dx/deta
-    double precision :: dydeta   ! dy/deta
-    double precision :: detJ     ! Jacobian determinant
-    double precision :: u(4)     ! Vector of conserved variables
-    double precision :: u0(4)    ! Vector of conserved variables at previous timestep
-    double precision :: w(4)     ! Vector of primitive variables
-    double precision :: dudx(4)  ! Gradient of u in x-direction
-    double precision :: dudy(4)  ! Gradient of u in y-direction
-    double precision :: dTdx     ! Gradient of T in x-direction
-    double precision :: dVdx(2)  ! Gradient of velocity in x-direction
-    double precision :: dVdy(2)  ! Gradient of velocity in y-direction
-    double precision :: dTdy     ! Gradient of T in y-direction
-    double precision :: wi(4,4)  ! Primitive states at interfaces (1-bottom, 2-right,...)
-    double precision :: dt_max   ! Max allowable time step for the element
+    double precision :: xc,yc     ! Coordinates of cell centroid
+    double precision :: area      ! Area of the cell
+    double precision :: n(2,4)    ! Face normals
+    double precision :: dxdxi     ! dx/dxi
+    double precision :: dydxi     ! dy/dxi
+    double precision :: dxdeta    ! dx/deta
+    double precision :: dydeta    ! dy/deta
+    double precision :: detJ      ! Jacobian determinant
+    double precision :: u(4)      ! Vector of conserved variables
+    double precision :: u0(4)     ! Vector of conserved variables at previous timestep
+    double precision :: w(4)      ! Vector of primitive variables
+    double precision :: dudx(4)   ! Gradient of u in x-direction
+    double precision :: dudy(4)   ! Gradient of u in y-direction
+    double precision :: dTdx      ! Gradient of T in x-direction
+    double precision :: dVdx(2)   ! Gradient of velocity in x-direction
+    double precision :: dVdy(2)   ! Gradient of velocity in y-direction
+    double precision :: dTdy      ! Gradient of T in y-direction
+    double precision :: wi(4,4)   ! Primitive states at interfaces (1-bottom, 2-right,...)
+    double precision :: dt_max    ! Max allowable time step for the element
+    double precision :: lambda_ci ! Spectral radii of the convective flux Jacobian in i-dir
+    double precision :: lambda_cj ! Spectral radii of the convective flux Jacobian in j-dir
   end type element
 
   !-----------------------------------------------------------------------------
@@ -617,6 +619,8 @@ module mesh_class
           ! spectral radii of inviscid flux Jacobian
           lambda_cx = (abs(w(2)*nhat_x(1) + w(3)*nhat_x(2)) + c)*dS_x
           lambda_cy = (abs(w(2)*nhat_y(1) + w(3)*nhat_y(2)) + c)*dS_y
+          grid%elem(i,j)%lambda_ci = lambda_cx
+          grid%elem(i,j)%lambda_cj = lambda_cy
 
           ! Computing the max timestep another way
           !dx = grid%edges_h(i,j)%length
@@ -680,6 +684,8 @@ module mesh_class
           ! spectral radii of inviscid flux Jacobian
           lambda_cx = (abs(w(2)*nhat_x(1) + w(3)*nhat_x(2)) + c)*dS_x
           lambda_cy = (abs(w(2)*nhat_y(1) + w(3)*nhat_y(2)) + c)*dS_y
+          grid%elem(i,j)%lambda_ci = lambda_cx
+          grid%elem(i,j)%lambda_cj = lambda_cy
 
           ! Computing an approximation to the spectral radii of the viscous flux
           ! Jacobian (Section 6.1.4 in CFD book by Blazek)

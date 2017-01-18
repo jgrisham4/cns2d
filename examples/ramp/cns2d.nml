@@ -25,10 +25,10 @@
   !method     = "rk4"          ! Options are rk4 or forward_euler or steady
   final_time = 1.0d-6             ! Seconds
   time_step  = 5.0d-10            ! Seconds
-  niter      = 1000
   niterfo    = 1000
+  niter      = 2000
   tol        = 1.0e-10
-  cfl        = 0.001d0
+  cfl        = 0.0001d0
 /
 
 &boundary_conditions
@@ -39,7 +39,7 @@
 /
 
 &slope_limiter
-  limiter = "none" ! barth or none
+  limiter = "barth" ! barth or none
 /
 
 &output

@@ -341,3 +341,15 @@ the following:
 - Enforcement of boundary conditions
 - Viscous fluxes
 
+-------------------------
+
+01/18/2017 10:02 am
+It seems to me that there is some mistake somewhere in the code.  The inviscid portion
+won't converge.  There has to be a mistake.  The CFL numbers I'm having to use are far
+too small.  I need to check and re-check everything.
+
+-------------------------
+
+01/18/2017 2:48 pm
+I don't know if I will be able to get this to work.  Apparently, the order of accuracy is
+0.5.  I don't know what is wrong.  I'm stuck.

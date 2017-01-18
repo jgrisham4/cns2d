@@ -91,7 +91,7 @@ module navierstokes
         end do
       end do
 
-      ! Computing residual
+      !! Computing residual
       !do j=1,this%grid%nelemj
       !  do i=1,this%grid%nelemi
       !    resid(i,j,:) = -1.0d0/(this%grid%elem(i,j)%area)*                 &
