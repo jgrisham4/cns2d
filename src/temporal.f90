@@ -321,8 +321,8 @@ module temporal
 
           ! Stage 1
           call residual_visc_fo(this,resid)
-          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          resid = rbar
+          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%dt*resid(i,j,:)
@@ -335,8 +335,8 @@ module temporal
 
           ! Stage 2
           call residual_visc_fo(this,resid)
-          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          resid = rbar
+          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%dt*resid(i,j,:)
@@ -349,8 +349,8 @@ module temporal
 
           ! Stage 3
           call residual_visc_fo(this,resid)
-          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          resid = rbar
+          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%dt*resid(i,j,:)
@@ -364,9 +364,9 @@ module temporal
           end do
 
           ! Getting initial residual
-          !if (k.eq.1) then
-          !  eqn_resids0(:) = eqn_resids(k,:)
-          !end if
+          if (k.eq.1) then
+            eqn_resids0(:) = eqn_resids(k,:)
+        end if
 
           ! Updating local time steps
           call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
@@ -393,8 +393,8 @@ module temporal
 
           ! Stage 1
           call residual_visc(this,resid)
-          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          resid = rbar
+          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%dt*resid(i,j,:)
@@ -407,8 +407,8 @@ module temporal
 
           ! Stage 2
           call residual_visc(this,resid)
-          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          resid = rbar
+          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%dt*resid(i,j,:)
@@ -421,8 +421,8 @@ module temporal
 
           ! Stage 3
           call residual_visc(this,resid)
-          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          resid = rbar
+          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%dt*resid(i,j,:)
@@ -436,9 +436,9 @@ module temporal
           end do
 
           ! Getting initial residual
-          !if (k.eq.1) then
-          !  eqn_resids0(:) = eqn_resids(k,:)
-          !end if
+          if (k.eq.1) then
+            eqn_resids0(:) = eqn_resids(k,:)
+          end if
 
           ! Updating local time steps
           call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl)
@@ -465,8 +465,8 @@ module temporal
 
           ! Stage 1
           call residual_inv_fo(this,resid)
-          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          resid = rbar
+          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%dt*resid(i,j,:)
@@ -479,8 +479,8 @@ module temporal
 
           ! Stage 2
           call residual_inv_fo(this,resid)
-          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          resid = rbar
+          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%dt*resid(i,j,:)
@@ -493,8 +493,8 @@ module temporal
 
           ! Stage 3
           call residual_inv_fo(this,resid)
-          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          resid = rbar
+          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%dt*resid(i,j,:)
@@ -508,9 +508,9 @@ module temporal
           end do
 
           ! Getting initial residual
-          !if (k.eq.1) then
-          !  eqn_resids0(:) = eqn_resids(k,:)
-          !end if
+          if (k.eq.1) then
+            eqn_resids0(:) = eqn_resids(k,:)
+          end if
 
           ! Updating local time steps
           call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)
@@ -537,8 +537,8 @@ module temporal
 
           ! Stage 1
           call residual_inv(this,resid)
-          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          resid = rbar
+          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%dt*resid(i,j,:)
@@ -551,8 +551,8 @@ module temporal
 
           ! Stage 2
           call residual_inv(this,resid)
-          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          resid = rbar
+          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%dt*resid(i,j,:)
@@ -565,8 +565,8 @@ module temporal
 
           ! Stage 3
           call residual_inv(this,resid)
-          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          resid = rbar
+          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          !resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%dt*resid(i,j,:)
@@ -580,9 +580,9 @@ module temporal
           end do
 
           ! Getting initial residual
-          !if (k.eq.1) then
-          !  eqn_resids0(:) = eqn_resids(k,:)
-          !end if
+          if (k.eq.1) then
+            eqn_resids0(:) = eqn_resids(k,:)
+          end if
 
           ! Updating local time steps
           call compute_max_timesteps_inv(this%grid,this%g,this%R,this%cfl)

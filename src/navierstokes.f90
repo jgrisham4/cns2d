@@ -235,7 +235,6 @@ module navierstokes
         end do
       end do
 
-
     end subroutine residual_visc_fo
 
 end module navierstokes

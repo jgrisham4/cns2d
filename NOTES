@@ -353,3 +353,12 @@ too small.  I need to check and re-check everything.
 01/18/2017 2:48 pm
 I don't know if I will be able to get this to work.  Apparently, the order of accuracy is
 0.5.  I don't know what is wrong.  I'm stuck.
+
+-------------------------
+
+01/19/2017 1:46 pm
+The CFL number I was using was far too low.  If I increase the CFL number to more realistic
+values, the solver converges for the ramp case.  There are still some issues -- the boundary
+elements are not right.  I believe this is because I don't do any residual smoothing on the
+boundaries.  I need to figure out what to do on the boundaries.  Maybe CIRS.
+

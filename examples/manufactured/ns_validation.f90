@@ -59,8 +59,8 @@ module validation
           ! Generating pseudo-random noise which will be added to coordinates of cell centers
           call random_number(xerr)  ! Returns number 0 <= xerr < 1
           call random_number(yerr)
-          xerr = xerr*0.001d0 - 0.0005d0
-          yerr = yerr*0.001d0 - 0.0005d0
+          xerr = xerr*0.02d0 - 0.01d0
+          yerr = yerr*0.02d0 - 0.01d0
 
           ! Computing the exact solution at the cell center (with noise added)
           xc   = grid%elem(i,j)%xc + xerr
@@ -117,26 +117,26 @@ program ns_validation
   double precision               :: Am(2,2),bm(2)
 
   ! Computing the error in each solution (only looking at density for now)
-  call compute_error( 41,21,0.001d0,err(1),dx(1))
-  call compute_error( 81,41, 0.01d0,err(2),dx(2))
-  call compute_error(161,81, 0.01d0,err(3),dx(3))
+  !call compute_error( 41,21,0.001d0,err(1),dx(1))
+  !call compute_error( 81,41, 0.01d0,err(2),dx(2))
+  call compute_error(161,81, 0.5d0,err(3),dx(3))
   !nelem(1) = 1.0d0/sqrt(40.0d0*20.0d0)
   !nelem(2) = 1.0d0/sqrt(80.0d0*40.0d0)
   !nelem(3) = 1.0d0/sqrt(160.0d0*80.0d0)
 
   ! Finding the slope
-  xv = log10(dx)
-  yv = log10(err)
-  A(1,1) = xv(1)
-  A(1,2) = 1.0d0
-  A(2,1) = xv(2)
-  A(2,2) = 1.0d0
-  A(3,1) = xv(3)
-  A(3,2) = 1.0d0
-  b = yv
-  Am = matmul(transpose(A),A)
-  bm = matmul(transpose(A),b)
-  xstar(1) = (bm(1)*Am(2,2) - Am(1,2)*bm(2))/(Am(1,1)*Am(2,2) - Am(1,2)*Am(2,1))
-  print *, "order of accuracy for continuity is ", xstar(1)
+  !xv = log10(dx)
+  !yv = log10(err)
+  !A(1,1) = xv(1)
+  !A(1,2) = 1.0d0
+  !A(2,1) = xv(2)
+  !A(2,2) = 1.0d0
+  !A(3,1) = xv(3)
+  !A(3,2) = 1.0d0
+  !b = yv
+  !Am = matmul(transpose(A),A)
+  !bm = matmul(transpose(A),b)
+  !xstar(1) = (bm(1)*Am(2,2) - Am(1,2)*bm(2))/(Am(1,1)*Am(2,2) - Am(1,2)*Am(2,1))
+  !print *, "order of accuracy for continuity is ", xstar(1)
 
 end program ns_validation
