@@ -88,27 +88,44 @@ module limiters
       !  1           2
 
       ! Extrapolating state to vertices of element
+      ! Barth's paper says that the extrema occur at the vertices.
+      ! I agree, but I'm not reconstructing the state at the vertices.
+      ! Blazek's book says to use the state extrapolated to the face midpoints
+      ! for the cell-centered scheme.
       ! Point 1
-      rvec(1) = s%grid%x(i,j) - s%grid%elem(i,j)%xc
-      rvec(2) = s%grid%y(i,j) - s%grid%elem(i,j)%yc
+      !rvec(1) = s%grid%x(i,j) - s%grid%elem(i,j)%xc
+      !rvec(2) = s%grid%y(i,j) - s%grid%elem(i,j)%yc
+      ! Left side
+      rvec(1) = s%grid%edges_h(i,j)%xm - s%grid%elem(i,j)%xc
+      rvec(2) = s%grid%edges_h(i,j)%ym - s%grid%elem(i,j)%xc
       unodes(:,1) = s%grid%elem(i,j)%u + gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
 
       ! Point 2
-      rvec(1) = s%grid%x(i+1,j) - s%grid%elem(i,j)%xc
-      rvec(2) = s%grid%y(i+1,j) - s%grid%elem(i,j)%yc
+      !rvec(1) = s%grid%x(i+1,j) - s%grid%elem(i,j)%xc
+      !rvec(2) = s%grid%y(i+1,j) - s%grid%elem(i,j)%yc
+      ! Right side
+      rvec(1) = s%grid%edges_h(i+1,j)%xm - s%grid%elem(i,j)%xc
+      rvec(2) = s%grid%edges_h(i+1,j)%ym - s%grid%elem(i,j)%yc
       unodes(:,2) = s%grid%elem(i,j)%u + gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
 
       ! Point 3
-      rvec(1) = s%grid%x(i+1,j+1) - s%grid%elem(i,j)%xc
-      rvec(2) = s%grid%y(i+1,j+1) - s%grid%elem(i,j)%yc
+      !rvec(1) = s%grid%x(i+1,j+1) - s%grid%elem(i,j)%xc
+      !rvec(2) = s%grid%y(i+1,j+1) - s%grid%elem(i,j)%yc
+      ! Bottom
+      rvec(1) = s%grid%edges_v(i,j)%xm - s%grid%elem(i,j)%xc
+      rvec(2) = s%grid%edges_v(i,j)%ym - s%grid%elem(i,j)%yc
       unodes(:,3) = s%grid%elem(i,j)%u + gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
 
       ! Point 4
-      rvec(1) = s%grid%x(i,j+1) - s%grid%elem(i,j)%xc
-      rvec(2) = s%grid%y(i,j+1) - s%grid%elem(i,j)%yc
+      !rvec(1) = s%grid%x(i,j+1) - s%grid%elem(i,j)%xc
+      !rvec(2) = s%grid%y(i,j+1) - s%grid%elem(i,j)%yc
+      ! Top
+      rvec(1) = s%grid%edges_v(i,j+1)%xm - s%grid%elem(i,j)%xc
+      rvec(2) = s%grid%edges_v(i,j+1)%ym - s%grid%elem(i,j)%yc
       unodes(:,4) = s%grid%elem(i,j)%u + gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
 
-      ! Finding value of limiter at each vertex
+      ! Finding value of limiter at each vertex -- not anymore
+      ! Finding value of limiter at each face midpoint
       ! k - vertex, l - variables
       do k=1,4
         do l=1,4
@@ -132,15 +149,96 @@ module limiters
     !---------------------------------------------------------------------------
     ! Subroutine for the Venkatakrishnan's limiter
     !---------------------------------------------------------------------------
-    !pure function venkatakrishnan() result(ph)
-    !  implicit none
-    !  type(solver), intent(in)                  :: s
-    !  integer, intent(in)                       :: i,j
-    !  double precision, allocatable, intent(in) :: gradu(:,:,:),umax(:,:,:),umin(:,:,:)
-    !  double precision                          :: ph(4)
-    !  double precision                          :: rvec(2),unodes(4,4),phibar(4,4)
-    !  integer                                   :: k,l
+    pure function venkatakrishnan(s,i,j,gradu,umax,umin,kval) result(ph)
+      implicit none
+      type(solver), intent(in)                  :: s
+      integer, intent(in)                       :: i,j
+      double precision, allocatable, intent(in) :: gradu(:,:,:),umax(:,:,:),umin(:,:,:)
+      double precision, intent(in)              :: kval
+      double precision                          :: ph(4),d1max,d1min
+      double precision                          :: rvec(2),d2(4,4),phibar(4,4)
+      double precision                          :: eps2
+      integer                                   :: k,l
 
-    !end function venkatakrishnan
+      ! Node numbering:
+      !
+      !  4           3
+      !   o---------o
+      !   |         |
+      !   |    +    |
+      !   |         |
+      !   o---------o
+      !  1           2
+
+      ! Computing parameter epsilon^2
+      eps2 = (kval*sqrt(s%grid%elem(i,j)%area))**3
+
+      ! Extrapolating state to vertices of element
+      ! Barth's paper says that the extrema occur at the vertices.
+      ! I agree, but I'm not reconstructing the state at the vertices.
+      ! Blazek's book says to use the state extrapolated to the face midpoints
+      ! for the cell-centered scheme.
+      ! Point 1
+      !rvec(1) = s%grid%x(i,j) - s%grid%elem(i,j)%xc
+      !rvec(2) = s%grid%y(i,j) - s%grid%elem(i,j)%yc
+      ! Left side
+      rvec(1) = s%grid%edges_h(i,j)%xm - s%grid%elem(i,j)%xc
+      rvec(2) = s%grid%edges_h(i,j)%ym - s%grid%elem(i,j)%xc
+      d2(:,1) = gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
+
+      ! Point 2
+      !rvec(1) = s%grid%x(i+1,j) - s%grid%elem(i,j)%xc
+      !rvec(2) = s%grid%y(i+1,j) - s%grid%elem(i,j)%yc
+      ! Right side
+      rvec(1) = s%grid%edges_h(i+1,j)%xm - s%grid%elem(i,j)%xc
+      rvec(2) = s%grid%edges_h(i+1,j)%ym - s%grid%elem(i,j)%yc
+      d2(:,2) = gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
+
+      ! Point 3
+      !rvec(1) = s%grid%x(i+1,j+1) - s%grid%elem(i,j)%xc
+      !rvec(2) = s%grid%y(i+1,j+1) - s%grid%elem(i,j)%yc
+      ! Bottom
+      rvec(1) = s%grid%edges_v(i,j)%xm - s%grid%elem(i,j)%xc
+      rvec(2) = s%grid%edges_v(i,j)%ym - s%grid%elem(i,j)%yc
+      d2(:,3) = gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
+
+      ! Point 4
+      !rvec(1) = s%grid%x(i,j+1) - s%grid%elem(i,j)%xc
+      !rvec(2) = s%grid%y(i,j+1) - s%grid%elem(i,j)%yc
+      ! Top
+      rvec(1) = s%grid%edges_v(i,j+1)%xm - s%grid%elem(i,j)%xc
+      rvec(2) = s%grid%edges_v(i,j+1)%ym - s%grid%elem(i,j)%yc
+      d2(:,4) = gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
+
+      ! Finding value of limiter at each vertex -- not anymore
+      ! k - vertex, l - variables
+      ! Finding value of limiter at each face midpoint
+      ! k - face, l - variables
+      do k=1,4
+        do l=1,4
+
+          ! Computing Delta_{1,max} and Delta_{1,min}
+          d1min = umin(i,j,l) - s%grid%elem(i,j)%u(l)
+          d1max = umax(i,j,l) - s%grid%elem(i,j)%u(l)
+
+          ! Logic to determine limiter
+          if (d2(l,k)>0.0d0) then
+            phibar(l,k) = 1.0d0/d2(l,k)*(((d1max**2+eps2)*d2(l,k)+2.0d0*d2(l,k)**2*d1max)/ &
+              (d1max**2 + 2.0d0*d2(l,k)**2 + d1max*d2(l,k) + eps2))
+          else if (d2(l,k)<0.0d0) then
+            phibar(l,k) = 1.0d0/d2(l,k)*(((d1min**2+eps2)*d2(l,k)+2.0d0*d2(l,k)**2*d1min)/ &
+              (d1min**2 + 2.0d0*d2(l,k)**2 + d1min*d2(l,k) + eps2))
+          else
+            phibar(l,k) = 1.0d0
+          end if
+        end do
+      end do
+
+      ! Finding the final value of the limiter for each conserved variable
+      do k=1,4
+        ph(k) = minval(phibar(k,:))
+      end do
+
+    end function venkatakrishnan
 
 end module limiters
