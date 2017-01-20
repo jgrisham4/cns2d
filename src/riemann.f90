@@ -89,8 +89,9 @@ module riemann
             pL = (gam-one)*( uL(4) - half*rhoL*(vxL*vxL+vyL*vyL) )  ! Getting a negative pressure
             if (pL.lt.0.0d0) then
               print *, "Warning: Negative pressures in Riemann solver -- left state."
-              write (*,'(a,4(f12.5,x))') "uL = ", uL
-              write (*,'(a,f12.5)'), "p = ", pL
+              !write (*,'(a,4(f12.5,x))') "uL = ", uL
+              !write (*,'(a,f12.5)'), "p = ", pL
+              pL = 0.000001d0
             end if
             aL = sqrt(gam*pL/rhoL)
             HL = ( uL(4) + pL ) / rhoL
@@ -105,8 +106,9 @@ module riemann
             pR = (gam-one)*( uR(4) - half*rhoR*(vxR*vxR+vyR*vyR) )
             if (pR.lt.0.0d0) then
               print *, "Warning: Negative pressures in Riemann solver -- right state."
-              write (*,'(a,4(f12.5,x))') "uR = ", uR
-              write (*,'(a,f12.5)'), "p = ", pR
+              pR = 0.000001d0
+              !write (*,'(a,4(f12.5,x))') "uR = ", uR
+              !write (*,'(a,f12.5)'), "p = ", pR
             end if
             aR = sqrt(gam*pR/rhoR)
             HR = ( uR(4) + pR ) / rhoR

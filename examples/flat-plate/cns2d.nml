@@ -27,7 +27,7 @@
   niter      = 5000         ! Number of iterations -- only used for steady flows
   niterfo    = 1000
   tol        = 1.0e-10       ! Used to monitor convergence -- only used for steady flow solves
-  cfl        = 0.5d0         ! Only used for steady flow solves
+  cfl        = 0.01d0         ! Only used for steady flow solves
 /
 
 &boundary_conditions

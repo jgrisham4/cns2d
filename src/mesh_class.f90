@@ -602,10 +602,11 @@ module mesh_class
 
           ! Computing the speed of sound for the element
           if (w(4).lt.0.0d0) then
-            print *, "Error: Negative pressure in compute_max_timesteps_inv."
-            stop
+            print *, "Warning: Negative pressure in compute_max_timesteps_inv."
+            c = sqrt(g*0.0000001d0/w(1))
+          else
+            c = sqrt(g*w(4)/w(1))
           end if
-          c = sqrt(g*w(4)/w(1))
 
           ! Finding averaged normal vectors
           nhat_x = 0.5d0*(grid%elem(i,j)%n(:,2) - grid%elem(i,j)%n(:,4))
@@ -667,10 +668,11 @@ module mesh_class
 
           ! Computing the speed of sound for the element
           if (w(4).lt.0.0d0) then
-            print *, "Error: Negative pressure in compute_max_timesteps_visc."
-            stop
+            print *, "Warning: Negative pressure in compute_max_timesteps_visc."
+            c = sqrt(g*0.0000001d0/w(1))
+          else
+            c = sqrt(g*w(4)/w(1))
           end if
-          c = sqrt(g*w(4)/w(1))
 
           ! Finding averaged normal vectors
           nhat_x = 0.5d0*(grid%elem(i,j)%n(:,4) - grid%elem(i,j)%n(:,2))

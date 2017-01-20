@@ -260,7 +260,7 @@ module temporal
       integer                        :: i,j,k,l,aer
 
       ! Parameter used in upwind implicit residual smoothing
-      double precision, parameter :: epsln = 0.10d0
+      double precision, parameter :: epsln = 0.1d0
 
       ! Parameters used in multi-stage time-stepping
       !double precision, parameter   :: a1 = 0.1918d0
@@ -321,8 +321,8 @@ module temporal
 
           ! Stage 1
           call residual_visc_fo(this,resid)
-          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          !resid = rbar
+          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%dt*resid(i,j,:)
@@ -335,8 +335,8 @@ module temporal
 
           ! Stage 2
           call residual_visc_fo(this,resid)
-          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          !resid = rbar
+          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%dt*resid(i,j,:)
@@ -349,8 +349,8 @@ module temporal
 
           ! Stage 3
           call residual_visc_fo(this,resid)
-          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          !resid = rbar
+          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%dt*resid(i,j,:)
@@ -393,8 +393,8 @@ module temporal
 
           ! Stage 1
           call residual_visc(this,resid)
-          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          !resid = rbar
+          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%dt*resid(i,j,:)
@@ -407,8 +407,8 @@ module temporal
 
           ! Stage 2
           call residual_visc(this,resid)
-          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          !resid = rbar
+          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%dt*resid(i,j,:)
@@ -421,8 +421,8 @@ module temporal
 
           ! Stage 3
           call residual_visc(this,resid)
-          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          !resid = rbar
+          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%dt*resid(i,j,:)
@@ -465,8 +465,8 @@ module temporal
 
           ! Stage 1
           call residual_inv_fo(this,resid)
-          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          !resid = rbar
+          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%dt*resid(i,j,:)
@@ -479,8 +479,8 @@ module temporal
 
           ! Stage 2
           call residual_inv_fo(this,resid)
-          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          !resid = rbar
+          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%dt*resid(i,j,:)
@@ -493,8 +493,8 @@ module temporal
 
           ! Stage 3
           call residual_inv_fo(this,resid)
-          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          !resid = rbar
+          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%dt*resid(i,j,:)
@@ -537,8 +537,8 @@ module temporal
 
           ! Stage 1
           call residual_inv(this,resid)
-          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          !resid = rbar
+          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a1*this%dt*resid(i,j,:)
@@ -551,8 +551,8 @@ module temporal
 
           ! Stage 2
           call residual_inv(this,resid)
-          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          !resid = rbar
+          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a2*this%dt*resid(i,j,:)
@@ -565,8 +565,8 @@ module temporal
 
           ! Stage 3
           call residual_inv(this,resid)
-          !call irs_upwind(this%grid,epsln,resid,this%g,rbar)
-          !resid = rbar
+          call irs_upwind(this%grid,epsln,resid,this%g,rbar)
+          resid = rbar
           do j=1,this%grid%nelemj
             do i=1,this%grid%nelemi
               !this%grid%elem(i,j)%u = this%grid%elem(i,j)%u0 + a3*this%dt*resid(i,j,:)

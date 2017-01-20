@@ -22,9 +22,9 @@
 
 &time_advancement
   method     = "steady"
-  niterfo    = 5000
+  niterfo    = 180
   niter      = 0
-  cfl        = 0.5d0
+  cfl        = 0.01d0
   tol        = 1.0e-6
   final_time = 1.0e-0  ! Seconds
   time_step  = 1.0e-0 ! Seconds

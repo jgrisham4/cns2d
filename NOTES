@@ -362,3 +362,19 @@ values, the solver converges for the ramp case.  There are still some issues -- 
 elements are not right.  I believe this is because I don't do any residual smoothing on the
 boundaries.  I need to figure out what to do on the boundaries.  Maybe CIRS.
 
+-------------------------
+
+01/19/2017 9:30 pm
+Found a mistake in the upwind implicit residual smoothing.  I computed the smoothing coefficient
+for each direction (i and j) using the spectral radii of the convective flux Jacobian, but I
+never changed the smoothing coefficient in the assembly of the system.  It was still set to
+epsilon, when it should be epsilon_i and epsilon_j, respectively.  I'm going to fix this and
+hope it allows me to use higher values of eps.
+
+-------------------------
+
+01/19/2017 11:09 pm
+Adding the boundary residual smoothing seems to mess everything up a bit.  Now, the solver
+won't converge.  It blows up with negative pressures.  Not sure what is happening.  I need
+to implement the venkatakrishnan limiter to see if that helps with robustness.
+

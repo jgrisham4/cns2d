@@ -3,7 +3,7 @@
 /
 
 &mesh_inputs
-  mesh_file = "ramp300.cgns"
+  mesh_file = "ramp200.cgns"
 /
 
 &freestream_properties
@@ -22,13 +22,12 @@
 
 &time_advancement
   method     = "steady"          ! Options are rk4 or forward_euler or steady
-  !method     = "rk4"          ! Options are rk4 or forward_euler or steady
-  final_time = 1.0d-6             ! Seconds
-  time_step  = 5.0d-10            ! Seconds
-  niterfo    = 1000
-  niter      = 2000
+  final_time = 1.0d0             ! Seconds
+  time_step  = 1.0d0             ! Seconds
+  niterfo    = 100
+  niter      = 0
   tol        = 1.0e-10
-  cfl        = 1.5d0
+  cfl        = 0.02d0
 /
 
 &boundary_conditions

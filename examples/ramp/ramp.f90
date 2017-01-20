@@ -81,7 +81,7 @@ program isentropic_vortex
   bcs(4) = 1000
 
   ! Initializing solver
-  call initialize(esolver,grid,dt,tfinal,1.4d0,287.0d0,w0,winfty,bcs,"barth",.false.,10000,500,1.0d-10,0.001d0)
+  call initialize(esolver,grid,dt,tfinal,1.4d0,287.0d0,w0,winfty,bcs,"barth",.false.,10000,500,1.0d-10,0.1d0)
   !call initialize(esolver,grid,dt,tfinal,1.4d0,w0,winfty,bcs,"none")
 
   ! Solving problem

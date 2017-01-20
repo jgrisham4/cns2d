@@ -48,8 +48,8 @@ module validation
       t_final = 0.0d0
       cfl     = cfl_num
       tol     = 1.0e-10
-      niterfo = 2000   ! First-order iterations
-      niter   = 3000
+      niterfo = 200   ! First-order iterations
+      niter   = 1000
 
       ! Setting initial guess using random noise added to the initial guess
       winfty(:) = 0.0d0
@@ -61,6 +61,8 @@ module validation
           call random_number(yerr)
           xerr = xerr*0.02d0 - 0.01d0
           yerr = yerr*0.02d0 - 0.01d0
+          xerr = 0.0d0
+          yerr = 0.0d0
 
           ! Computing the exact solution at the cell center (with noise added)
           xc   = grid%elem(i,j)%xc + xerr
