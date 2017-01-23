@@ -46,6 +46,7 @@ module mesh_class
     double precision :: dt_max    ! Max allowable time step for the element
     double precision :: lambda_ci ! Spectral radii of the convective flux Jacobian in i-dir
     double precision :: lambda_cj ! Spectral radii of the convective flux Jacobian in j-dir
+    double precision :: phi(4)    ! Value of limiter for each conserved variable
   end type element
 
   !-----------------------------------------------------------------------------
@@ -603,6 +604,7 @@ module mesh_class
           ! Computing the speed of sound for the element
           if (w(4).lt.0.0d0) then
             print *, "Warning: Negative pressure in compute_max_timesteps_inv."
+            write (*,'(2(a,i0))') "i=", i, " j=", j
             c = sqrt(g*0.0000001d0/w(1))
           else
             c = sqrt(g*w(4)/w(1))

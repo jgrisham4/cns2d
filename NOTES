@@ -378,3 +378,16 @@ Adding the boundary residual smoothing seems to mess everything up a bit.  Now, 
 won't converge.  It blows up with negative pressures.  Not sure what is happening.  I need
 to implement the venkatakrishnan limiter to see if that helps with robustness.
 
+-------------------------
+
+01/22/2017 11:48 pm
+I've added the limiter by Venkatakrishnan.  I believe I've isolated the problem to the
+freestream and extrapolate BCs.  Look at animations in ramp to pick back up in the morning.
+
+-------------------------
+
+01/23/2017 12:09 pm
+The solver works fine for the isentropic vortex and the shocktube.  For an inviscid flat
+plate, it seems that the boundary conditions cause oscillations to propagate inside
+somehow.  Looking at rho v, there are tons of strange oscillations.  I'm going to keep writing
+unit tests for everything I can think of.  I'm not sure where the problem is.

@@ -14,7 +14,7 @@ program precns2d
   logical                       :: viscous_terms
   character (len=30)            :: mesh_file,method,limiter
   double precision              :: u_inf,v_inf,p_inf,rho_inf
-  double precision              :: g,C1,S,final_time,time_step,R,cfl,tol,dt_max_global
+  double precision              :: g,C1,S,final_time,time_step,R,cfl,tol,dt_max_global,k
   integer                       :: bcids(4),write_freq,niter,niterfo
   type(mesh)                    :: grid
   type(solver)                  :: solv
@@ -29,7 +29,7 @@ program precns2d
   namelist /gas_properties/g,C1,S,R
   namelist /time_advancement/method,final_time,time_step,niter,tol,cfl,niterfo
   namelist /boundary_conditions/bcids
-  namelist /slope_limiter/limiter
+  namelist /slope_limiter/limiter,k
   namelist /output/write_freq
 
   ! Opening file
@@ -117,7 +117,7 @@ program precns2d
   end do
 
   ! Initializing solver
-  call initialize(solv,grid,time_step,final_time,g,R,w0,winfty,bcids,limiter,viscous_terms,niter,niterfo,tol,cfl)
+  call initialize(solv,grid,time_step,final_time,g,R,w0,winfty,bcids,limiter,viscous_terms,niter,niterfo,tol,cfl,k)
 
   ! Computing the max timestep possible
   if (solv%is_visc.eq..true.) then

@@ -71,7 +71,8 @@ program shocktube
   !bcs(4) = 1003
 
   ! Initializing solver
-  call initialize(esolver,grid,dt,tfinal,1.4d0,287.0d0,w0,winfty,bcs,"barth",.false.,0,0,0.0d0,0.0d0)
+  !call initialize(esolver,grid,dt,tfinal,1.4d0,287.0d0,w0,winfty,bcs,"barth",.false.,0,0,0.0d0,0.0d0,1.0d0)
+  call initialize(esolver,grid,dt,tfinal,1.4d0,287.0d0,w0,winfty,bcs,"venkat",.false.,0,0,0.0d0,0.0d0,1.0d0)
 
   ! Solving problem
   !call solve_feuler(esolver,100)
@@ -79,7 +80,8 @@ program shocktube
 
   ! Writing out a slice to file
   j = 10
-  open(3,file="results2d.dat")
+  !open(3,file="results2d.dat")
+  open(3,file="./comparison/results2d-venkat.dat")
   do i=1,grid%nelemi
     esolver%grid%elem(i,j)%w = u_to_w(esolver%grid%elem(i,j)%u,esolver%g)
     write(3,'(es13.6,a,4(es13.6,1x))') esolver%grid%elem(i,j)%xc, " ", esolver%grid%elem(i,j)%w

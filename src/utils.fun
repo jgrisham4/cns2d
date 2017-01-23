@@ -75,4 +75,55 @@ test elem_min
 
 end test elem_min
 
+! Testing w_to_u function
+test prim_to_cons
+  double precision :: w(4), u(4), u_computed(4)
+  double precision :: g = 1.4d0
+
+  ! Computing correct result
+  w(1) = 0.5d0
+  w(2) = 10.0d0
+  w(3) = 5.0d0
+  w(4) = 100000.0d0
+  u_computed(1) = w(1)
+  u_computed(2) = w(1)*w(2)
+  u_computed(3) = w(1)*w(3)
+  u_computed(4) = w(4)/(g-1.0d0) + 0.5d0*w(1)*(w(2)**2+w(3)**2)
+
+  ! Calling function
+  u = w_to_u(w,g)
+
+  ! Checking equality
+  assert_equal_within(u(1),u_computed(1),1.0e-10)
+  assert_equal_within(u(2),u_computed(2),1.0e-10)
+  assert_equal_within(u(3),u_computed(3),1.0e-10)
+  assert_equal_within(u(4),u_computed(4),1.0e-10)
+
+end test prim_to_cons
+
+test cons_to_prim
+  double precision :: w(4), u(4), w_computed(4)
+  double precision :: g = 1.4d0
+
+  ! Computing correct result
+  u(1) = 0.5d0
+  u(2) = 5.0d0
+  u(3) = 2.5d0
+  u(4) = 250031.25
+  w_computed(1) = u(1)
+  w_computed(2) = u(2)/u(1)
+  w_computed(3) = u(3)/u(1)
+  w_computed(4) = (g-1.0d0)*(u(4) - 0.5d0*u(1)*(w_computed(2)**2+w_computed(3)**2))
+
+  ! Calling function
+  w = u_to_w(u,g)
+
+  ! Checking equality
+  assert_equal_within(w(1),w_computed(1),1.0e-10)
+  assert_equal_within(w(2),w_computed(2),1.0e-10)
+  assert_equal_within(w(3),w_computed(3),1.0e-10)
+  assert_equal_within(w(4),w_computed(4),1.0e-10)
+
+end test cons_to_prim
+
 end test_suite

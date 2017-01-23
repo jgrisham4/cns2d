@@ -15,8 +15,8 @@ program cns2d
   ! Namelist variables
   logical            :: viscous_terms
   character (len=30) :: mesh_file,method,limiter
-  double precision   :: u_inf,v_inf,p_inf,rho_inf
-  double precision   :: g,C1,S,final_time,time_step,R,cfl,tol
+  double precision   :: u_inf,v_inf,p_inf,rho_inf,epsln
+  double precision   :: g,C1,S,final_time,time_step,R,cfl,tol,k
   integer            :: bcids(4),write_freq,niter,niterfo
 
   ! Local variables
@@ -33,8 +33,9 @@ program cns2d
   namelist /gas_properties/g,C1,S,R
   namelist /time_advancement/method,final_time,time_step,niter,tol,cfl,niterfo
   namelist /boundary_conditions/bcids
-  namelist /slope_limiter/limiter
+  namelist /slope_limiter/limiter,k
   namelist /output/write_freq
+  namelist /acceleration/epsln
 
   ! Opening file
   open(unit=101,file="cns2d.nml",status="old")
@@ -121,7 +122,7 @@ program cns2d
   end do
 
   ! Initializing solver
-  call initialize(solv,grid,time_step,final_time,g,R,w0,winfty,bcids,limiter,viscous_terms,niter,niterfo,tol,cfl)
+  call initialize(solv,grid,time_step,final_time,g,R,w0,winfty,bcids,limiter,viscous_terms,niter,niterfo,tol,cfl,k)
 
   ! Solving the problem
   if (method.eq."forward_euler") then
@@ -129,8 +130,7 @@ program cns2d
   else if (method.eq."rk4") then
     call solve_rk4(solv,write_freq)
   else if (method.eq."steady") then
-    call solve_steady(solv)
-    !call solve_steady_fe(solv)
+    call solve_steady(solv,epsln)
   else
     print *, "Error: Time advancement method ", method, " not recognized."
     stop

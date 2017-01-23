@@ -8,7 +8,7 @@
 module euler
   use solver_class, only : solver
   use utils,        only : compute_elem_max,compute_elem_min
-  use limiters,     only : barth
+  use limiters,     only : barth,venkatakrishnan
   use grad,         only : compute_gradient
   use riemann,      only : roe,rotated_rhll
   use bcs,          only : apply_bcs
@@ -73,7 +73,7 @@ module euler
       end do
 
       ! Finding max and min of states for each element and neighbors
-      if (this%limiter.eq."barth") then
+      if ((this%limiter.eq."barth").or.(this%limiter.eq."venkat")) then
         umax = compute_elem_max(u,this%grid%nelemi,this%grid%nelemj)
         umin = compute_elem_min(u,this%grid%nelemi,this%grid%nelemj)
       end if
@@ -103,6 +103,18 @@ module euler
 
                 ! Calling barth subroutine to find limiter
                 phi = barth(this,i,j,gradU,umax,umin)
+                this%grid%elem(i,j)%phi = phi
+
+                ! Slope-limited reconstruction
+                do k=1,4
+                  this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*phi(k)
+                end do
+
+              case ("venkat")
+
+                ! Calling venkatakrishnan subroutine to find limiter
+                phi = venkatakrishnan(this,i,j,gradU,umax,umin)
+                this%grid%elem(i,j)%phi = phi
 
                 ! Slope-limited reconstruction
                 do k=1,4
@@ -134,6 +146,18 @@ module euler
 
                 ! Calling subroutine to compute the barth limiter
                 phi = barth(this,i,j,gradU,umax,umin)
+                this%grid%elem(i,j)%phi = phi
+
+                ! Slope-limited reconstruction
+                do k=1,4
+                  this%grid%edges_v(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)*phi(k)
+                end do
+
+              case ("venkat")
+
+                ! Calling venkatakrishnan subroutine to find limiter
+                phi = venkatakrishnan(this,i,j,gradU,umax,umin)
+                this%grid%elem(i,j)%phi = phi
 
                 ! Slope-limited reconstruction
                 do k=1,4
@@ -171,6 +195,19 @@ module euler
 
                 ! Calling subroutine to compute the barth limiter
                 phi = barth(this,i,j,gradU,umax,umin)
+                this%grid%elem(i,j)%phi = phi
+
+                ! Slope-limited reconstruction
+                do k=1,4
+                  this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*phi(k)
+                  this%grid%edges_v(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)*phi(k)
+                end do
+
+              case ("venkat")
+
+                ! Calling subroutine to compute the venkatakrishnan limiter
+                phi = venkatakrishnan(this,i,j,gradU,umax,umin)
+                this%grid%elem(i,j)%phi = phi
 
                 ! Slope-limited reconstruction
                 do k=1,4
@@ -211,11 +248,21 @@ module euler
               case ("barth")
 
                 ! Calling barth subroutine to find limiter
-                phi = barth(this,i,j,gradU,umax,umin)
+                !phi = barth(this,i,j,gradU,umax,umin)
 
                 ! Slope-limited reconstruction
                 do k=1,4
-                  this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*phi(k)
+                  this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*this%grid%elem(i,j)%phi(k)
+                end do
+
+              case("venkat")
+
+                ! Calling venkatakrishnan subroutine to find limiter
+                !phi = venkatakrishnan(this,i,j,gradU,umax,umin)
+
+                ! Slope-limited reconstruction
+                do k=1,4
+                  this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*this%grid%elem(i,j)%phi(k)
                 end do
 
               case default
@@ -242,11 +289,21 @@ module euler
               case ("barth")
 
                 ! Calling subroutine to compute the barth limiter
-                phi = barth(this,i,j,gradU,umax,umin)
+                !phi = barth(this,i,j,gradU,umax,umin)
 
                 ! Slope-limited reconstruction
                 do k=1,4
-                  this%grid%edges_h(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)*phi(k)
+                  this%grid%edges_h(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)*this%grid%elem(i,j)%phi(k)
+                end do
+
+              case ("venkat")
+
+                ! Calling subroutine to compute the venkatakrishnan limiter
+                !phi = venkatakrishnan(this,i,j,gradU,umax,umin)
+
+                ! Slope-limited reconstruction
+                do k=1,4
+                  this%grid%edges_h(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)*this%grid%elem(i,j)%phi(k)
                 end do
 
               case default
@@ -278,12 +335,23 @@ module euler
               case ("barth")
 
                 ! Calling subroutine to compute the barth limiter
-                phi = barth(this,i,j,gradU,umax,umin)
+                !phi = barth(this,i,j,gradU,umax,umin)
 
                 ! Slope-limited reconstruction
                 do k=1,4
-                  this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*phi(k)
-                  this%grid%edges_h(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)*phi(k)
+                  this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*this%grid%elem(i,j)%phi(k)
+                  this%grid%edges_h(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)*this%grid%elem(i,j)%phi(k)
+                end do
+
+              case ("venkat")
+
+                ! Calling subroutine to compute the venkatakrishnan limiter
+                !phi = venkatakrishnan(this,i,j,gradU,umax,umin)
+
+                ! Slope-limited reconstruction
+                do k=1,4
+                  this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*this%grid%elem(i,j)%phi(k)
+                  this%grid%edges_h(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)*this%grid%elem(i,j)%phi(k)
                 end do
 
               case default
@@ -295,9 +363,6 @@ module euler
 
         end do
       end do
-
-      ! Applying boundary conditions
-      call apply_bcs(this)
 
       ! Must now iterate through all the interior interfaces and solve
       ! the Riemann problem to find the fluxes
@@ -345,6 +410,9 @@ module euler
 
         end do
       end do
+
+      ! Applying boundary conditions
+      call apply_bcs(this)
 
       ! Computing residual
       do j=1,this%grid%nelemj
@@ -406,9 +474,6 @@ module euler
         end do
       end do
 
-      ! Applying boundary conditions
-      call apply_bcs(this)
-
       ! Must now iterate through all the interior interfaces and solve
       ! the Riemann problem to find the fluxes
       ! Vertical faces
@@ -433,6 +498,9 @@ module euler
 
         end do
       end do
+
+      ! Applying boundary conditions
+      call apply_bcs(this)
 
       ! Computing residual
       do j=1,this%grid%nelemj

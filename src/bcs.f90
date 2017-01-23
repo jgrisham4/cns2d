@@ -53,7 +53,7 @@ module bcs
 
         ! Farfield
         do i=1,this%grid%nelemi
-          this%grid%edges_h(i,j)%flux = -flux_adv(this%winfty,this%grid%elem(i,j)%n(:,1),this%g)
+          this%grid%edges_h(i,j)%flux = flux_adv(this%winfty,-this%grid%elem(i,j)%n(:,1),this%g)
         end do
 
       else if (this%bcids(1).eq.1001) then
@@ -62,7 +62,7 @@ module bcs
         do i=1,this%grid%nelemi
           uextrap = this%grid%elem(i,j)%u
           wextrap = u_to_w(uextrap,this%g)
-          this%grid%edges_h(i,j)%flux = -flux_adv(wextrap,this%grid%elem(i,j)%n(:,1),this%g)
+          this%grid%edges_h(i,j)%flux = flux_adv(wextrap,-this%grid%elem(i,j)%n(:,1),this%g)
         end do
 
       else if (this%bcids(1).eq.1002) then
@@ -117,7 +117,7 @@ module bcs
                                       this%grid%elem(i,j)%dudy*rR(2)
 
           ! Solving the Riemann problem at the interface
-          this%grid%edges_h(i,j)%flux = roe(this%grid%edges_h(i,j)%uL,this%grid%edges_h(i,j)%uR,this%grid%elem(i,j-1)%n(:,3))
+          this%grid%edges_h(i,j)%flux = roe(this%grid%edges_h(i,j)%uL,this%grid%edges_h(i,j)%uR,-this%grid%elem(i,j)%n(:,1))
 
         end do
 
@@ -295,8 +295,8 @@ module bcs
 
           ! Computing the primitive variables at the face and computing the flux
           wtmp = u_to_w(utmp,this%g)
-          this%grid%edges_h(i,j)%flux = -flux_adv(wtmp,this%grid%elem(i,j)%n(:,1),this%g) + &
-            flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,this%grid%elem(i,j)%n(:,1),this%g,this%R)
+          this%grid%edges_h(i,j)%flux = flux_adv(wtmp,-this%grid%elem(i,j)%n(:,1),this%g) - &
+            flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,-this%grid%elem(i,j)%n(:,1),this%g,this%R)
 
         end do
 
@@ -546,7 +546,7 @@ module bcs
 
         ! Farfield
         do j=1,this%grid%nelemj
-          this%grid%edges_v(i,j)%flux = -flux_adv(this%winfty,this%grid%elem(i,j)%n(:,4),this%g)
+          this%grid%edges_v(i,j)%flux = flux_adv(this%winfty,-this%grid%elem(i,j)%n(:,4),this%g)
         end do
 
       else if (this%bcids(4).eq.1001) then
@@ -555,7 +555,7 @@ module bcs
         do j=1,this%grid%nelemj
           uextrap = this%grid%elem(i,j)%u
           wextrap = u_to_w(uextrap,this%g)
-          this%grid%edges_v(i,j)%flux = -flux_adv(wextrap,this%grid%elem(i,j)%n(:,4),this%g)
+          this%grid%edges_v(i,j)%flux = flux_adv(wextrap,-this%grid%elem(i,j)%n(:,4),this%g)
         end do
 
       else if (this%bcids(4).eq.1002) then
@@ -635,8 +635,8 @@ module bcs
 
           ! Computing the primitive variables at the face and computing the flux
           wtmp = u_to_w(utmp,this%g)
-          this%grid%edges_v(i,j)%flux = -flux_adv(wtmp,this%grid%elem(i,j)%n(:,4),this%g) + &
-            flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,this%grid%elem(i,j)%n(:,4),this%g,this%R)
+          this%grid%edges_v(i,j)%flux = flux_adv(wtmp,-this%grid%elem(i,j)%n(:,4),this%g) - &
+            flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,-this%grid%elem(i,j)%n(:,4),this%g,this%R)
 
         end do
 

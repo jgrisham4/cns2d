@@ -1,6 +1,7 @@
 program isentropic_vortex
   use mesh_class,   only : mesh,read_from_file,preprocess
-  use solvers, only : solver,initialize,solve_feuler,solve_rk4
+  use solver_class, only : solver,initialize
+  use temporal,     only : solve_feuler,solve_rk4
   implicit none
   double precision :: a,rho_inf,p_inf,u_inf,v_inf,x0,y0,K,xb,yb,rb,temp,g
   double precision :: rgas,t_inf,a_inf,winfty(4)
@@ -14,8 +15,8 @@ program isentropic_vortex
   type(solver) :: esolver
 
   ! Reading mesh
-  call read_from_file(grid,"iv800.cgns")
-  !call read_from_file(grid,"iv200.cgns")
+  !call read_from_file(grid,"iv800.cgns")
+  call read_from_file(grid,"iv200.cgns")
 
   ! Preprocessing mesh
   call preprocess(grid)
@@ -69,8 +70,7 @@ program isentropic_vortex
   bcs(4) = 1000
 
   ! Initializing solver
-  !call initialize(esolver,grid,0.01d0,10.0d0,1.4d0,287.0d0,w0,winfty,bcs,"barth",.false.,0,0.0d0,0.0d0)
-  call initialize(esolver,grid,0.01d0,10.0d0,1.4d0,287.0d0,w0,winfty,bcs,"none",.false.,0,0.0d0,0.0d0)
+  call initialize(esolver,grid,0.01d0,10.0d0,1.4d0,287.0d0,w0,winfty,bcs,"none",.false.,0,0,0.0d0,0.0d0,0.0d0)
 
   ! Solving problem
   !call solve_feuler(esolver,1000)

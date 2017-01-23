@@ -12,11 +12,11 @@ module gas_properties
   public :: mu, k
 
   ! Assuming constant Prandtl number
-  !double precision, parameter :: Pr = 0.72d0
+  double precision, parameter :: Pr = 0.72d0
 
   ! Constants used in MMS
-  double precision, parameter :: Pr = 1.05d0  ! MMS
-  double precision, parameter :: mu_mms = 0.3d0
+  !double precision, parameter :: Pr = 1.05d0  ! MMS
+  !double precision, parameter :: mu_mms = 0.3d0
 
   contains
 
@@ -28,8 +28,8 @@ module gas_properties
       implicit none
       double precision, intent(in) :: T
       double precision             :: mu
-      !mu = 1.45d0*T**(3.0d0/2.0d0)/(T+110.0d0)*1.0e-6
-      mu = mu_mms
+      mu = 1.45d0*T**(3.0d0/2.0d0)/(T+110.0d0)*1.0e-6
+      !mu = mu_mms
     end function mu
 
     !---------------------------------------------------------

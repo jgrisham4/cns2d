@@ -81,12 +81,12 @@ program isentropic_vortex
   bcs(4) = 1000
 
   ! Initializing solver
-  call initialize(esolver,grid,dt,tfinal,1.4d0,287.0d0,w0,winfty,bcs,"barth",.false.,10000,500,1.0d-10,0.1d0)
+  call initialize(esolver,grid,dt,tfinal,1.4d0,287.0d0,w0,winfty,bcs,"venkat",.false.,90,0,1.0d-10,0.1d0,5.0d0)
   !call initialize(esolver,grid,dt,tfinal,1.4d0,w0,winfty,bcs,"none")
 
   ! Solving problem
   !call solve_feuler(esolver,1000)
   !call solve_rk4(esolver,500)
-  call solve_steady(esolver)
+  call solve_steady(esolver,6.0d0)
 
 end program isentropic_vortex

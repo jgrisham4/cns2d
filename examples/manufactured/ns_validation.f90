@@ -91,7 +91,7 @@ module validation
       bcs(4) = 2000
 
       ! Initializing solver
-      call initialize(ns_solver,grid,dt,t_final,g,R,w0,winfty,bcs,"none",.true.,niter,niterfo,tol,cfl)
+      call initialize(ns_solver,grid,dt,t_final,g,R,w0,winfty,bcs,"none",.true.,niter,niterfo,tol,cfl,1.0d0)
 
       ! Solving the problem
       call solve_steady(ns_solver)

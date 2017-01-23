@@ -250,17 +250,15 @@ module temporal
     ! Subroutine for solving a steady problem -- a 3 stage
     ! Runge-Kutta scheme is used to advance in time.
     !---------------------------------------------------------
-    subroutine solve_steady(this)
+    subroutine solve_steady(this,epsln)
       implicit none
       type(solver), intent(inout)    :: this
+      double precision, intent(in)   :: epsln  ! Parameter used in upwind implicit residual smoothing
       double precision, allocatable  :: resid(:,:,:),eqn_resids(:,:)
       double precision, dimension(4) :: eqn_resids0
       double precision, allocatable :: rbar(:,:,:)
       character (len=30)             :: tecname
       integer                        :: i,j,k,l,aer
-
-      ! Parameter used in upwind implicit residual smoothing
-      double precision, parameter :: epsln = 0.1d0
 
       ! Parameters used in multi-stage time-stepping
       !double precision, parameter   :: a1 = 0.1918d0
@@ -455,6 +453,13 @@ module temporal
 
         ! Inviscid first-order spatial accuracy
         do while (k.le.this%niterfo)
+
+          ! Writing current solution
+          if (mod(k,1).eq.0) then
+            write (tecname, '(a,i0,a)') "sol", (k), ".tec"
+            print *, "Writing data to ", tecname
+            call write_results_tec(this,tecname)
+          end if
 
           ! Copying old solution
           do j=1,this%grid%nelemj

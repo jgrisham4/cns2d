@@ -14,6 +14,8 @@ R = 287.0
 # Finding freestream quantities
 uinfty = Minfty*np.sqrt(g*R*Tinfty)*np.cos(theta)
 vinfty = -Minfty*np.sqrt(g*R*Tinfty)*np.sin(theta)
+#uinfty = Minfty*np.sqrt(g*R*Tinfty)
+#vinfty = 0.0
 rhoinfty = pinfty/(R*Tinfty)
 
 print("\nFreestream quantities:")

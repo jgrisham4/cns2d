@@ -29,6 +29,7 @@ module solver_class
     double precision      :: g         ! Ratio of specific heats
     double precision      :: R         ! Ideal gas constant for air
     double precision      :: winfty(4) ! Freestream primitive variables
+    double precision      :: k_venkat  ! Constant used in Venkatakrishnan's limiter
     logical               :: is_visc   ! Boolean variable to turn on viscous terms
     character (len=30)    :: limiter   ! Name of slope limiter ("none" or "barth")
     type(mesh)            :: grid      ! Mesh object
@@ -40,7 +41,7 @@ module solver_class
     ! Subroutine which initializes solution, i.e., allocates
     ! memory and sets up some important variables
     !---------------------------------------------------------------------------
-    subroutine initialize(this,m,delta_t,t_final,gam,R,w0,winf,bcidents,lim,visc,niter,nfo,tol,cfl)
+    subroutine initialize(this,m,delta_t,t_final,gam,R,w0,winf,bcidents,lim,visc,niter,nfo,tol,cfl,kval)
       implicit none
       type(solver),     intent(inout)           :: this
       type(mesh),       intent(in)              :: m
@@ -54,26 +55,28 @@ module solver_class
       integer,          intent(in)              :: nfo
       double precision, intent(in)              :: tol  ! Tolerance used to monitor convergence
       double precision, intent(in)              :: cfl
+      double precision, intent(in)              :: kval
       double precision, allocatable             :: u0(:,:,:)
       integer                                   :: allocate_err,i,j
 
       print *, "Initializing solver..."
 
       ! Assigning members of the solver class
-      this%grid    = m
-      this%dt      = delta_t
-      this%tfinal  = t_final
-      this%g       = gam
-      this%R       = R
-      this%winfty  = winf
-      this%ntsteps = nint(t_final/delta_t)
-      this%bcids   = bcidents
-      this%limiter = lim
-      this%is_visc = visc
-      this%niter   = niter
-      this%niterfo = nfo
-      this%tol     = tol
-      this%cfl     = cfl
+      this%grid     = m
+      this%dt       = delta_t
+      this%tfinal   = t_final
+      this%g        = gam
+      this%R        = R
+      this%winfty   = winf
+      this%ntsteps  = nint(t_final/delta_t)
+      this%bcids    = bcidents
+      this%limiter  = lim
+      this%is_visc  = visc
+      this%niter    = niter
+      this%niterfo  = nfo
+      this%tol      = tol
+      this%cfl      = cfl
+      this%k_venkat = kval
       !write (*,'(a,i7)') "number of time steps: ", this%ntsteps
 
       ! Converting initial condition to conserved variables

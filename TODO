@@ -1,3 +1,8 @@
+- Add code to read K for venkatakrishnan limiter to namelist (cns2d) and
+  initialize subroutine.
+
+- Test venkatakrishnan limiter on new ramp grid that has flat plate portion.
+
 - Write unit tests for everything I can possibly
   think of.
 

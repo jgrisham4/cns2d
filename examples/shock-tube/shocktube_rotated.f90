@@ -74,7 +74,8 @@ program shocktube
   !bcs(4) = 1003
 
   ! Initializing solver
-  call initialize(esolver,grid,dt,tfinal,1.4d0,287.0d0,w0,winfty,bcs,"barth",.false.,0,0,0.0d0,0.0d0)
+  !call initialize(esolver,grid,dt,tfinal,1.4d0,287.0d0,w0,winfty,bcs,"barth",.false.,0,0,0.0d0,0.0d0)
+  call initialize(esolver,grid,dt,tfinal,1.4d0,287.0d0,w0,winfty,bcs,"venkat",.false.,0,0,0.0d0,0.0d0,1.0d0)
 
   ! Solving problem
   !call solve_feuler(esolver,100)

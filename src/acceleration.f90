@@ -131,35 +131,39 @@ module acceleration
 
       ! Smoothing in the i-direction
       do k=1,4
-        do j=1,grid%nelemj
+        do j=2,grid%nelemj-1
 
           ! Special treatment for first element
-          eps_i = eps*min(grid%elem(1,j)%lambda_ci/grid%elem(1,j)%lambda_cj,1.0d0)
+          !eps_i = eps*min(grid%elem(1,j)%lambda_ci/grid%elem(1,j)%lambda_cj,1.0d0)
           rhs(1) = resid(1,j,k)
-          if (mach(1,j)>1.0d0) then
-            d(1) = 1.0d0 + eps_i
-            ud(1) = 0.0d0
-          else if (abs(mach(1,j))<=1.0d0) then
-            d(1) = 1.0d0 + 2.0d0*eps_i
-            ud(1) = -eps_i
-          else
-            d(1) = 1.0d0 + eps_i
-            ud(1) = -eps_i
-          end if
+          d(1) = 1.0d0
+          ud(1) = 0.0d0
+          !if (mach(1,j)>1.0d0) then
+          !  d(1) = 1.0d0 + eps_i
+          !  ud(1) = 0.0d0
+          !else if (abs(mach(1,j))<=1.0d0) then
+          !  d(1) = 1.0d0 + 2.0d0*eps_i
+          !  ud(1) = -eps_i
+          !else
+          !  d(1) = 1.0d0 + eps_i
+          !  ud(1) = -eps_i
+          !end if
 
           ! Special treatment for last element
-          eps_i = eps*min(grid%elem(grid%nelemi,j)%lambda_ci/grid%elem(grid%nelemi,j)%lambda_cj,1.0d0)
+          !eps_i = eps*min(grid%elem(grid%nelemi,j)%lambda_ci/grid%elem(grid%nelemi,j)%lambda_cj,1.0d0)
           rhs(grid%nelemi) = resid(grid%nelemi,j,k)
-          if (mach(grid%nelemi,j)>1.0d0) then
-            ld(grid%nelemi) = -eps_i
-            d(grid%nelemi) = 1.0d0 + eps_i
-          else if (abs(mach(grid%nelemi,j))<=1.0d0) then
-            ld(grid%nelemi) = -eps_i
-            d(grid%nelemi) = 1.0d0 + 2.0d0*eps_i
-          else
-            ld(grid%nelemi) = 0.0d0
-            d(grid%nelemi) = 1.0d0 + eps_i
-          end if
+          d(grid%nelemi) = 1.0d0
+          ld(grid%nelemi) = 0.0d0
+          !if (mach(grid%nelemi,j)>1.0d0) then
+          !  ld(grid%nelemi) = -eps_i
+          !  d(grid%nelemi) = 1.0d0 + eps_i
+          !else if (abs(mach(grid%nelemi,j))<=1.0d0) then
+          !  ld(grid%nelemi) = -eps_i
+          !  d(grid%nelemi) = 1.0d0 + 2.0d0*eps_i
+          !else
+          !  ld(grid%nelemi) = 0.0d0
+          !  d(grid%nelemi) = 1.0d0 + eps_i
+          !end if
 
           ! Assembling system based on Mach number in i-direction
           do i=2,grid%nelemi-1
@@ -213,35 +217,39 @@ module acceleration
 
       ! Smoothing in the j-direction
       do k=1,4
-        do i=1,grid%nelemi
+        do i=2,grid%nelemi-1
 
           ! Special treatment for first element
-          eps_j = eps*min(grid%elem(i,1)%lambda_cj/grid%elem(i,1)%lambda_ci,1.0d0)
+          !eps_j = eps*min(grid%elem(i,1)%lambda_cj/grid%elem(i,1)%lambda_ci,1.0d0)
           rhs(1) = r_bar1(i,1,k)
-          if (mach(i,1)>1.0d0) then
-            d(1) = 1.0d0 + eps_j
-            ud(1) = 0.0d0
-          else if (abs(mach(i,1))<=1.0d0) then
-            d(1) = 1.0d0 + 2.0d0*eps_j
-            ud(1) = -eps_j
-          else
-            d(1) = 1.0d0 + eps_j
-            ud(1) = -eps_j
-          end if
+          d(1) = 1.0d0
+          ud(1) = 0.0d0
+          !if (mach(i,1)>1.0d0) then
+          !  d(1) = 1.0d0 + eps_j
+          !  ud(1) = 0.0d0
+          !else if (abs(mach(i,1))<=1.0d0) then
+          !  d(1) = 1.0d0 + 2.0d0*eps_j
+          !  ud(1) = -eps_j
+          !else
+          !  d(1) = 1.0d0 + eps_j
+          !  ud(1) = -eps_j
+          !end if
 
           ! Special treatment for last element
           eps_j = eps*min(grid%elem(i,grid%nelemj)%lambda_cj/grid%elem(i,grid%nelemj)%lambda_ci,1.0d0)
           rhs(grid%nelemj) = r_bar1(i,grid%nelemj,k)
-          if (mach(i,grid%nelemj)>1.0d0) then
-            ld(grid%nelemj) = -eps_j
-            d(grid%nelemj) = 1.0d0 + eps_j
-          else if (abs(mach(i,grid%nelemj))<=1.0d0) then
-            ld(grid%nelemj) = -eps_j
-            d(grid%nelemj) = 1.0d0 + 2.0d0*eps_j
-          else
-            ld(grid%nelemj) = 0.0d0
-            d(grid%nelemj) = 1.0d0 + eps_j
-          end if
+          d(grid%nelemj) = 1.0d0
+          ld(grid%nelemj) = 0.0d0
+          !if (mach(i,grid%nelemj)>1.0d0) then
+          !  ld(grid%nelemj) = -eps_j
+          !  d(grid%nelemj) = 1.0d0 + eps_j
+          !else if (abs(mach(i,grid%nelemj))<=1.0d0) then
+          !  ld(grid%nelemj) = -eps_j
+          !  d(grid%nelemj) = 1.0d0 + 2.0d0*eps_j
+          !else
+          !  ld(grid%nelemj) = 0.0d0
+          !  d(grid%nelemj) = 1.0d0 + eps_j
+          !end if
 
           ! Assembling the system based on the Mach number in the j-direction
           do j=2,grid%nelemj-1
