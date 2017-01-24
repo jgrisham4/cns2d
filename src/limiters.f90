@@ -88,44 +88,27 @@ module limiters
       !  1           2
 
       ! Extrapolating state to vertices of element
-      ! Barth's paper says that the extrema occur at the vertices.
-      ! I agree, but I'm not reconstructing the state at the vertices.
-      ! Blazek's book says to use the state extrapolated to the face midpoints
-      ! for the cell-centered scheme.
       ! Point 1
       rvec(1) = s%grid%x(i,j) - s%grid%elem(i,j)%xc
       rvec(2) = s%grid%y(i,j) - s%grid%elem(i,j)%yc
-      ! Left side
-      !rvec(1) = s%grid%edges_h(i,j)%xm - s%grid%elem(i,j)%xc
-      !rvec(2) = s%grid%edges_h(i,j)%ym - s%grid%elem(i,j)%xc
       unodes(:,1) = s%grid%elem(i,j)%u + gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
 
       ! Point 2
       rvec(1) = s%grid%x(i+1,j) - s%grid%elem(i,j)%xc
       rvec(2) = s%grid%y(i+1,j) - s%grid%elem(i,j)%yc
-      ! Right side
-      !rvec(1) = s%grid%edges_h(i+1,j)%xm - s%grid%elem(i,j)%xc
-      !rvec(2) = s%grid%edges_h(i+1,j)%ym - s%grid%elem(i,j)%yc
       unodes(:,2) = s%grid%elem(i,j)%u + gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
 
       ! Point 3
       rvec(1) = s%grid%x(i+1,j+1) - s%grid%elem(i,j)%xc
       rvec(2) = s%grid%y(i+1,j+1) - s%grid%elem(i,j)%yc
-      ! Bottom
-      !rvec(1) = s%grid%edges_v(i,j)%xm - s%grid%elem(i,j)%xc
-      !rvec(2) = s%grid%edges_v(i,j)%ym - s%grid%elem(i,j)%yc
       unodes(:,3) = s%grid%elem(i,j)%u + gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
 
       ! Point 4
       rvec(1) = s%grid%x(i,j+1) - s%grid%elem(i,j)%xc
       rvec(2) = s%grid%y(i,j+1) - s%grid%elem(i,j)%yc
-      ! Top
-      !rvec(1) = s%grid%edges_v(i,j+1)%xm - s%grid%elem(i,j)%xc
-      !rvec(2) = s%grid%edges_v(i,j+1)%ym - s%grid%elem(i,j)%yc
       unodes(:,4) = s%grid%elem(i,j)%u + gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
 
-      ! Finding value of limiter at each vertex -- not anymore
-      ! Finding value of limiter at each face midpoint
+      ! Finding value of limiter at each vertex
       ! k - vertex, l - variables
       do k=1,4
         do l=1,4
@@ -182,33 +165,21 @@ module limiters
       ! Point 1
       rvec(1) = s%grid%x(i,j) - s%grid%elem(i,j)%xc
       rvec(2) = s%grid%y(i,j) - s%grid%elem(i,j)%yc
-      ! Left side
-      !rvec(1) = s%grid%edges_h(i,j)%xm - s%grid%elem(i,j)%xc
-      !rvec(2) = s%grid%edges_h(i,j)%ym - s%grid%elem(i,j)%xc
       d2(:,1) = gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
 
       ! Point 2
       rvec(1) = s%grid%x(i+1,j) - s%grid%elem(i,j)%xc
       rvec(2) = s%grid%y(i+1,j) - s%grid%elem(i,j)%yc
-      ! Right side
-      !rvec(1) = s%grid%edges_h(i+1,j)%xm - s%grid%elem(i,j)%xc
-      !rvec(2) = s%grid%edges_h(i+1,j)%ym - s%grid%elem(i,j)%yc
       d2(:,2) = gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
 
       ! Point 3
       rvec(1) = s%grid%x(i+1,j+1) - s%grid%elem(i,j)%xc
       rvec(2) = s%grid%y(i+1,j+1) - s%grid%elem(i,j)%yc
-      ! Bottom
-      !rvec(1) = s%grid%edges_v(i,j)%xm - s%grid%elem(i,j)%xc
-      !rvec(2) = s%grid%edges_v(i,j)%ym - s%grid%elem(i,j)%yc
       d2(:,3) = gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
 
       ! Point 4
       rvec(1) = s%grid%x(i,j+1) - s%grid%elem(i,j)%xc
       rvec(2) = s%grid%y(i,j+1) - s%grid%elem(i,j)%yc
-      ! Top
-      !rvec(1) = s%grid%edges_v(i,j+1)%xm - s%grid%elem(i,j)%xc
-      !rvec(2) = s%grid%edges_v(i,j+1)%ym - s%grid%elem(i,j)%yc
       d2(:,4) = gradU(i,j,1:4)*rvec(1) + gradU(i,j,5:8)*rvec(2)
 
       ! Finding value of limiter at each vertex -- not anymore

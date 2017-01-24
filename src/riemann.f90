@@ -41,10 +41,11 @@ module riemann
   private
   public :: roe, rotated_rhll
   contains
-    function roe(uL, uR, nhat)
-      double precision :: uL(4), uR(4) !  Input: conservative variables rho*[1, u, v, E]
-      double precision :: nhat(2)      !  Input: face normal vector
-      double precision :: nx, ny       ! Face normal vector, [nx, ny] (Left-to-Right)
+    function roe(uL, uR, nhat, winf)
+      double precision :: uL(4), uR(4) ! Input: conservative variables rho*[1, u, v, E]
+      double precision :: nhat(2)      ! Input: face normal vector
+      double precision :: winf(4)      ! Input: Freestream primitives
+      double precision :: nx, ny       ! Input: Face normal vector, [nx, ny] (Left-to-Right)
       double precision :: roe(4)       ! Output: Roe flux function (upwind)
       !Local constants
       double precision :: gam                          ! Ratio of specific heat.
@@ -59,10 +60,8 @@ module riemann
       double precision :: drho,dvx,dvy,dvn,dvt,dp,dV(4)  ! Wave strenghs
       double precision :: ws(4),dws(4), Rv(4,4)          ! Wave speeds and right-eigevectors
       double precision :: fL(4), fR(4), diss(4)          ! Fluxes and dissipation term
+      double precision, parameter :: floor_val = 0.01d0  ! Floor value used to limit nonphysical p and rho
       integer :: i, j
-
-      !write(*,'(a,4f10.3)') "uL = ", uL
-      !write(*,'(a,4f10.3)') "uR = ", uR
 
       !Constants.
        gam = 1.4d0
@@ -74,44 +73,47 @@ module riemann
 
       !Tangent vector (Do you like it? Actually, Roe flux can be implemented
       ! without any tangent vector. See "I do like CFD, VOL.1" for details.)
-        nx = nhat(1)
-        ny = nhat(2)
-        tx = -ny
-        ty = nx
+      nx = nhat(1)
+      ny = nhat(2)
+      tx = -ny
+      ty = nx
 
       !Primitive and other variables.
       !  Left state
-          rhoL = uL(1)
-           vxL = uL(2)/uL(1)
-           vyL = uL(3)/uL(1)
-           vnL = vxL*nx+vyL*ny
-           vtL = vxL*tx+vyL*ty
-            pL = (gam-one)*( uL(4) - half*rhoL*(vxL*vxL+vyL*vyL) )  ! Getting a negative pressure
-            if (pL.lt.0.0d0) then
-              print *, "Warning: Negative pressures in Riemann solver -- left state."
-              !write (*,'(a,4(f12.5,x))') "uL = ", uL
-              !write (*,'(a,f12.5)'), "p = ", pL
-              pL = 0.000001d0
-            end if
-            aL = sqrt(gam*pL/rhoL)
-            HL = ( uL(4) + pL ) / rhoL
+      rhoL = uL(1)
+      vxL  = uL(2)/uL(1)
+      vyL  = uL(3)/uL(1)
+      vnL  = vxL*nx+vyL*ny
+      vtL  = vxL*tx+vyL*ty
+      if (rhoL<(floor_val*winf(1))) then
+        print *, "Warning: rhoL floored in roe subroutine."
+        rhoL = floor_val*winf(1)
+      end if
+      pL   = (gam-one)*( uL(4) - half*rhoL*(vxL*vxL+vyL*vyL) )  ! Getting a negative pressure
+      if (pL<(floor_val*winf(4))) then
+        print *, "Warning: pL floored in roe subroutine."
+        pL = floor_val*winf(4)
+      end if
+      aL   = sqrt(gam*pL/rhoL)
+      HL   = ( uL(4) + pL ) / rhoL
 
       !  Right state
-        !write (*,'(a,4f10.3)') "uR = ", uR
-          rhoR = uR(1)
-           vxR = uR(2)/uR(1)
-           vyR = uR(3)/uR(1)
-           vnR = vxR*nx+vyR*ny
-           vtR = vxR*tx+vyR*ty
-            pR = (gam-one)*( uR(4) - half*rhoR*(vxR*vxR+vyR*vyR) )
-            if (pR.lt.0.0d0) then
-              print *, "Warning: Negative pressures in Riemann solver -- right state."
-              pR = 0.000001d0
-              !write (*,'(a,4(f12.5,x))') "uR = ", uR
-              !write (*,'(a,f12.5)'), "p = ", pR
-            end if
-            aR = sqrt(gam*pR/rhoR)
-            HR = ( uR(4) + pR ) / rhoR
+      rhoR = uR(1)
+      vxR = uR(2)/uR(1)
+      vyR = uR(3)/uR(1)
+      vnR = vxR*nx+vyR*ny
+      vtR = vxR*tx+vyR*ty
+      if (rhoR<(floor_val*winf(1))) then
+        print *, "Warning: rhoR floored in roe subroutine."
+        rhoR = floor_val*winf(1)
+      end if
+      pR = (gam-one)*( uR(4) - half*rhoR*(vxR*vxR+vyR*vyR) )
+      if (pR<(floor_val*winf(4))) then
+        print *, "Warning: pR floored in roe subroutine."
+        pR = floor_val*winf(4)
+      end if
+      aR = sqrt(gam*pR/rhoR)
+      HR = ( uR(4) + pR ) / rhoR
 
       !First compute the Roe Averages
           RT = sqrt(rhoR/rhoL)

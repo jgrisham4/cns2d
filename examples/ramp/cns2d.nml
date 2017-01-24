@@ -3,13 +3,13 @@
 /
 
 &mesh_inputs
-  mesh_file = "ramp200.cgns"
+  mesh_file = "ramp.cgns"
 /
 
 &freestream_properties
   rho_inf = 0.1226d0     ! kg/m^3
-  u_inf   = 670.0121d0   ! m/s
-  v_inf   = -118.1412d0  ! m/s
+  u_inf   = 680.3481d0   ! m/s
+  v_inf   = 0.0d0        ! m/s
   p_inf   = 1.01325d4    ! Pa
 /
 
@@ -24,10 +24,10 @@
   method     = "steady"          ! Options are rk4 or forward_euler or steady
   final_time = 5.0e-6             ! Seconds
   time_step  = 5.0e-9             ! Seconds
-  niterfo    = 20
-  niter      = 0
+  niterfo    = 1000
+  niter      = 2000
   tol        = 1.0e-10
-  cfl        = 0.1d0
+  cfl        = 0.5d0
 /
 
 &boundary_conditions
@@ -38,7 +38,7 @@
 /
 
 &slope_limiter
-  limiter = "barth" ! barth, venkat or none
+  limiter = "venkat" ! barth, venkat or none
   k = 1.0d0
 /
 
@@ -47,5 +47,5 @@
 /
 
 &acceleration
-  epsln = 0.1d0
+  epsln = 1.0d0
 /

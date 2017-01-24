@@ -46,7 +46,7 @@ module mesh_class
     double precision :: dt_max    ! Max allowable time step for the element
     double precision :: lambda_ci ! Spectral radii of the convective flux Jacobian in i-dir
     double precision :: lambda_cj ! Spectral radii of the convective flux Jacobian in j-dir
-    double precision :: phi(4)    ! Value of limiter for each conserved variable
+    double precision :: phi(4)    ! Slope limiter for element
   end type element
 
   !-----------------------------------------------------------------------------
@@ -579,19 +579,20 @@ module mesh_class
     ! element.  This subroutine assumes that the
     ! conservative variables are set for the element.
     !---------------------------------------------------------------------------
-    subroutine compute_max_timesteps_inv(grid,g,R,cfl)
+    subroutine compute_max_timesteps_inv(grid,g,R,cfl,winfty)
       implicit none
       type(mesh), intent(inout)    :: grid                 ! Mesh object
       double precision, intent(in) :: g                    ! Ratio of specific heats
       double precision, intent(in) :: R                    ! Gas constant
       double precision, intent(in) :: cfl                  ! CFL number
+      double precision, intent(in) :: winfty(4)            ! Freestream primitives
       double precision             :: dS_x,dS_y            ! Averaged face area
       double precision             :: nhat_x(2),nhat_y(2)  ! Averaged normal vectors
       double precision             :: lambda_cx,lambda_cy  ! Spectral radii of conv. flux Jac.
       double precision             :: c                    ! Local speed of sound
       double precision             :: w(4)                 ! Vector of primitive variables
-      double precision             :: cp,Pr,T,m,term1
       !double precision             :: dt_u,dx,dy
+      double precision, parameter  :: floor_value = 0.01d0
       integer                      :: i,j
 
       ! Looping over elements
@@ -602,13 +603,15 @@ module mesh_class
           w = u_to_w(grid%elem(i,j)%u,g)
 
           ! Computing the speed of sound for the element
-          if (w(4).lt.0.0d0) then
-            print *, "Warning: Negative pressure in compute_max_timesteps_inv."
-            write (*,'(2(a,i0))') "i=", i, " j=", j
-            c = sqrt(g*0.0000001d0/w(1))
-          else
-            c = sqrt(g*w(4)/w(1))
+          if (w(4)<(floor_value*winfty(4))) then
+            print *, "Warning: pressure floored in compute_max_timesteps_inv."
+            w(4) = floor_value*winfty(4)
           end if
+          if (w(1)<(floor_value*winfty(1))) then
+            print *, "Warning: density floored in compute_max_timesteps_inv."
+            w(1) = floor_value*winfty(1)
+          end if
+          c = sqrt(g*w(4)/w(1))
 
           ! Finding averaged normal vectors
           nhat_x = 0.5d0*(grid%elem(i,j)%n(:,2) - grid%elem(i,j)%n(:,4))
@@ -646,12 +649,13 @@ module mesh_class
     ! element.  This subroutine assumes that the
     ! conservative variables are set for the element.
     !---------------------------------------------------------------------------
-    subroutine compute_max_timesteps_visc(grid,g,R,cfl)
+    subroutine compute_max_timesteps_visc(grid,g,R,cfl,winfty)
       implicit none
       type(mesh), intent(inout)    :: grid                 ! Mesh object
       double precision, intent(in) :: g                    ! Ratio of specific heats
       double precision, intent(in) :: R                    ! Gas constant
       double precision, intent(in) :: cfl                  ! CFL number
+      double precision, intent(in) :: winfty(4)            ! Freestream primitives
       double precision             :: dS_x,dS_y            ! Averaged face area
       double precision             :: nhat_x(2),nhat_y(2)  ! Averaged normal vectors
       double precision             :: lambda_cx,lambda_cy  ! Spectral radii of conv. flux Jac.
@@ -659,6 +663,7 @@ module mesh_class
       double precision             :: c                    ! Local speed of sound
       double precision             :: w(4)                 ! Vector of primitive variables
       double precision             :: cp,Pr,T,m,term1
+      double precision, parameter  :: floor_value = 0.01d0
       integer                      :: i,j
 
       ! Looping over elements
@@ -669,12 +674,15 @@ module mesh_class
           w = u_to_w(grid%elem(i,j)%u,g)
 
           ! Computing the speed of sound for the element
-          if (w(4).lt.0.0d0) then
-            print *, "Warning: Negative pressure in compute_max_timesteps_visc."
-            c = sqrt(g*0.0000001d0/w(1))
-          else
-            c = sqrt(g*w(4)/w(1))
+          if (w(4)<floor_value*winfty(4)) then
+            print *, "Warning: pressure floored in compute_max_timesteps_inv."
+            w(4) = floor_value*winfty(4)
           end if
+          if (w(1)<(floor_value*winfty(1))) then
+            print *, "Warning: density floored in compute_max_timesteps_inv."
+            w(1) = floor_value*winfty(1)
+          end if
+          c = sqrt(g*w(4)/w(1))
 
           ! Finding averaged normal vectors
           nhat_x = 0.5d0*(grid%elem(i,j)%n(:,4) - grid%elem(i,j)%n(:,2))

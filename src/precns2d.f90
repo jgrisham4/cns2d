@@ -121,9 +121,9 @@ program precns2d
 
   ! Computing the max timestep possible
   if (solv%is_visc.eq..true.) then
-    call compute_max_timesteps_visc(solv%grid,solv%g,solv%R,cfl)
+    call compute_max_timesteps_visc(solv%grid,solv%g,solv%R,cfl,winfty)
   else
-    call compute_max_timesteps_inv(solv%grid,solv%g,solv%R,cfl)
+    call compute_max_timesteps_inv(solv%grid,solv%g,solv%R,cfl,winfty)
   end if
 
   ! Finding the minimum timestep

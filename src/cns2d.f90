@@ -47,6 +47,7 @@ program cns2d
   read(101,boundary_conditions)
   read(101,slope_limiter)
   read(101,output)
+  read(101,acceleration)
   close(101)
 
   ! Printing some info

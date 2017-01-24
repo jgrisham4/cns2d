@@ -103,39 +103,40 @@ module utils
         do i=1,ni
           if ((i.eq.1).and.(j.eq.1)) then
             do k=1,4
-              um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i,j+1,k))
+              um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i+1,j+1,k))
             end do
           else if ((i.eq.1).and.(j.eq.nj)) then
             do k=1,4
-              um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i,j-1,k))
+              um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i,j-1,k),u(i+1,j-1,k))
             end do
           else if ((i.eq.ni).and.(j.eq.1)) then
             do k=1,4
-              um(i,j,k) = max(u(i,j,k),u(i,j+1,k),u(i-1,j,k))
+              um(i,j,k) = max(u(i,j,k),u(i,j+1,k),u(i-1,j,k),u(i-1,j+1,k))
             end do
           else if ((i.eq.ni).and.(j.eq.nj)) then
             do k=1,4
-              um(i,j,k) = max(u(i,j,k),u(i-1,j,k),u(i,j-1,k))
+              um(i,j,k) = max(u(i,j,k),u(i-1,j,k),u(i,j-1,k),u(i-1,j-1,k))
             end do
           else if (i.eq.1) then
             do k=1,4
-              um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i,j-1,k))
+              um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i,j-1,k),u(i+1,j+1,k),u(i+1,j-1,k))
             end do
           else if (i.eq.ni) then
             do k=1,4
-              um(i,j,k) = max(u(i,j,k),u(i,j+1,k),u(i-1,j,k),u(i,j-1,k))
+              um(i,j,k) = max(u(i,j,k),u(i,j+1,k),u(i-1,j,k),u(i,j-1,k),u(i-1,j+1,k),u(i-1,j-1,k))
             end do
           else if (j.eq.1) then
             do k=1,4
-              um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i-1,j,k))
+              um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i-1,j,k),u(i-1,j+1,k),u(i+1,j+1,k))
             end do
           else if (j.eq.nj) then
             do k=1,4
-              um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i-1,j,k),u(i,j-1,k))
+              um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i-1,j,k),u(i,j-1,k),u(i+1,j-1,k),u(i-1,j-1,k))
             end do
           else
             do k=1,4
-              um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i-1,j,k),u(i,j-1,k))
+              um(i,j,k) = max(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i-1,j,k),u(i,j-1,k), &
+                u(i-1,j-1,k),u(i+1,j-1,k),u(i+1,j+1,k),u(i-1,j+1,k))
             end do
           end if
         end do
@@ -162,43 +163,43 @@ module utils
         do i=1,ni
           if ((i.eq.1).and.(j.eq.1)) then
             do k=1,4
-              um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i,j+1,k))
+              um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i+1,j+1,k))
             end do
           else if ((i.eq.1).and.(j.eq.nj)) then
             do k=1,4
-              um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i,j-1,k))
+              um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i,j-1,k),u(i+1,j-1,k))
             end do
           else if ((i.eq.ni).and.(j.eq.1)) then
             do k=1,4
-              um(i,j,k) = min(u(i,j,k),u(i,j+1,k),u(i-1,j,k))
+              um(i,j,k) = min(u(i,j,k),u(i,j+1,k),u(i-1,j,k),u(i-1,j+1,k))
             end do
           else if ((i.eq.ni).and.(j.eq.nj)) then
             do k=1,4
-              um(i,j,k) = min(u(i,j,k),u(i-1,j,k),u(i,j-1,k))
+              um(i,j,k) = min(u(i,j,k),u(i-1,j,k),u(i,j-1,k),u(i-1,j-1,k))
             end do
           else if (i.eq.1) then
             do k=1,4
-              um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i,j-1,k))
+              um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i,j-1,k),u(i+1,j+1,k),u(i+1,j-1,k))
             end do
           else if (i.eq.ni) then
             do k=1,4
-              um(i,j,k) = min(u(i,j,k),u(i,j+1,k),u(i-1,j,k),u(i,j-1,k))
+              um(i,j,k) = min(u(i,j,k),u(i,j+1,k),u(i-1,j,k),u(i,j-1,k),u(i-1,j+1,k),u(i-1,j-1,k))
             end do
           else if (j.eq.1) then
             do k=1,4
-              um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i-1,j,k))
+              um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i-1,j,k),u(i-1,j+1,k),u(i+1,j+1,k))
             end do
           else if (j.eq.nj) then
             do k=1,4
-              um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i-1,j,k),u(i,j-1,k))
+              um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i-1,j,k),u(i,j-1,k),u(i+1,j-1,k),u(i-1,j-1,k))
             end do
           else
             do k=1,4
-              um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i-1,j,k),u(i,j-1,k))
+              um(i,j,k) = min(u(i,j,k),u(i+1,j,k),u(i,j+1,k),u(i-1,j,k),u(i,j-1,k), &
+                u(i-1,j-1,k),u(i+1,j-1,k),u(i+1,j+1,k),u(i-1,j+1,k))
             end do
           end if
         end do
       end do
-
     end function compute_elem_min
 end module utils

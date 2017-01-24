@@ -26,8 +26,7 @@ module euler
       implicit none
       type(solver),     intent(inout) :: this
       double precision, intent(inout) :: resid(:,:,:)
-      double precision                :: duL(4),duR(4),phi(4)
-      double precision, dimension(4)  :: fx,fy,uextrap,wextrap,wtmp
+      double precision                :: duL(4),duR(4)
       double precision, dimension(2)  :: rL,rR,r
       double precision, allocatable   :: u(:,:,:),gradU(:,:,:),umax(:,:,:),umin(:,:,:)
       integer                         :: i,j,k,l,err
@@ -64,18 +63,29 @@ module euler
       ! Computing gradient for use in reconstruction
       call compute_gradient(this%grid,u,gradU)
 
-      ! Assigning gradient to elements
-      do j=1,this%grid%nelemj
-        do i=1,this%grid%nelemi
-          this%grid%elem(i,j)%dudx = gradU(i,j,1:4)
-          this%grid%elem(i,j)%dudy = gradU(i,j,5:8)
-        end do
-      end do
-
       ! Finding max and min of states for each element and neighbors
-      if ((this%limiter.eq."barth").or.(this%limiter.eq."venkat")) then
+      if ((this%limiter=="barth").or.(this%limiter=="venkat")) then
         umax = compute_elem_max(u,this%grid%nelemi,this%grid%nelemj)
         umin = compute_elem_min(u,this%grid%nelemi,this%grid%nelemj)
+      end if
+
+      ! Computing value of limiter for each element and assigning gradients
+      if (this%limiter=="barth") then
+        do j=1,this%grid%nelemj
+          do i=1,this%grid%nelemi
+            this%grid%elem(i,j)%dudx = gradU(i,j,1:4)
+            this%grid%elem(i,j)%dudy = gradU(i,j,5:8)
+            this%grid%elem(i,j)%phi = barth(this,i,j,gradU,umax,umin)
+          end do
+        end do
+      else if (this%limiter=="venkat") then
+        do j=1,this%grid%nelemj
+          do i=1,this%grid%nelemi
+            this%grid%elem(i,j)%dudx = gradU(i,j,1:4)
+            this%grid%elem(i,j)%dudy = gradU(i,j,5:8)
+            this%grid%elem(i,j)%phi = venkatakrishnan(this,i,j,gradU,umax,umin)
+          end do
+        end do
       end if
 
       ! Reconstructing states on left and right sides of each vertical interface
@@ -90,41 +100,27 @@ module euler
             rL(2) = this%grid%edges_v(i+1,j)%ym - this%grid%elem(i,j)%yc
 
             ! Finding grad(u) . r_L on the left side of the interface
-            !duL = gradU(i,j,1:4)*rL(1) + gradU(i,j,5:8)*rL(2)
             duL = this%grid%elem(i,j)%dudx*rL(1) + this%grid%elem(i,j)%dudy*rL(2)
 
             ! Reconstructing state on left of interface
-            select case (this%limiter)
-              case ("none")
-                do k=1,4
-                  this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)
-                end do
-              case ("barth")
+            if (this%limiter=="none") then
 
-                ! Calling barth subroutine to find limiter
-                phi = barth(this,i,j,gradU,umax,umin)
-                this%grid%elem(i,j)%phi = phi
+              ! Unlimited reconstruction
+              do k=1,4
+                this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)
+              end do
 
-                ! Slope-limited reconstruction
-                do k=1,4
-                  this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*phi(k)
-                end do
+            else if ((this%limiter=="barth").or.(this%limiter=="venkat")) then
 
-              case ("venkat")
+              ! Slope-limited reconstruction
+              do k=1,4
+                this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*this%grid%elem(i,j)%phi(k)
+              end do
 
-                ! Calling venkatakrishnan subroutine to find limiter
-                phi = venkatakrishnan(this,i,j,gradU,umax,umin)
-                this%grid%elem(i,j)%phi = phi
-
-                ! Slope-limited reconstruction
-                do k=1,4
-                  this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*phi(k)
-                end do
-
-              case default
-                write(*,'(3a)') "Slope limiter ", this%limiter, " not recognized."
-                stop
-            end select
+            else
+              write(*,'(3a)') "Slope limiter ", this%limiter, " not recognized."
+              stop
+            end if
 
           else if (i.eq.(this%grid%nelemi)) then
 
@@ -133,41 +129,27 @@ module euler
             rR(2) = this%grid%edges_v(i,j)%ym - this%grid%elem(i,j)%yc
 
             ! Finding the slope on the right side of the interface
-            !duR = gradU(i,j,1:4)*rR(1) + gradU(i,j,5:8)*rR(2)
             duR = this%grid%elem(i,j)%dudx*rR(1) + this%grid%elem(i,j)%dudy*rR(2)
 
             ! Reconstructing primitive states on right of interface
-            select case (this%limiter)
-              case ("none")
-                do k=1,4
-                  this%grid%edges_v(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)
-                end do
-              case ("barth")
+            if (this%limiter=="none") then
 
-                ! Calling subroutine to compute the barth limiter
-                phi = barth(this,i,j,gradU,umax,umin)
-                this%grid%elem(i,j)%phi = phi
+              ! Unlimited reconstruction
+              do k=1,4
+                this%grid%edges_v(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)
+              end do
 
-                ! Slope-limited reconstruction
-                do k=1,4
-                  this%grid%edges_v(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)*phi(k)
-                end do
+            else if ((this%limiter=="barth").or.(this%limiter=="venkat")) then
 
-              case ("venkat")
+              ! Slope-limited reconstruction
+              do k=1,4
+                this%grid%edges_v(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)*this%grid%elem(i,j)%phi(k)
+              end do
 
-                ! Calling venkatakrishnan subroutine to find limiter
-                phi = venkatakrishnan(this,i,j,gradU,umax,umin)
-                this%grid%elem(i,j)%phi = phi
-
-                ! Slope-limited reconstruction
-                do k=1,4
-                  this%grid%edges_v(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)*phi(k)
-                end do
-
-              case default
-                write(*,'(3a)') "Slope limiter ", this%limiter, " not recognized."
-                stop
-            end select
+            else
+              write(*,'(3a)') "Slope limiter ", this%limiter, " not recognized."
+              stop
+            end if
 
           else
 
@@ -178,47 +160,30 @@ module euler
             rR(2) = this%grid%edges_v(i,j)%ym - this%grid%elem(i,j)%yc
 
             ! Finding slopes on left and right
-            ! The below is grad(u) . r_L and grad(u) . r_R
-            !duL = gradU(i,j,1:4)*rL(1) + gradU(i,j,5:8)*rL(2)
-            !duR = gradU(i,j,1:4)*rR(1) + gradU(i,j,5:8)*rR(2)
             duL = this%grid%elem(i,j)%dudx*rL(1) + this%grid%elem(i,j)%dudy*rL(2)
             duR = this%grid%elem(i,j)%dudx*rR(1) + this%grid%elem(i,j)%dudy*rR(2)
 
             ! Reconstructing states on left and right of interface
-            select case (this%limiter)
-              case ("none")
-                do k=1,4
-                  this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)
-                  this%grid%edges_v(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)
-                end do
-              case ("barth")
+            if (this%limiter=="none") then
 
-                ! Calling subroutine to compute the barth limiter
-                phi = barth(this,i,j,gradU,umax,umin)
-                this%grid%elem(i,j)%phi = phi
+              ! Unlimited reconstruction
+              do k=1,4
+                this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)
+                this%grid%edges_v(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)
+              end do
 
-                ! Slope-limited reconstruction
-                do k=1,4
-                  this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*phi(k)
-                  this%grid%edges_v(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)*phi(k)
-                end do
+            else if ((this%limiter=="barth").or.(this%limiter=="venkat")) then
 
-              case ("venkat")
+              ! Slope-limited reconstruction
+              do k=1,4
+                this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*this%grid%elem(i,j)%phi(k)
+                this%grid%edges_v(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)*this%grid%elem(i,j)%phi(k)
+              end do
 
-                ! Calling subroutine to compute the venkatakrishnan limiter
-                phi = venkatakrishnan(this,i,j,gradU,umax,umin)
-                this%grid%elem(i,j)%phi = phi
-
-                ! Slope-limited reconstruction
-                do k=1,4
-                  this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*phi(k)
-                  this%grid%edges_v(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)*phi(k)
-                end do
-
-              case default
-                write(*,'(3a)') "Slope limiter ", this%limiter, " not recognized."
-                stop
-            end select
+            else
+              write(*,'(3a)') "Slope limiter ", this%limiter, " not recognized."
+              stop
+            end if
 
           end if
 
@@ -236,39 +201,27 @@ module euler
             rL(2) = this%grid%edges_h(i,j+1)%ym - this%grid%elem(i,j)%yc
 
             ! Finding the slope on the left side of the interface
-            !duL = gradU(i,j,1:4)*rL(1) + gradU(i,j,5:8)*rL(2)
             duL = this%grid%elem(i,j)%dudx*rL(1) + this%grid%elem(i,j)%dudy*rL(2)
 
             ! Reconstructing primitive states on left of interface
-            select case (this%limiter)
-              case ("none")
-                do k=1,4
-                  this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)
-                end do
-              case ("barth")
+            if (this%limiter=="none") then
 
-                ! Calling barth subroutine to find limiter
-                !phi = barth(this,i,j,gradU,umax,umin)
+              ! Unlimited reconstruction
+              do k=1,4
+                this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)
+              end do
 
-                ! Slope-limited reconstruction
-                do k=1,4
-                  this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*this%grid%elem(i,j)%phi(k)
-                end do
+            else if ((this%limiter=="barth").or.(this%limiter=="venkat")) then
 
-              case("venkat")
+              ! Slope-limited reconstruction
+              do k=1,4
+                this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*this%grid%elem(i,j)%phi(k)
+              end do
 
-                ! Calling venkatakrishnan subroutine to find limiter
-                !phi = venkatakrishnan(this,i,j,gradU,umax,umin)
-
-                ! Slope-limited reconstruction
-                do k=1,4
-                  this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*this%grid%elem(i,j)%phi(k)
-                end do
-
-              case default
-                write(*,'(3a)') "Slope limiter ", this%limiter, " not recognized."
-                stop
-            end select
+            else
+              write(*,'(3a)') "Slope limiter ", this%limiter, " not recognized."
+              stop
+            end if
 
           else if (j.eq.(this%grid%nelemj)) then
 
@@ -277,39 +230,27 @@ module euler
             rR(2) = this%grid%edges_h(i,j)%ym - this%grid%elem(i,j)%yc
 
             ! Finding the slope on the right side of the interface
-            !duR = gradU(i,j,1:4)*rR(1) + gradU(i,j,5:8)*rR(2)
             duR = this%grid%elem(i,j)%dudx*rR(1) + this%grid%elem(i,j)%dudy*rR(2)
 
             ! Reconstructing primitive states on right of interface
-            select case (this%limiter)
-              case ("none")
-                do k=1,4
-                  this%grid%edges_h(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)
-                end do
-              case ("barth")
+            if (this%limiter=="none") then
 
-                ! Calling subroutine to compute the barth limiter
-                !phi = barth(this,i,j,gradU,umax,umin)
+              ! Unlimited reconstruction
+              do k=1,4
+                this%grid%edges_h(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)
+              end do
 
-                ! Slope-limited reconstruction
-                do k=1,4
-                  this%grid%edges_h(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)*this%grid%elem(i,j)%phi(k)
-                end do
+            else if ((this%limiter=="barth").or.(this%limiter.eq."venkat")) then
 
-              case ("venkat")
+              ! Slope-limited reconstruction
+              do k=1,4
+                this%grid%edges_h(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)*this%grid%elem(i,j)%phi(k)
+              end do
 
-                ! Calling subroutine to compute the venkatakrishnan limiter
-                !phi = venkatakrishnan(this,i,j,gradU,umax,umin)
-
-                ! Slope-limited reconstruction
-                do k=1,4
-                  this%grid%edges_h(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)*this%grid%elem(i,j)%phi(k)
-                end do
-
-              case default
-                write(*,'(3a)') "Slope limiter ", this%limiter, " not recognized."
-                stop
-            end select
+            else
+              write(*,'(3a)') "Slope limiter ", this%limiter, " not recognized."
+              stop
+            end if
 
           else
 
@@ -320,44 +261,27 @@ module euler
             rR(2) = this%grid%edges_h(i,j)%ym   - this%grid%elem(i,j)%yc
 
             ! Finding slopes on left and right
-            !duL = gradU(i,j,1:4)*rL(1) + gradU(i,j,5:8)*rL(2)
-            !duR = gradU(i,j,1:4)*rR(1) + gradU(i,j,5:8)*rR(2)
             duL = this%grid%elem(i,j)%dudx*rL(1) + this%grid%elem(i,j)%dudy*rL(2)
             duR = this%grid%elem(i,j)%dudx*rR(1) + this%grid%elem(i,j)%dudy*rR(2)
 
             ! Reconstructing states on left and right of interface
-            select case (this%limiter)
-              case ("none")
-                do k=1,4
-                  this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)
-                  this%grid%edges_h(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)
-                end do
-              case ("barth")
+            if (this%limiter=="none") then
+              do k=1,4
+                this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)
+                this%grid%edges_h(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)
+              end do
+            else if ((this%limiter=="barth").or.(this%limiter=="venkat")) then
 
-                ! Calling subroutine to compute the barth limiter
-                !phi = barth(this,i,j,gradU,umax,umin)
+              ! Slope-limited reconstruction
+              do k=1,4
+                this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*this%grid%elem(i,j)%phi(k)
+                this%grid%edges_h(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)*this%grid%elem(i,j)%phi(k)
+              end do
 
-                ! Slope-limited reconstruction
-                do k=1,4
-                  this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*this%grid%elem(i,j)%phi(k)
-                  this%grid%edges_h(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)*this%grid%elem(i,j)%phi(k)
-                end do
-
-              case ("venkat")
-
-                ! Calling subroutine to compute the venkatakrishnan limiter
-                !phi = venkatakrishnan(this,i,j,gradU,umax,umin)
-
-                ! Slope-limited reconstruction
-                do k=1,4
-                  this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*this%grid%elem(i,j)%phi(k)
-                  this%grid%edges_h(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)*this%grid%elem(i,j)%phi(k)
-                end do
-
-              case default
-                write(*,'(3a)') "Slope limiter ", this%limiter, " not recognized."
-                stop
-            end select
+            else
+              write(*,'(3a)') "Slope limiter ", this%limiter, " not recognized."
+              stop
+            end if
 
           end if
 
@@ -371,20 +295,19 @@ module euler
         do i=2,this%grid%nelemi
 
           ! Calling Riemann solver
-          this%grid%edges_v(i,j)%flux = roe(this%grid%edges_v(i,j)%uL,this%grid%edges_v(i,j)%uR,this%grid%elem(i-1,j)%n(:,2))
-
-          !this%grid%edges_v(i,j)%flux = rotated_rhll(this%grid%edges_v(i,j)%uL,this%grid%edges_v(i,j)%uR,this%grid%elem(i-1,j)%n(:,2))
+          this%grid%edges_v(i,j)%flux = roe(this%grid%edges_v(i,j)%uL, &
+            this%grid%edges_v(i,j)%uR,this%grid%elem(i-1,j)%n(:,2),this%winfty)
 
           ! Checking for NaNs
-          !do k=1,4
-          !  if (isnan(this%grid%edges_v(i,j)%flux(k))) then
-          !    write(*,'(a)') "NaNs encountered after solving Riemann problem for vertical faces"
-          !    write(*,'(a,i4,a,i4,a,i4)') "i = ", i, " j = ", j , " k = ", k
-          !    write(*,'(2(a,f12.5))') "x_midpoint = ", this%grid%edges_v(i,j)%xm, &
-          !      " y_midpoint = ", this%grid%edges_v(i,j)%ym
-          !    stop
-          !  end if
-          !end do
+          do k=1,4
+            if (isnan(this%grid%edges_v(i,j)%flux(k))) then
+              write(*,'(a)') "NaNs encountered after solving Riemann problem for vertical faces"
+              write(*,'(a,i4,a,i4,a,i4)') "i = ", i, " j = ", j , " k = ", k
+              write(*,'(2(a,f12.5))') "x_midpoint = ", this%grid%edges_v(i,j)%xm, &
+                " y_midpoint = ", this%grid%edges_v(i,j)%ym
+              stop
+            end if
+          end do
 
         end do
       end do
@@ -394,19 +317,19 @@ module euler
         do i=1,this%grid%nelemi
 
           ! Calling Riemann solver
-          this%grid%edges_h(i,j)%flux = roe(this%grid%edges_h(i,j)%uL,this%grid%edges_h(i,j)%uR,this%grid%elem(i,j-1)%n(:,3))
-          !this%grid%edges_h(i,j)%flux = rotated_rhll(this%grid%edges_h(i,j)%uL,this%grid%edges_h(i,j)%uR,this%grid%elem(i,j-1)%n(:,3))
+          this%grid%edges_h(i,j)%flux = roe(this%grid%edges_h(i,j)%uL, &
+            this%grid%edges_h(i,j)%uR,this%grid%elem(i,j-1)%n(:,3),this%winfty)
 
           ! Checking for NaNs
-          !do k=1,4
-          !  if (isnan(this%grid%edges_h(i,j)%flux(k))) then
-          !    write(*,'(a)') "NaNs encountered after solving Riemann problem for horizontal faces"
-          !    write(*,'(a,i4,a,i4,a,i4)') "i = ", i, " j = ", j , " k = ", k
-          !    write(*,'(2(a,f12.5))') "x_midpoint = ", this%grid%edges_h(i,j)%xm, &
-          !      " y_midpoint = ", this%grid%edges_h(i,j)%ym
-          !    stop
-          !  end if
-          !end do
+          do k=1,4
+            if (isnan(this%grid%edges_h(i,j)%flux(k))) then
+              write(*,'(a)') "NaNs encountered after solving Riemann problem for horizontal faces"
+              write(*,'(a,i4,a,i4,a,i4)') "i = ", i, " j = ", j , " k = ", k
+              write(*,'(2(a,f12.5))') "x_midpoint = ", this%grid%edges_h(i,j)%xm, &
+                " y_midpoint = ", this%grid%edges_h(i,j)%ym
+              stop
+            end if
+          end do
 
         end do
       end do
@@ -439,8 +362,7 @@ module euler
       implicit none
       type(solver), intent(inout)     :: this
       double precision, intent(inout) :: resid(:,:,:)
-      double precision                :: duL(4),duR(4),phi(4)
-      double precision, dimension(4)  :: fx,fy,uextrap,wextrap,wtmp
+      double precision                :: duL(4),duR(4)
       double precision, dimension(2)  :: rL,rR,r
       double precision, allocatable   :: u(:,:,:),gradU(:,:,:),umax(:,:,:),umin(:,:,:)
       integer                         :: i,j,k,l,err
@@ -474,6 +396,8 @@ module euler
         end do
       end do
 
+      ! Applying boundary conditions
+      call apply_bcs(this)
       ! Must now iterate through all the interior interfaces and solve
       ! the Riemann problem to find the fluxes
       ! Vertical faces
@@ -481,9 +405,8 @@ module euler
         do i=2,this%grid%nelemi
 
           ! Calling Riemann solver
-          !print *, i, j, this%grid%edges_v(i,j)%xm, this%grid%edges_v(i,j)%ym
-          this%grid%edges_v(i,j)%flux = roe(this%grid%elem(i-1,j)%u,this%grid%elem(i,j)%u,this%grid%elem(i-1,j)%n(:,2))
-          !this%grid%edges_v(i,j)%flux = rotated_rhll(this%grid%edges_v(i,j)%uL,this%grid%edges_v(i,j)%uR,this%grid%elem(i-1,j)%n(:,2))
+          this%grid%edges_v(i,j)%flux = roe(this%grid%elem(i-1,j)%u, &
+            this%grid%elem(i,j)%u,this%grid%elem(i-1,j)%n(:,2),this%winfty)
 
         end do
       end do
@@ -493,14 +416,11 @@ module euler
         do i=1,this%grid%nelemi
 
           ! Calling Riemann solver
-          this%grid%edges_h(i,j)%flux = roe(this%grid%elem(i,j-1)%u,this%grid%elem(i,j)%u,this%grid%elem(i,j-1)%n(:,3))
-          !this%grid%edges_h(i,j)%flux = rotated_rhll(this%grid%edges_h(i,j)%uL,this%grid%edges_h(i,j)%uR,this%grid%elem(i,j-1)%n(:,3))
+          this%grid%edges_h(i,j)%flux = roe(this%grid%elem(i,j-1)%u, &
+            this%grid%elem(i,j)%u,this%grid%elem(i,j-1)%n(:,3),this%winfty)
 
         end do
       end do
-
-      ! Applying boundary conditions
-      call apply_bcs(this)
 
       ! Computing residual
       do j=1,this%grid%nelemj

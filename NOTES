@@ -391,3 +391,20 @@ The solver works fine for the isentropic vortex and the shocktube.  For an invis
 plate, it seems that the boundary conditions cause oscillations to propagate inside
 somehow.  Looking at rho v, there are tons of strange oscillations.  I'm going to keep writing
 unit tests for everything I can think of.  I'm not sure where the problem is.
+
+-------------------------
+
+01/24/2017 12:12 am
+- Set state at ghost cells and solve Riemann problem instead of computing fluxes directly.
+- Must be a BC implementation issue.
+- Set minimum pressure so that it doesn't go negative.
+- Write phi out to file to see where the limiter is being activated.
+- Create 5x5 grid and find fluxes, etc by hand and see if the code gives the same.
+- Might be a problem with the Riemann solver.
+
+-------------------------
+
+01/24/2017 4:18 pm
+Found one major bug in flux.f90.  Specifically, it was in the flux_adv subroutine.  The
+total enthalpy was calcuated using H = u4 + p/rho, but u4 = rhoE so it should be
+H = u4/u1 + p/rho.  This fixes several issues.
