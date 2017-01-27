@@ -114,7 +114,8 @@ module euler
 
               ! Slope-limited reconstruction
               do k=1,4
-                this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*this%grid%elem(i,j)%phi(k)
+                this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + &
+                  duL(k)*this%grid%elem(i,j)%phi(k)
               end do
 
             else
@@ -143,7 +144,8 @@ module euler
 
               ! Slope-limited reconstruction
               do k=1,4
-                this%grid%edges_v(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)*this%grid%elem(i,j)%phi(k)
+                this%grid%edges_v(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + &
+                  duR(k)*this%grid%elem(i,j)%phi(k)
               end do
 
             else
@@ -176,8 +178,10 @@ module euler
 
               ! Slope-limited reconstruction
               do k=1,4
-                this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*this%grid%elem(i,j)%phi(k)
-                this%grid%edges_v(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)*this%grid%elem(i,j)%phi(k)
+                this%grid%edges_v(i+1,j)%uL(k) = this%grid%elem(i,j)%u(k) + &
+                  duL(k)*this%grid%elem(i,j)%phi(k)
+                this%grid%edges_v(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + &
+                  duR(k)*this%grid%elem(i,j)%phi(k)
               end do
 
             else
@@ -215,7 +219,8 @@ module euler
 
               ! Slope-limited reconstruction
               do k=1,4
-                this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*this%grid%elem(i,j)%phi(k)
+                this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + &
+                  duL(k)*this%grid%elem(i,j)%phi(k)
               end do
 
             else
@@ -244,7 +249,8 @@ module euler
 
               ! Slope-limited reconstruction
               do k=1,4
-                this%grid%edges_h(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + duR(k)*this%grid%elem(i,j)%phi(k)
+                this%grid%edges_h(i,j)%uR(k) = this%grid%elem(i,j)%u(k) + &
+                  duR(k)*this%grid%elem(i,j)%phi(k)
               end do
 
             else
@@ -274,8 +280,10 @@ module euler
 
               ! Slope-limited reconstruction
               do k=1,4
-                this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + duL(k)*this%grid%elem(i,j)%phi(k)
-                this%grid%edges_h(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + duR(k)*this%grid%elem(i,j)%phi(k)
+                this%grid%edges_h(i,j+1)%uL(k) = this%grid%elem(i,j)%u(k) + &
+                  duL(k)*this%grid%elem(i,j)%phi(k)
+                this%grid%edges_h(i,j)%uR(k)   = this%grid%elem(i,j)%u(k) + &
+                  duR(k)*this%grid%elem(i,j)%phi(k)
               end do
 
             else

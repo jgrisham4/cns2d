@@ -4,18 +4,18 @@ import numpy as np
 from gas_dynamics import oblique_relations as obr
 from gas_dynamics import normal_relations as nor
 
-theta  = 10.0*np.pi/180.0   # Deflection angle
-Minfty = 2.0
+theta  = 12.7735*np.pi/180.0   # Deflection angle
+Minfty = 3.0
 Tinfty = 288.0
 pinfty = 101.325e3*0.1
 g = 1.4
 R = 287.0
 
 # Finding freestream quantities
-uinfty = Minfty*np.sqrt(g*R*Tinfty)*np.cos(theta)
-vinfty = -Minfty*np.sqrt(g*R*Tinfty)*np.sin(theta)
-#uinfty = Minfty*np.sqrt(g*R*Tinfty)
-#vinfty = 0.0
+#uinfty = Minfty*np.sqrt(g*R*Tinfty)*np.cos(theta)
+#vinfty = -Minfty*np.sqrt(g*R*Tinfty)*np.sin(theta)
+uinfty = Minfty*np.sqrt(g*R*Tinfty)
+vinfty = 0.0
 rhoinfty = pinfty/(R*Tinfty)
 
 print("\nFreestream quantities:")
@@ -40,6 +40,7 @@ v2 = 0.0
 print("post-shock state:")
 print("theta = {:3.3f} deg.".format(theta*180.0/np.pi))
 print("betar = {:3.3f} deg.".format((beta-theta)*180.0/np.pi))
+print("beta  = {:3.3f} deg.".format((beta)*180.0/np.pi))
 print("rho_2 = {:3.4f} kg/m^3".format(rho2))
 print("u_2   = {:4.4f} m/s".format(u2))
 print("v_2   = {:4.4f} m/s".format(v2))

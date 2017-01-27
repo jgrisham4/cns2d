@@ -1,3 +1,5 @@
-((-1 + g)*(-2*et0*x*Sin(x**2 + y**2) + 
-      (4*v0**2*x*(eps + Cos(x**2 + y**2))*Sin(x**2 + y**2) - 
-         4*u0**2*x*Cos(x**2 + y**2)*(eps + Sin(x**2 + y**2)))/2.))/Rgas
+-((apx*Pi*px*Sin((apx*Pi*x)/L))/
+     (L*R*(r0 + ry*Cos((ary*Pi*y)/L) + rx*Sin((arx*Pi*x)/L)))) - 
+  (arx*Pi*rx*Cos((arx*Pi*x)/L)*
+     (p0 + px*Cos((apx*Pi*x)/L) + py*Sin((apy*Pi*y)/L)))/
+   (L*R*(r0 + ry*Cos((ary*Pi*y)/L) + rx*Sin((arx*Pi*x)/L))**2)

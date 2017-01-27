@@ -1,1 +1,1 @@
--2*v0*x*Sin(x**2 + y**2)
+-((avx*Pi*vx*Sin((avx*Pi*x)/L))/L)

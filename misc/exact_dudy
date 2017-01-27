@@ -1,1 +1,1 @@
-2*u0*y*Cos(x**2 + y**2)
+-((auy*Pi*uy*Sin((auy*Pi*y)/L))/L)

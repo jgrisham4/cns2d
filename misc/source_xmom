@@ -1,17 +1,10 @@
-(-3*(-1 + g)*rho0*v0**2*x*Cos(x**2 + y**2)**3 + 
-    3*rho0*Cos(x**2 + y**2)**2*
-     (2*et0*(-1 + g)*x + v0*(-2*eps*(-1 + g)*v0*x + (3 + 2*eps)*u0*y) + 
-       4*u0*v0*y*Sin(x**2 + y**2)) + 
-    Cos(x**2 + y**2)*(-3*eps*(3 + eps)*(-3 + g)*rho0*u0**2*x + 
-       3*(-1 + g)*rho0*(3*et0 - eps**2*v0**2)*x + 4*mu*v0*(x - 2*y)*y + 
-       u0*(-14*mu + 3*eps*(3 + 2*eps)*rho0*v0*y) + 
-       3*rho0*Sin(x**2 + y**2)*
-        (-((3 + 4*eps)*(-3 + g)*u0**2*x) + 3*(-1 + g)*v0**2*x + 
-          4*eps*u0*v0*y + (-3*(-3 + g)*u0**2 + 2*(-1 + g)*v0**2)*x*
-           Sin(x**2 + y**2))) + 
-    Sin(x**2 + y**2)*(-9*rho0*(et0*(-1 + g)*x + 
-          eps*v0*(v0*x - g*v0*x + u0*y)) - 
-       4*mu*(v0 + u0*(-4*x**2 + 2*x*y - 3*y**2)) - 
-       3*rho0*Sin(x**2 + y**2)*
-        (2*et0*(-1 + g)*x + v0*(-2*eps*(-1 + g)*v0*x + (3 + 2*eps)*u0*y) + 
-          2*u0*v0*y*Sin(x**2 + y**2))))/3.
+(9.869604401089358*auy**2*uy*\[Mu]*Cos((auy*Pi*y)/L) - 
+    3.141592653589793*apx*L*px*Sin((apx*Pi*x)/L) + 
+    13.159472534785811*aux**2*ux*\[Mu]*Sin((aux*Pi*x)/L) + 
+    aux*L*Pi*ux*Cos((aux*Pi*x)/L)*
+     (r0 + ry*Cos((ary*Pi*y)/L) + rx*Sin((arx*Pi*x)/L))*
+     (u0 + uy*Cos((auy*Pi*y)/L) + ux*Sin((aux*Pi*x)/L)) + 
+    auy*L*uy*(-3.141592653589793*r0 - 
+       3.141592653589793*ry*Cos((ary*Pi*y)/L) - 
+       3.141592653589793*rx*Sin((arx*Pi*x)/L))*Sin((auy*Pi*y)/L)*
+     (v0 + vx*Cos((avx*Pi*x)/L) + vy*Sin((avy*Pi*y)/L)))/L**2

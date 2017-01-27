@@ -1,12 +1,16 @@
-- Add code to read K for venkatakrishnan limiter to namelist (cns2d) and
-  initialize subroutine.
+- Implement Green-Gauss method for computing gradients at the faces.
 
-- Test venkatakrishnan limiter on new ramp grid that has flat plate portion.
+- Add member to edge class for gradients of velocities and temperature at
+  the midpoints.
+
+- Modify viscous flux function so that it uses midpoint gradient.
+
+- Add argument to residual_inv and residual_inv_fo which controls whether or not
+  the residual is actually computed for the Navier-Stokes solution.  This could
+  save some time by avoiding this loop over all elements at each timestep.
 
 - Write unit tests for everything I can possibly
   think of.
-
-- Check spatial order of accuracy of Euler solver using Ringleb flow.
 
 - Parallelize loops using OpenMP.
 

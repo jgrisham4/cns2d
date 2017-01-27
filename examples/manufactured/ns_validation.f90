@@ -10,7 +10,7 @@ module validation
 
   contains
 
-    subroutine compute_error(dim_i,dim_j,cfl_num, dx, error_norm)
+    subroutine compute_error(dim_i,dim_j,cfl_num,dx,error_norm)
       implicit none
       integer, intent(in)             :: dim_i,dim_j
       double precision, intent(in)    :: cfl_num
@@ -48,8 +48,8 @@ module validation
       t_final = 0.0d0
       cfl     = cfl_num
       tol     = 1.0e-10
-      niterfo = 200   ! First-order iterations
-      niter   = 1000
+      niterfo = 500   ! First-order iterations
+      niter   = 0
 
       ! Setting initial guess using random noise added to the initial guess
       winfty(:) = 0.0d0
@@ -61,8 +61,8 @@ module validation
           call random_number(yerr)
           xerr = xerr*0.02d0 - 0.01d0
           yerr = yerr*0.02d0 - 0.01d0
-          xerr = 0.0d0
-          yerr = 0.0d0
+          !xerr = 0.0d0
+          !yerr = 0.0d0
 
           ! Computing the exact solution at the cell center (with noise added)
           xc   = grid%elem(i,j)%xc + xerr
@@ -94,7 +94,7 @@ module validation
       call initialize(ns_solver,grid,dt,t_final,g,R,w0,winfty,bcs,"none",.true.,niter,niterfo,tol,cfl,1.0d0)
 
       ! Solving the problem
-      call solve_steady(ns_solver)
+      call solve_steady(ns_solver,1.0d0)
 
       ! Computing the L2 norm of the error
       error_norm = 0.0d0
@@ -121,7 +121,7 @@ program ns_validation
   ! Computing the error in each solution (only looking at density for now)
   !call compute_error( 41,21,0.001d0,err(1),dx(1))
   !call compute_error( 81,41, 0.01d0,err(2),dx(2))
-  call compute_error(161,81, 0.5d0,err(3),dx(3))
+  call compute_error(101,101,0.01d0,err(3),dx(3))
   !nelem(1) = 1.0d0/sqrt(40.0d0*20.0d0)
   !nelem(2) = 1.0d0/sqrt(80.0d0*40.0d0)
   !nelem(3) = 1.0d0/sqrt(160.0d0*80.0d0)

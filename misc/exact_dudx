@@ -1,1 +1,1 @@
-2*u0*x*Cos(x**2 + y**2)
+(aux*Pi*ux*Cos((aux*Pi*x)/L))/L

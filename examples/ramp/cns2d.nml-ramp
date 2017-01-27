@@ -24,10 +24,10 @@
   method     = "steady"          ! Options are rk4 or forward_euler or steady
   final_time = 5.0e-6             ! Seconds
   time_step  = 5.0e-9             ! Seconds
-  niterfo    = 20
-  niter      = 0
+  niterfo    = 1000
+  niter      = 2000
   tol        = 1.0e-10
-  cfl        = 0.1d0
+  cfl        = 0.5d0
 /
 
 &boundary_conditions

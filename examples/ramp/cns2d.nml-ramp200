@@ -8,8 +8,8 @@
 
 &freestream_properties
   rho_inf = 0.1226d0     ! kg/m^3
-  u_inf   = 0.0d0        ! m/s
-  v_inf   = -680.3481d0   ! m/s
+  u_inf   = 995.2660d0   ! m/s
+  v_inf   = -225.6349d0        ! m/s
   p_inf   = 1.01325d4    ! Pa
 /
 
@@ -22,23 +22,23 @@
 
 &time_advancement
   method     = "steady"          ! Options are rk4 or forward_euler or steady
-  final_time = 1.0e-5             ! Seconds
-  time_step  = 1.0e-7             ! Seconds
-  niterfo    = 70
-  niter      = 0
+  final_time = 5.0e-6             ! Seconds
+  time_step  = 5.0e-9             ! Seconds
+  niterfo    = 1000
+  niter      = 2000
   tol        = 1.0e-10
-  cfl        = 0.01d0
+  cfl        = 0.5d0
 /
 
 &boundary_conditions
-  bcids(1) = 1001   ! bottom - slip wall
-  bcids(2) = 1002   ! right  - extrapolate
+  bcids(1) = 1002   ! bottom - slip wall
+  bcids(2) = 1001   ! right  - extrapolate
   bcids(3) = 1000   ! top    - freestream
-  bcids(4) = 1002   ! left   - freestream
+  bcids(4) = 1000   ! left   - freestream
 /
 
 &slope_limiter
-  limiter = "none" ! barth, venkat or none
+  limiter = "venkat" ! barth, venkat or none
   k = 1.0d0
 /
 
@@ -47,5 +47,5 @@
 /
 
 &acceleration
-  epsln = 6.0d0
+  epsln = 1.0d0
 /

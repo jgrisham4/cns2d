@@ -8,7 +8,7 @@
 
 &freestream_properties
   rho_inf = 0.1226d0     ! kg/m^3
-  u_inf   = 680.3481d0   ! m/s
+  u_inf   = 1020.5222d0   ! m/s
   v_inf   = 0.0d0        ! m/s
   p_inf   = 1.01325d4    ! Pa
 /
@@ -25,7 +25,7 @@
   final_time = 5.0e-6             ! Seconds
   time_step  = 5.0e-9             ! Seconds
   niterfo    = 1000
-  niter      = 2000
+  niter      = 2500
   tol        = 1.0e-10
   cfl        = 0.5d0
 /
@@ -39,7 +39,7 @@
 
 &slope_limiter
   limiter = "venkat" ! barth, venkat or none
-  k = 1.0d0
+  k = 0.5d0
 /
 
 &output

@@ -1,1 +1,1 @@
-u0*(eps + Sin(x**2 + y**2))
+u0 + uy*Cos((auy*Pi*y)/L) + ux*Sin((aux*Pi*x)/L)

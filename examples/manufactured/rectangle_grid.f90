@@ -8,20 +8,13 @@ program rectangle_grid
   integer :: imax,jmax,i,j,icelldim,iphysdim,index_base,index_file,index_zone,index_coord,ier,aerr
 
   ! Setting grid inputs
-  !imax  = 41
-  !jmax  = 21
-  imax  = 81
-  jmax  = 41
-  !imax  = 321
-  !jmax  = 161
-  xmin  = -0.1d0
-  xmax  = 0.7d0
-  ymin  = 0.1d0
-  ymax  = 0.5d0
-  !fname = "grid_41x21.cgns"
-  fname = "grid_81x41.cgns"
-  !fname = "grid_161x81.cgns"
-  !fname = "grid_321x161.cgns"
+  imax   = 101
+  jmax   = 101
+  xmin   = 0.0d0
+  xmax   = 1.0d0
+  ymin   = 0.0d0
+  ymax   = 1.0d0
+  fname  = "grid_100x100.cgns"
 
   ! Allocating memory for arrays
   allocate(x(imax,jmax),stat=aerr)

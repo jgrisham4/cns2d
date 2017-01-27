@@ -1,1 +1,1 @@
--2*v0*y*Sin(x**2 + y**2)
+(avy*Pi*vy*Cos((avy*Pi*y)/L))/L

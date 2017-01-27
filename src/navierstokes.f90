@@ -50,26 +50,25 @@ module navierstokes
       ! Computing gradient of temperature and velocity
       ! dT/dx_ij = gradU(i,j,1)
       ! dT/dy_ij = gradU(i,j,5)
-      do j=1,this%grid%nelemj
-        do i=1,this%grid%nelemi
-          this%grid%elem(i,j)%w = u_to_w(this%grid%elem(i,j)%u,this%g)
-          u(i,j,1) = this%grid%elem(i,j)%w(4)/(this%R*this%grid%elem(i,j)%w(1))
-          u(i,j,2) = this%grid%elem(i,j)%w(2)
-          u(i,j,3) = this%grid%elem(i,j)%w(3)
-          u(i,j,4) = 0.0d0
-        end do
-      end do
-      call compute_gradient(this%grid,u,gradU)
-
+      !do j=1,this%grid%nelemj
+      !  do i=1,this%grid%nelemi
+      !    this%grid%elem(i,j)%w = u_to_w(this%grid%elem(i,j)%u,this%g)
+      !    u(i,j,1) = this%grid%elem(i,j)%w(4)/(this%R*this%grid%elem(i,j)%w(1))
+      !    u(i,j,2) = this%grid%elem(i,j)%w(2)
+      !    u(i,j,3) = this%grid%elem(i,j)%w(3)
+      !    u(i,j,4) = 0.0d0
+      !  end do
+      !end do
+      !call compute_gradient(this%grid,u,gradU)
       ! Copying gradients of temperature and velocity to element objects
-      do j=1,this%grid%nelemj
-        do i=1,this%grid%nelemi
-          this%grid%elem(i,j)%dTdx = gradU(i,j,1)
-          this%grid%elem(i,j)%dTdy = gradU(i,j,5)
-          this%grid%elem(i,j)%dVdx = gradU(i,j,2:3)  ! Vector which holds {du/dx, dv/dx}
-          this%grid%elem(i,j)%dVdy = gradU(i,j,6:7)  ! Vector which holds {du/dy, dv/dy}
-        end do
-      end do
+      !do j=1,this%grid%nelemj
+      !  do i=1,this%grid%nelemi
+      !    this%grid%elem(i,j)%dTdx = gradU(i,j,1)
+      !    this%grid%elem(i,j)%dTdy = gradU(i,j,5)
+      !    this%grid%elem(i,j)%dVdx = gradU(i,j,2:3)  ! Vector which holds {du/dx, dv/dx}
+      !    this%grid%elem(i,j)%dVdy = gradU(i,j,6:7)  ! Vector which holds {du/dy, dv/dy}
+      !  end do
+      !end do
 
       ! Computing viscous fluxes for vertical internal faces
       ! The flux for each edge has already been set by the residual_inv subroutine

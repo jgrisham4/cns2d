@@ -1,1 +1,1 @@
-rho0*(1.5 + Sin(x**2 + y**2))
+r0 + ry*Cos((ary*Pi*y)/L) + rx*Sin((arx*Pi*x)/L)

@@ -15,8 +15,8 @@ module gas_properties
   !double precision, parameter :: Pr = 0.72d0
 
   ! Constants used in MMS
-  double precision, parameter :: Pr = 1.05d0  ! MMS
-  double precision, parameter :: mu_mms = 0.3d0
+  double precision, parameter :: Pr = 1.0d0  ! MMS
+  double precision, parameter :: mu_mms = 20.0d0
 
   contains
 

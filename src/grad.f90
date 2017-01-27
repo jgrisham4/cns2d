@@ -1,4 +1,4 @@
-!==========================================================
+!===============================================================================
 ! This module contains a subroutine which can be used to
 ! compute the gradient of a variable on a curvilinear
 ! mesh.  It does so making use of the metrics of the
@@ -6,7 +6,7 @@
 !
 ! Author: James Grisham
 ! Date  : 12-03-2016
-!==========================================================
+!===============================================================================
 
 module grad
   use mesh_class, only : mesh
@@ -16,14 +16,14 @@ module grad
 
   contains
 
-  !--------------------------------------------------------
+  !-----------------------------------------------------------------------------
   ! Subroutine for computing the gradient of an input
   ! array named var which has four independent variables
   !
   ! Note: This subroutine assumes that memory has been
   !       allocated for gradVar prior to this subroutine
   !       being called.
-  !--------------------------------------------------------
+  !-----------------------------------------------------------------------------
   subroutine compute_gradient(grid,var,gradVar)
     implicit none
     type(mesh), intent(in)                       :: grid
@@ -107,5 +107,28 @@ module grad
     end do
 
   end subroutine compute_gradient
+
+  !-----------------------------------------------------------------------------
+  ! Subroutine for computing the gradient velocity and temperature for interior
+  ! faces using the Green-Gauss approach.
+  !
+  ! Process is relatively straightforward.  Need to create a new control
+  ! volume whose center is the midpoint at which the gradient is to be computed.
+  ! After that, need to find the value of the variables at the faces.  Two of
+  ! the midpoints on the faces will be at cell centers, so those values can be
+  ! taken directly.  The other two will be located at nodes and will need to
+  ! be computed by averaging the values of the variables from the four
+  ! adjacent cells.  After that, the gradient at the face can be computed as
+  ! grad(U) = 1/Omega' ( Sum_i U_i dS_i ) where dS_i is the length of the face
+  ! multiplied against the face normal.
+  !
+  ! Important side note:  The viscosity must be found by averaging the values 
+  ! at the two cell centers.
+  !-----------------------------------------------------------------------------
+  subroutine compute_face_gradients(grid)
+    implicit none
+    type(mesh), intent(in) :: grid
+
+  end subroutine compute_face_gradients
 
 end module grad

@@ -256,7 +256,7 @@ module temporal
       double precision, intent(in)   :: epsln  ! Parameter used in upwind implicit residual smoothing
       double precision, allocatable  :: resid(:,:,:),eqn_resids(:,:)
       double precision, dimension(4) :: eqn_resids0
-      double precision, allocatable :: rbar(:,:,:)
+      double precision, allocatable  :: rbar(:,:,:)
       character (len=30)             :: tecname
       integer                        :: i,j,k,l,aer
 
@@ -364,7 +364,7 @@ module temporal
           ! Getting initial residual
           if (k.eq.1) then
             eqn_resids0(:) = eqn_resids(k,:)
-        end if
+          end if
 
           ! Updating local time steps
           call compute_max_timesteps_visc(this%grid,this%g,this%R,this%cfl,this%winfty)
@@ -446,6 +446,7 @@ module temporal
 
           ! Kicking out of loop if converged
           if (all(eqn_resids(k,:)/eqn_resids0<this%tol)) then
+            print *, "Converged."
             exit
           end if
 
@@ -595,6 +596,7 @@ module temporal
 
           ! Kicking out of loop if converged
           if (all(eqn_resids(k,:)/eqn_resids0<this%tol)) then
+            print *, "Converged."
             exit
           end if
 

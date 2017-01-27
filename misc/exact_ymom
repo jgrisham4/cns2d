@@ -1,1 +1,1 @@
-v0*(eps + Cos(x**2 + y**2))
+v0 + vx*Cos((avx*Pi*x)/L) + vy*Sin((avy*Pi*y)/L)

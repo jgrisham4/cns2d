@@ -408,3 +408,20 @@ unit tests for everything I can think of.  I'm not sure where the problem is.
 Found one major bug in flux.f90.  Specifically, it was in the flux_adv subroutine.  The
 total enthalpy was calcuated using H = u4 + p/rho, but u4 = rhoE so it should be
 H = u4/u1 + p/rho.  This fixes several issues.
+
+-------------------------
+
+01/26/2017 9:11 pm
+Trying to check the code using the method of manufactured solutions, but I'm having issues.
+The boundaries are wrong, as is rhou.  The x-momentum is very wrong.  I'm thinking of
+enforcing the boundary conditions for the viscous fluxes by setting the state in the
+ghost cells and using the averages of the cell-centered values to compute the flux at
+the face.  Not sure that will fix the issue.
+
+-------------------------
+
+01/26/2017 10:55 pm
+As it turns out, the way I am evaluating the derivatives at the faces is wrong.  According
+to Blazek, averaging the cell-centered gradients to find the gradient at the faces can
+cause decoupling in the solution on quad and hex meshes.  I need to implement a capability
+to compute the gradients at the faces of the cells using the Green-Gauss approach.

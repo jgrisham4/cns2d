@@ -43,6 +43,7 @@ module bcs
       double precision               :: u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy
       double precision               :: x1,x2,x3,x4
       double precision               :: y1,y2,y3,y4
+      double precision               :: fctmp(4),fvtmp(4)
       integer                        :: i,j,k,l
 
       !===============================================
@@ -299,12 +300,12 @@ module bcs
           utmp(1) = rho_e(xtmp,ytmp)
           utmp(2) = rho_e(xtmp,ytmp)*u
           utmp(3) = rho_e(xtmp,ytmp)*v
-          utmp(4) = et_e(xtmp,ytmp)
+          utmp(4) = rho_e(xtmp,ytmp)*et_e(xtmp,ytmp)
 
           ! Computing the primitive variables at the face and computing the flux
           wtmp = u_to_w(utmp,this%g)
-          this%grid%edges_h(i,j)%flux = -flux_adv(wtmp,this%grid%elem(i,j)%n(:,1),this%g) + &
-            flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,this%grid%elem(i,j)%n(:,1),this%g,this%R)
+          this%grid%edges_h(i,j)%flux = flux_adv(wtmp,-this%grid%elem(i,j)%n(:,1),this%g) - &
+            flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,-this%grid%elem(i,j)%n(:,1),this%g,this%R)
 
         end do
 
@@ -409,7 +410,7 @@ module bcs
           utmp(1) = rho_e(xtmp,ytmp)
           utmp(2) = rho_e(xtmp,ytmp)*u
           utmp(3) = rho_e(xtmp,ytmp)*v
-          utmp(4) = et_e(xtmp,ytmp)
+          utmp(4) = rho_e(xtmp,ytmp)*et_e(xtmp,ytmp)
 
           ! Computing primitive variables at the face and computing the flux
           wtmp = u_to_w(utmp,this%g)
@@ -532,7 +533,7 @@ module bcs
           utmp(1) = rho_e(xtmp,ytmp)
           utmp(2) = rho_e(xtmp,ytmp)*u
           utmp(3) = rho_e(xtmp,ytmp)*v
-          utmp(4) = et_e(xtmp,ytmp)
+          utmp(4) = rho_e(xtmp,ytmp)*et_e(xtmp,ytmp)
 
           ! Computing primitive variables at the face and computing the flux
           wtmp = u_to_w(utmp,this%g)
@@ -642,12 +643,12 @@ module bcs
           utmp(1) = rho_e(xtmp,ytmp)
           utmp(2) = rho_e(xtmp,ytmp)*u
           utmp(3) = rho_e(xtmp,ytmp)*v
-          utmp(4) = et_e(xtmp,ytmp)
+          utmp(4) = rho_e(xtmp,ytmp)*et_e(xtmp,ytmp)
 
           ! Computing the primitive variables at the face and computing the flux
           wtmp = u_to_w(utmp,this%g)
-          this%grid%edges_v(i,j)%flux = -flux_adv(wtmp,this%grid%elem(i,j)%n(:,4),this%g) + &
-            flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,this%grid%elem(i,j)%n(:,4),this%g,this%R)
+          this%grid%edges_v(i,j)%flux = flux_adv(wtmp,-this%grid%elem(i,j)%n(:,4),this%g) - &
+            flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,-this%grid%elem(i,j)%n(:,4),this%g,this%R)
 
         end do
 
