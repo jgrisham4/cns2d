@@ -1,0 +1,8 @@
+(Pi*(aux*ux*Cos((aux*Pi*x)/L)*(r0 + ry*Cos((ary*Pi*y)/L) + 
+         rx*Sin((arx*Pi*x)/L)) + 
+      avy*vy*Cos((avy*Pi*y)/L)*
+       (r0 + ry*Cos((ary*Pi*y)/L) + rx*Sin((arx*Pi*x)/L)) + 
+      arx*rx*Cos((arx*Pi*x)/L)*
+       (u0 + uy*Cos((auy*Pi*y)/L) + ux*Sin((aux*Pi*x)/L)) - 
+      ary*ry*Sin((ary*Pi*y)/L)*
+       (v0 + vx*Cos((avx*Pi*x)/L) + vy*Sin((avy*Pi*y)/L))))/L

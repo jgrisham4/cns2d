@@ -1,14 +1,14 @@
-(-13.159472534785811*aux*mu*ux*Cos((aux*Pi*x)/L)*
+(-13.159472534785811*aux*ux*mu*Cos((aux*Pi*x)/L)*
      (1.*aux*ux*Cos((aux*Pi*x)/L) - 
        0.49999999999999994*avy*vy*Cos((avy*Pi*y)/L)) - 
-    13.159472534785811*avy*mu*vy*Cos((avy*Pi*y)/L)*
+    13.159472534785811*avy*vy*mu*Cos((avy*Pi*y)/L)*
      (-0.49999999999999994*aux*ux*Cos((aux*Pi*x)/L) + 
        1.*avy*vy*Cos((avy*Pi*y)/L)) + 
-    auy**2*mu*Pi**2*uy*Cos((auy*Pi*y)/L)*
+    auy**2*Pi**2*uy*mu*Cos((auy*Pi*y)/L)*
      (u0 + uy*Cos((auy*Pi*y)/L) + ux*Sin((aux*Pi*x)/L)) - 
     apx*L*Pi*px*Sin((apx*Pi*x)/L)*
      (u0 + uy*Cos((auy*Pi*y)/L) + ux*Sin((aux*Pi*x)/L)) + 
-    13.159472534785811*aux**2*mu*ux*Sin((aux*Pi*x)/L)*
+    13.159472534785811*aux**2*ux*mu*Sin((aux*Pi*x)/L)*
      (u0 + uy*Cos((auy*Pi*y)/L) + ux*Sin((aux*Pi*x)/L)) + 
     aux*L*Pi*ux*Cos((aux*Pi*x)/L)*
      (p0 + px*Cos((apx*Pi*x)/L) + py*Sin((apy*Pi*y)/L)) + 
@@ -35,15 +35,15 @@
           (p0 + px*Cos((apx*Pi*x)/L) + py*Sin((apy*Pi*y)/L))*
           Sin((ary*Pi*y)/L)**2))/
      (R*(r0 + ry*Cos((ary*Pi*y)/L) + rx*Sin((arx*Pi*x)/L))**3) - 
-    avx*mu*Pi**2*vx*Sin((avx*Pi*x)/L)*
+    avx*Pi**2*vx*mu*Sin((avx*Pi*x)/L)*
      (avx*vx*Sin((avx*Pi*x)/L) + auy*uy*Sin((auy*Pi*y)/L)) - 
-    auy*mu*Pi**2*uy*Sin((auy*Pi*y)/L)*
+    auy*Pi**2*uy*mu*Sin((auy*Pi*y)/L)*
      (avx*vx*Sin((avx*Pi*x)/L) + auy*uy*Sin((auy*Pi*y)/L)) + 
-    avx**2*mu*Pi**2*vx*Cos((avx*Pi*x)/L)*
+    avx**2*Pi**2*vx*mu*Cos((avx*Pi*x)/L)*
      (v0 + vx*Cos((avx*Pi*x)/L) + vy*Sin((avy*Pi*y)/L)) + 
     apy*L*Pi*py*Cos((apy*Pi*y)/L)*
      (v0 + vx*Cos((avx*Pi*x)/L) + vy*Sin((avy*Pi*y)/L)) + 
-    13.159472534785811*avy**2*mu*vy*Sin((avy*Pi*y)/L)*
+    13.159472534785811*avy**2*vy*mu*Sin((avy*Pi*y)/L)*
      (v0 + vx*Cos((avx*Pi*x)/L) + vy*Sin((avy*Pi*y)/L)) + 
     L*(r0 + ry*Cos((ary*Pi*y)/L) + rx*Sin((arx*Pi*x)/L))*
      (v0 + vx*Cos((avx*Pi*x)/L) + vy*Sin((avy*Pi*y)/L))*

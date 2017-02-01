@@ -425,3 +425,11 @@ As it turns out, the way I am evaluating the derivatives at the faces is wrong. 
 to Blazek, averaging the cell-centered gradients to find the gradient at the faces can
 cause decoupling in the solution on quad and hex meshes.  I need to implement a capability
 to compute the gradients at the faces of the cells using the Green-Gauss approach.
+
+-------------------------
+
+01/31/2017 10:31 pm
+I believe there was a mistake in the operator for the momentum equations.  I corrected it.
+Now, it seems that rho and rhoE are converging to the exact solution, but there is still
+a problem with rhou and rhov.  I'm hoping this problem is caused by the gradient computation.
+I do see some patterns emerging in rhov which look like a sort of decoupling is taking place.

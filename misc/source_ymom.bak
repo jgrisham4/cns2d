@@ -1,0 +1,8 @@
+(avx**2*Pi**2*vx*\[Mu]*Cos((avx*Pi*x)/L) + apy*L*Pi*py*Cos((apy*Pi*y)/L) - 
+    avx*L*Pi*vx*(r0 + ry*Cos((ary*Pi*y)/L) + rx*Sin((arx*Pi*x)/L))*
+     (u0 + uy*Cos((auy*Pi*y)/L) + ux*Sin((aux*Pi*x)/L))*Sin((avx*Pi*x)/L) - 
+    6.579736267392905*avy**2*vy*\[Mu]*Sin((avy*Pi*y)/L) + 
+    2*avy**2*Pi**2*vy*\[Mu]*Sin((avy*Pi*y)/L) + 
+    avy*L*Pi*vy*Cos((avy*Pi*y)/L)*
+     (r0 + ry*Cos((ary*Pi*y)/L) + rx*Sin((arx*Pi*x)/L))*
+     (v0 + vx*Cos((avx*Pi*x)/L) + vy*Sin((avy*Pi*y)/L)))/L**2

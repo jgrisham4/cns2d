@@ -187,34 +187,21 @@ module mms
       double precision, intent(in) :: x,y
       double precision :: s
 
-      ! This is for Lmv1
-      !s = (9.869604401089358*auy**2*uy*mu*Cos((auy*pi*y)/L) - &
-      !  3.141592653589793*apx*L*px*Sin((apx*pi*x)/L) + &
-      !  13.159472534785811*aux**2*ux*mu*Sin((aux*pi*x)/L) + &
-      !  aux*L*pi*ux*Cos((aux*pi*x)/L)*&
-      !  (r0 + ry*Cos((ary*pi*y)/L) + rx*Sin((arx*pi*x)/L))*&
-      !  (u0 + uy*Cos((auy*pi*y)/L) + ux*Sin((aux*pi*x)/L)) + &
-      !  auy*L*uy*(-3.141592653589793*r0 - &
-      !  3.141592653589793*ry*Cos((ary*pi*y)/L) - &
-      !  3.141592653589793*rx*Sin((arx*pi*x)/L))*Sin((auy*pi*y)/L)*&
-      !  (v0 + vx*Cos((avx*pi*x)/L) + vy*Sin((avy*pi*y)/L)))/L**2
-
-      ! This is for Lmv2
-      s = (auy**2*mu*pi**2*uy*Cos((auy*pi*y)/L) - apx*L*pi*px*Sin((apx*pi*x)/L) - &
-        6.579736267392905*aux**2*mu*ux*Sin((aux*pi*x)/L) + &
-        2*aux**2*mu*pi**2*ux*Sin((aux*pi*x)/L) + &
-        2*aux*L*pi*ux*Cos((aux*pi*x)/L)*&
-        (r0 + ry*Cos((ary*pi*y)/L) + rx*Sin((arx*pi*x)/L))*&
-        (u0 + uy*Cos((auy*pi*y)/L) + ux*Sin((aux*pi*x)/L)) + &
-        avy*L*pi*vy*Cos((avy*pi*y)/L)*&
-        (r0 + ry*Cos((ary*pi*y)/L) + rx*Sin((arx*pi*x)/L))*&
-        (u0 + uy*Cos((auy*pi*y)/L) + ux*Sin((aux*pi*x)/L)) + &
-        arx*L*pi*rx*Cos((arx*pi*x)/L)*&
-        (u0 + uy*Cos((auy*pi*y)/L) + ux*Sin((aux*pi*x)/L))**2 - &
-        ary*L*pi*ry*(u0 + uy*Cos((auy*pi*y)/L) + ux*Sin((aux*pi*x)/L))*&
-        Sin((ary*pi*y)/L)*(v0 + vx*Cos((avx*pi*x)/L) + vy*Sin((avy*pi*y)/L)) - &
-        auy*L*pi*uy*(r0 + ry*Cos((ary*pi*y)/L) + rx*Sin((arx*pi*x)/L))*&
-        Sin((auy*pi*y)/L)*(v0 + vx*Cos((avx*pi*x)/L) + vy*Sin((avy*pi*y)/L)))/L**2
+      s = (auy**2*mu*Pi**2*uy*Cos((auy*Pi*y)/L) - apx*L*Pi*px*Sin((apx*Pi*x)/L) - &
+        6.579736267392905*aux**2*mu*ux*Sin((aux*Pi*x)/L) + &
+        2*aux**2*mu*Pi**2*ux*Sin((aux*Pi*x)/L) + &
+        2*aux*L*Pi*ux*Cos((aux*Pi*x)/L)*&
+        (r0 + ry*Cos((ary*Pi*y)/L) + rx*Sin((arx*Pi*x)/L))*&
+        (u0 + uy*Cos((auy*Pi*y)/L) + ux*Sin((aux*Pi*x)/L)) + &
+        avy*L*Pi*vy*Cos((avy*Pi*y)/L)*&
+        (r0 + ry*Cos((ary*Pi*y)/L) + rx*Sin((arx*Pi*x)/L))*&
+        (u0 + uy*Cos((auy*Pi*y)/L) + ux*Sin((aux*Pi*x)/L)) + &
+        arx*L*Pi*rx*Cos((arx*Pi*x)/L)*&
+        (u0 + uy*Cos((auy*Pi*y)/L) + ux*Sin((aux*Pi*x)/L))**2 - &
+        ary*L*Pi*ry*(u0 + uy*Cos((auy*Pi*y)/L) + ux*Sin((aux*Pi*x)/L))*&
+        Sin((ary*Pi*y)/L)*(v0 + vx*Cos((avx*Pi*x)/L) + vy*Sin((avy*Pi*y)/L)) - &
+        auy*L*Pi*uy*(r0 + ry*Cos((ary*Pi*y)/L) + rx*Sin((arx*Pi*x)/L))*&
+        Sin((auy*Pi*y)/L)*(v0 + vx*Cos((avx*Pi*x)/L) + vy*Sin((avy*Pi*y)/L)))/L**2
 
     end function s_xmom
 
@@ -227,33 +214,22 @@ module mms
       double precision, intent(in) :: x,y
       double precision :: s
 
-      ! This is for Lmv1
-      !s = (avx**2*Pi**2*vx*mu*Cos((avx*Pi*x)/L) + apy*L*Pi*py*Cos((apy*Pi*y)/L) - &
-      !  avx*L*Pi*vx*(r0 + ry*Cos((ary*Pi*y)/L) + rx*Sin((arx*Pi*x)/L))*&
-      !  (u0 + uy*Cos((auy*Pi*y)/L) + ux*Sin((aux*Pi*x)/L))*Sin((avx*Pi*x)/L) - &
-      !  6.579736267392905*avy**2*vy*mu*Sin((avy*Pi*y)/L) + &
-      !  2*avy**2*Pi**2*vy*mu*Sin((avy*Pi*y)/L) + &
-      !  avy*L*Pi*vy*Cos((avy*Pi*y)/L)*&
-      !  (r0 + ry*Cos((ary*Pi*y)/L) + rx*Sin((arx*Pi*x)/L))*&
-      !  (v0 + vx*Cos((avx*Pi*x)/L) + vy*Sin((avy*Pi*y)/L)))/L**2
-
-      ! This is for Lmv2
-      s = (avx**2*mu*pi**2*vx*Cos((avx*pi*x)/L) + apy*L*pi*py*Cos((apy*pi*y)/L) - &
-        avx*L*pi*vx*(r0 + ry*Cos((ary*pi*y)/L) + rx*Sin((arx*pi*x)/L))*&
-        (u0 + uy*Cos((auy*pi*y)/L) + ux*Sin((aux*pi*x)/L))*Sin((avx*pi*x)/L) - &
-        6.579736267392905*avy**2*mu*vy*Sin((avy*pi*y)/L) + &
-        2*avy**2*mu*pi**2*vy*Sin((avy*pi*y)/L) + &
-        aux*L*pi*ux*Cos((aux*pi*x)/L)*&
-        (r0 + ry*Cos((ary*pi*y)/L) + rx*Sin((arx*pi*x)/L))*&
-        (v0 + vx*Cos((avx*pi*x)/L) + vy*Sin((avy*pi*y)/L)) + &
-        2*avy*L*pi*vy*Cos((avy*pi*y)/L)*&
-        (r0 + ry*Cos((ary*pi*y)/L) + rx*Sin((arx*pi*x)/L))*&
-        (v0 + vx*Cos((avx*pi*x)/L) + vy*Sin((avy*pi*y)/L)) + &
-        arx*L*pi*rx*Cos((arx*pi*x)/L)*&
-        (u0 + uy*Cos((auy*pi*y)/L) + ux*Sin((aux*pi*x)/L))*&
-        (v0 + vx*Cos((avx*pi*x)/L) + vy*Sin((avy*pi*y)/L)) - &
-        ary*L*pi*ry*Sin((ary*pi*y)/L)*&
-        (v0 + vx*Cos((avx*pi*x)/L) + vy*Sin((avy*pi*y)/L))**2)/L**2
+      s = (avx**2*mu*Pi**2*vx*Cos((avx*Pi*x)/L) + apy*L*Pi*py*Cos((apy*Pi*y)/L) - &
+        avx*L*Pi*vx*(r0 + ry*Cos((ary*Pi*y)/L) + rx*Sin((arx*Pi*x)/L))*&
+        (u0 + uy*Cos((auy*Pi*y)/L) + ux*Sin((aux*Pi*x)/L))*Sin((avx*Pi*x)/L) - &
+        6.579736267392905*avy**2*mu*vy*Sin((avy*Pi*y)/L) + &
+        2*avy**2*mu*Pi**2*vy*Sin((avy*Pi*y)/L) + &
+        aux*L*Pi*ux*Cos((aux*Pi*x)/L)*&
+        (r0 + ry*Cos((ary*Pi*y)/L) + rx*Sin((arx*Pi*x)/L))*&
+        (v0 + vx*Cos((avx*Pi*x)/L) + vy*Sin((avy*Pi*y)/L)) + &
+        2*avy*L*Pi*vy*Cos((avy*Pi*y)/L)*&
+        (r0 + ry*Cos((ary*Pi*y)/L) + rx*Sin((arx*Pi*x)/L))*&
+        (v0 + vx*Cos((avx*Pi*x)/L) + vy*Sin((avy*Pi*y)/L)) + &
+        arx*L*Pi*rx*Cos((arx*Pi*x)/L)*&
+        (u0 + uy*Cos((auy*Pi*y)/L) + ux*Sin((aux*Pi*x)/L))*&
+        (v0 + vx*Cos((avx*Pi*x)/L) + vy*Sin((avy*Pi*y)/L)) - &
+        ary*L*Pi*ry*Sin((ary*Pi*y)/L)*&
+        (v0 + vx*Cos((avx*Pi*x)/L) + vy*Sin((avy*Pi*y)/L))**2)/L**2
 
     end function s_ymom
 
