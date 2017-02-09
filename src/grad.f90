@@ -122,12 +122,17 @@ module grad
   ! grad(U) = 1/Omega' ( Sum_i U_i dS_i ) where dS_i is the length of the face
   ! multiplied against the face normal.
   !
-  ! Important side note:  The viscosity must be found by averaging the values 
+  ! Important side note:  The viscosity must be found by averaging the values
   ! at the two cell centers.
   !-----------------------------------------------------------------------------
   subroutine compute_face_gradients(grid)
     implicit none
     type(mesh), intent(in) :: grid
+
+    ! Computing the gradients along vertical faces
+
+    ! Computing gradients along horizontal faces
+
 
   end subroutine compute_face_gradients
 
