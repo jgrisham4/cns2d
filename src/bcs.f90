@@ -14,9 +14,12 @@
 ! - The no-slip wall BC is only implemented for the bottom boundary.  Any of
 !   the boundary that is to the left of x=0 is set as an inviscid wall.  Any
 !   of the boundary where x>=0 is set to viscous wall.
+! - States in the first layer of ghost cells are set in a consistent manner
+!   in the below.  This is necessary for Green-Gauss gradient computation.
 !
 ! Author: James Grisham
 ! Date: 01/13/2017
+! Modified: 02/09/2017
 !===============================================================================
 
 module bcs
@@ -54,21 +57,28 @@ module bcs
 
         ! Farfield
         do i=1,this%grid%nelemi
-          this%grid%edges_h(i,j)%flux = -flux_adv(this%winfty,this%grid%elem(i,j)%n(:,1),this%g)
-        end do
 
-        !! Setting state in ghost cell
-        !do i=1,this%grid%nelemi
-        !  this%grid%elem(i,j-1)%w = w_to_u(this%winfty,this%g)
-        !end do
+          ! Computing the flux
+          this%grid%edges_h(i,j)%flux = -flux_adv(this%winfty,this%grid%elem(i,j)%n(:,1),this%g)
+
+          ! Setting the state in the ghost cell
+          this%grid%elem(i,j-1)%u = w_to_u(this%winfty,this%g)
+
+        end do
 
       else if (this%bcids(1).eq.1001) then
 
         ! Extrapolate
         do i=1,this%grid%nelemi
+
+          ! Extrapolating the state to compute the flux
           uextrap = this%grid%elem(i,j)%u
           wextrap = u_to_w(uextrap,this%g)
           this%grid%edges_h(i,j)%flux = -flux_adv(wextrap,this%grid%elem(i,j)%n(:,1),this%g)
+
+          ! Setting the state in the ghost cell
+          this%grid%elem(i,j-1)%u = uextrap
+
         end do
 
       else if (this%bcids(1).eq.1002) then
@@ -77,6 +87,8 @@ module bcs
         ! This is accomplished by setting the fluxes using
         ! extrapolated pressure at the wall.
         do i=1,this%grid%nelemi
+
+          ! Computing the flux
           wtmp = u_to_w(this%grid%elem(i,j)%u,this%g)
           pw = 3.0d0/2.0d0*wtmp(4)
           wtmp = u_to_w(this%grid%elem(i,j+1)%u,this%g)
@@ -85,6 +97,13 @@ module bcs
           this%grid%edges_h(i,j)%flux(2) = -pw*this%grid%elem(i,j)%n(1,1)
           this%grid%edges_h(i,j)%flux(3) = -pw*this%grid%elem(i,j)%n(2,1)
           this%grid%edges_h(i,j)%flux(4) = 0.0d0
+
+          ! Setting state in the ghost cell
+          this%grid%elem(i,j-1)%u(1) =  this%grid%elem(i,j)%u(1)
+          this%grid%elem(i,j-1)%u(2) = -this%grid%elem(i,j)%u(2)
+          this%grid%elem(i,j-1)%u(3) = -this%grid%elem(i,j)%u(3)
+          this%grid%elem(i,j-1)%u(4) =  this%grid%elem(i,j)%u(4)
+
         end do
 
       else if (this%bcids(1).eq.1003) then
@@ -130,8 +149,10 @@ module bcs
 
       else if (this%bcids(1).eq.1004) then
 
-        ! Seting state in ghost cells
+        ! Enforcing no-slip wall boundary condition
         do i=1,this%grid%nelemi
+
+          ! Seting state in ghost cells
           this%grid%elem(i,j-1)%u(1) =  this%grid%elem(i,j)%u(1)
           this%grid%elem(i,j-1)%u(2) = -this%grid%elem(i,j)%u(2)
           this%grid%elem(i,j-1)%u(3) = -this%grid%elem(i,j)%u(3)
@@ -140,10 +161,6 @@ module bcs
           this%grid%elem(i,j-2)%u(2) = -this%grid%elem(i,j+1)%u(2)
           this%grid%elem(i,j-2)%u(3) = -this%grid%elem(i,j+1)%u(3)
           this%grid%elem(i,j-2)%u(4) =  this%grid%elem(i,j+1)%u(4)
-        end do
-
-        ! Enforcing no-slip wall boundary condition
-        do i=1,this%grid%nelemi
 
           ! Switching between inviscid and viscous wall for x < 0 and x >= 0, respectively
           if (this%grid%elem(i,j)%xc.lt.0.0d0) then
@@ -307,6 +324,14 @@ module bcs
           this%grid%edges_h(i,j)%flux = flux_adv(wtmp,-this%grid%elem(i,j)%n(:,1),this%g) - &
             flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,-this%grid%elem(i,j)%n(:,1),this%g,this%R)
 
+          ! Setting state in the ghost cells
+          xtmp = this%grid%elem(i,j-1)%xc
+          ytmp = this%grid%elem(i,j-1)%yc
+          this%grid%elem(i,j-1)%u(1) = rho_e(xtmp,ytmp)
+          this%grid%elem(i,j-1)%u(2) = rho_e(xtmp,ytmp)*u_e(xtmp,ytmp)
+          this%grid%elem(i,j-1)%u(3) = rho_e(xtmp,ytmp)*v_e(xtmp,ytmp)
+          this%grid%elem(i,j-1)%u(4) = rho_e(xtmp,ytmp)*et_e(xtmp,ytmp)
+
         end do
 
       else
@@ -324,22 +349,36 @@ module bcs
 
         ! Farfield
         do j=1,this%grid%nelemj
+
+          ! Computing the flux
           this%grid%edges_v(i+1,j)%flux = flux_adv(this%winfty,this%grid%elem(i,j)%n(:,2),this%g)
+
+          ! Setting the state in the ghost cell
+          this%grid%elem(i+1,j)%u = w_to_u(this%grid%elem(i,j)%u,this%g)
+
         end do
 
       else if (this%bcids(2).eq.1001) then
 
         ! Extrapolate
         do j=1,this%grid%nelemj
+
+          ! Computing the flux
           uextrap = this%grid%elem(i,j)%u
           wextrap = u_to_w(uextrap,this%g)
           this%grid%edges_v(i+1,j)%flux = flux_adv(wextrap,this%grid%elem(i,j)%n(:,2),this%g)
+
+          ! Setting the state in the ghost cell
+          this%grid%elem(i+1,j)%u = uextrap
+
         end do
 
       else if (this%bcids(2).eq.1002) then
 
         ! Slip wall
         do j=1,this%grid%nelemj
+
+          ! Computing the flux
           wtmp = u_to_w(this%grid%elem(i,j)%u,this%g)
           pw = 3.0d0/2.0d0*wtmp(4)
           wtmp = u_to_w(this%grid%elem(i-1,j)%u,this%g)
@@ -348,6 +387,13 @@ module bcs
           this%grid%edges_v(i+1,j)%flux(2) = pw*this%grid%elem(i,j)%n(1,2)
           this%grid%edges_v(i+1,j)%flux(3) = pw*this%grid%elem(i,j)%n(2,2)
           this%grid%edges_v(i+1,j)%flux(4) = 0.0d0
+
+          ! Setting the state in the ghost cells
+          this%grid%elem(i+1,j)%u(1) =  this%grid%elem(i,j)%u(1)
+          this%grid%elem(i+1,j)%u(2) = -this%grid%elem(i,j)%u(2)
+          this%grid%elem(i+1,j)%u(3) = -this%grid%elem(i,j)%u(3)
+          this%grid%elem(i+1,j)%u(4) =  this%grid%elem(i,j)%u(4)
+
         end do
 
       else if (this%bcids(2).eq.1003) then
@@ -417,6 +463,14 @@ module bcs
           this%grid%edges_v(i+1,j)%flux = flux_adv(wtmp,this%grid%elem(i,j)%n(:,2),this%g) - &
             flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,this%grid%elem(i,j)%n(:,2),this%g,this%R)
 
+          ! Setting state in the ghost cell
+          xtmp = this%grid%elem(i+1,j)%xc
+          ytmp = this%grid%elem(i+1,j)%yc
+          this%grid%elem(i+1,j)%u(1) = rho_e(xtmp,ytmp)
+          this%grid%elem(i+1,j)%u(2) = rho_e(xtmp,ytmp)*u_e(xtmp,ytmp)
+          this%grid%elem(i+1,j)%u(3) = rho_e(xtmp,ytmp)*v_e(xtmp,ytmp)
+          this%grid%elem(i+1,j)%u(4) = rho_e(xtmp,ytmp)*et_e(xtmp,ytmp)
+
         end do
 
       else
@@ -434,22 +488,36 @@ module bcs
 
         ! Farfield
         do i=1,this%grid%nelemi
+
+          ! Computing flux
           this%grid%edges_h(i,j+1)%flux = flux_adv(this%winfty,this%grid%elem(i,j)%n(:,3),this%g)
+
+          ! Setting the state in the ghost cell
+          this%grid%elem(i,j+1)%u = w_to_u(this%winfty,this%g)
+
         end do
 
       else if (this%bcids(3).eq.1001) then
 
         ! Extrapolate
         do i=1,this%grid%nelemi
+
+          ! Computing the flux
           uextrap = this%grid%elem(i,j)%u
           wextrap = u_to_w(uextrap,this%g)
           this%grid%edges_h(i,j+1)%flux = flux_adv(wextrap,this%grid%elem(i,j)%n(:,3),this%g)
+
+          ! Setting the state in the ghost cell
+          this%grid%elem(i,j+1)%u = uextrap
+
         end do
 
       else if (this%bcids(3).eq.1002) then
 
-        ! Slip wall
+        ! Weak enforcement of slip wall
         do i=1,this%grid%nelemi
+
+          ! Computing the flux
           wtmp = u_to_w(this%grid%elem(i,j)%u,this%g)
           pw = 3.0d0/2.0d0*wtmp(4)
           wtmp = u_to_w(this%grid%elem(i,j-1)%u,this%g)
@@ -458,6 +526,13 @@ module bcs
           this%grid%edges_h(i,j+1)%flux(2) = pw*this%grid%elem(i,j)%n(1,3)
           this%grid%edges_h(i,j+1)%flux(3) = pw*this%grid%elem(i,j)%n(2,3)
           this%grid%edges_h(i,j+1)%flux(4) = 0.0d0
+
+          ! Setting the state in the ghost cell
+          this%grid%elem(i,j+1)%u(1) =  this%grid%elem(i,j)%u(1)
+          this%grid%elem(i,j+1)%u(2) = -this%grid%elem(i,j)%u(2)
+          this%grid%elem(i,j+1)%u(3) = -this%grid%elem(i,j)%u(3)
+          this%grid%elem(i,j+1)%u(4) =  this%grid%elem(i,j)%u(4)
+
         end do
 
       else if (this%bcids(3).eq.1003) then
@@ -540,6 +615,14 @@ module bcs
           this%grid%edges_h(i,j+1)%flux = flux_adv(wtmp,this%grid%elem(i,j)%n(:,3),this%g) - &
             flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,this%grid%elem(i,j)%n(:,3),this%g,this%R)
 
+          ! Setting the state in the ghost cell
+          xtmp = this%grid%elem(i,j+1)%xc
+          ytmp = this%grid%elem(i,j+1)%yc
+          this%grid%elem(i,j+1)%u(1) = rho_e(xtmp,ytmp)
+          this%grid%elem(i,j+1)%u(2) = rho_e(xtmp,ytmp)*u_e(xtmp,ytmp)
+          this%grid%elem(i,j+1)%u(3) = rho_e(xtmp,ytmp)*v_e(xtmp,ytmp)
+          this%grid%elem(i,j+1)%u(4) = rho_e(xtmp,ytmp)*et_e(xtmp,ytmp)
+
         end do
 
       else
@@ -557,22 +640,36 @@ module bcs
 
         ! Farfield
         do j=1,this%grid%nelemj
+
+          ! Computing the flux
           this%grid%edges_v(i,j)%flux = -flux_adv(this%winfty,this%grid%elem(i,j)%n(:,4),this%g)
+
+          ! Setting the state in the ghost cell
+          this%grid%elem(i-1,j)%u = w_to_u(this%winfty,this%g)
+
         end do
 
       else if (this%bcids(4).eq.1001) then
 
         ! Extrapolate
         do j=1,this%grid%nelemj
+
+          ! Computing the flux
           uextrap = this%grid%elem(i,j)%u
           wextrap = u_to_w(uextrap,this%g)
           this%grid%edges_v(i,j)%flux = -flux_adv(wextrap,this%grid%elem(i,j)%n(:,4),this%g)
+
+          ! Setting the state in the ghost cell
+          this%grid%elem(i-1,j)%u = uextrap
+
         end do
 
       else if (this%bcids(4).eq.1002) then
 
-        ! Slip wall
+        ! Weakly enforced slip wall
         do j=1,this%grid%nelemj
+
+          ! Computing the flux
           wtmp = u_to_w(this%grid%elem(i,j)%u,this%g)
           pw = 3.0d0/2.0d0*wtmp(4)
           wtmp = u_to_w(this%grid%elem(i+1,j)%u,this%g)
@@ -581,6 +678,13 @@ module bcs
           this%grid%edges_v(i,j)%flux(2) = -pw*this%grid%elem(i,j)%n(1,4)
           this%grid%edges_v(i,j)%flux(3) = -pw*this%grid%elem(i,j)%n(2,4)
           this%grid%edges_v(i,j)%flux(4) = 0.0d0
+
+          ! Setting the state in the ghost cell
+          this%grid%elem(i-1,j)%u(1) =  this%grid%elem(i,j)%u(1)
+          this%grid%elem(i-1,j)%u(2) = -this%grid%elem(i,j)%u(2)
+          this%grid%elem(i-1,j)%u(3) = -this%grid%elem(i,j)%u(3)
+          this%grid%elem(i-1,j)%u(4) =  this%grid%elem(i,j)%u(4)
+
         end do
 
       else if (this%bcids(4).eq.1003) then
@@ -650,6 +754,14 @@ module bcs
           this%grid%edges_v(i,j)%flux = flux_adv(wtmp,-this%grid%elem(i,j)%n(:,4),this%g) - &
             flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,-this%grid%elem(i,j)%n(:,4),this%g,this%R)
 
+          ! Setting the state in the ghost cell
+          xtmp = this%grid%elem(i-1,j)%xc
+          ytmp = this%grid%elem(i-1,j)%yc
+          this%grid%elem(i-1,j)%u(1) = rho_e(xtmp,ytmp)
+          this%grid%elem(i-1,j)%u(2) = rho_e(xtmp,ytmp)*u_e(xtmp,ytmp)
+          this%grid%elem(i-1,j)%u(3) = rho_e(xtmp,ytmp)*v_e(xtmp,ytmp)
+          this%grid%elem(i-1,j)%u(4) = rho_e(xtmp,ytmp)*et_e(xtmp,ytmp)
+
         end do
 
       else
@@ -658,6 +770,45 @@ module bcs
         stop
 
       end if
+
+      ! Filling in values in the ghost cells
+      ! Bottom left
+      i = 0
+      j = 0
+      if (this%bcids(1)=="1004") then
+        this%grid%elem(i,j)%u(1) =  this%grid%elem(i,j+1)%u(1)
+        this%grid%elem(i,j)%u(2) = -this%grid%elem(i,j+1)%u(2)
+        this%grid%elem(i,j)%u(3) = -this%grid%elem(i,j+1)%u(3)
+        this%grid%elem(i,j)%u(4) =  this%grid%elem(i,j+1)%u(4)
+      else
+        this%grid%elem(i,j)%u = 0.5d0*(this%grid%elem(i+1,j)%u + &
+          this%grid%elem(i,j+1)%u)
+      endif
+
+      ! Bottom right
+      i = this%grid%imax+1
+      j = 0
+      if (this%bcids(1)=="1004") then
+        this%grid%elem(i,j)%u(1) =  this%grid%elem(i,j+1)%u(1)
+        this%grid%elem(i,j)%u(2) = -this%grid%elem(i,j+1)%u(2)
+        this%grid%elem(i,j)%u(3) = -this%grid%elem(i,j+1)%u(3)
+        this%grid%elem(i,j)%u(4) =  this%grid%elem(i,j+1)%u(4)
+      else
+        this%grid%elem(i,j)%u = 0.5d0*(this%grid%elem(i-1,j)%u + &
+          this%grid%elem(i,j+1)%u)
+      endif
+
+      ! Top right
+      i = this%grid%imax+1
+      j = this%grid%jmax+1
+      this%grid%elem(i,j)%u = 0.5d0*(this%grid%elem(i-1,j)%u + &
+        this%grid%elem(i,j-1)%u)
+
+      ! Top left
+      i = 0
+      j = this%grid%jmax+1
+      this%grid%elem(i,j)%u = 0.5d0*(this%grid%elem(i+1,j)%u + &
+        this%grid%elem(i,j-1)%u)
 
     end subroutine apply_bcs
 

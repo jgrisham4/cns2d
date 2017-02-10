@@ -433,3 +433,9 @@ I believe there was a mistake in the operator for the momentum equations.  I cor
 Now, it seems that rho and rhoE are converging to the exact solution, but there is still
 a problem with rhou and rhov.  I'm hoping this problem is caused by the gradient computation.
 I do see some patterns emerging in rhov which look like a sort of decoupling is taking place.
+
+-------------------------
+
+02/09/2017 10:19 am
+Working on adding the Green-Gauss gradient computation.  Having to set the state in
+the ghost cells.  I'm doing this in the bcs.f90 file.

@@ -124,14 +124,52 @@ module grad
   !
   ! Important side note:  The viscosity must be found by averaging the values
   ! at the two cell centers.
+  !
+  ! THE BOUNDARY CONDITIONS MUST BE ENFORCED PRIOR TO CALLING THIS SUBROUTINE
+  ! OTHERWISE, THE GRADIENTS ALONG THE BOUNDARIES WILL BE WRONG.
   !-----------------------------------------------------------------------------
   subroutine compute_face_gradients(grid)
     implicit none
     type(mesh), intent(in) :: grid
+    double precision :: dS(4),n(2,4),x(4),y(4)
 
-    ! Computing the gradients along vertical faces
+    ! Blazek says that the values in the corner ghost cells should be
+    ! set using averages of the corresponding cells above or below and
+    ! to the right or left.  This should work for all boundary conditions
+    ! except wall or symmetry, in which case, the boundary should be
+    ! effectively extended into the ghost cells.  As such, I believe
+    ! this should be done in the bcs.f90 file.
+
+    ! Computing the gradients along vertical faces for interior faces
+    do i=2,this%grid%nelemi
+      do j=1,this%grid%nelemj
+
+        ! Computing the lengths of the edges
+        dS(1) = sqrt((this%grid%edges_v())**2 + ()**2)
+
+
+        ! Finding face normals
+
+        ! Computing the face-centered gradient
+
+      end do
+    end do
 
     ! Computing gradients along horizontal faces
+    do j=2,this%grid%nelemj
+      do i=1,this%grid%nelemi
+
+        ! Computing the lengths of the edges
+
+        ! Finding face normals
+
+        ! Computing the face-centered gradient
+
+      end do
+    end do
+
+    ! Computing gradients for boundary faces
+    ! Requires construction of midpoints of edges
 
 
   end subroutine compute_face_gradients
