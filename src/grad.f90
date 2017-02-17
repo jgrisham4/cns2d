@@ -10,6 +10,7 @@
 
 module grad
   use mesh_class, only : mesh
+  use utils,      only : nvec
   implicit none
   private
   public :: compute_gradient
@@ -131,7 +132,8 @@ module grad
   subroutine compute_face_gradients(grid)
     implicit none
     type(mesh), intent(in) :: grid
-    double precision :: dS(4),n(2,4),x(4),y(4)
+    double precision :: dS(4),n(2,4),x(4),y(4),xm(4),ym(4)
+    double precision :: f(3,4),wtmp(4),T
 
     ! Blazek says that the values in the corner ghost cells should be
     ! set using averages of the corresponding cells above or below and
@@ -140,15 +142,47 @@ module grad
     ! effectively extended into the ghost cells.  As such, I believe
     ! this should be done in the bcs.f90 file.
 
-    ! Computing the gradients along vertical faces for interior faces
-    do i=2,this%grid%nelemi
-      do j=1,this%grid%nelemj
+    ! I'm going to compute all the geometric quantities from scratch
+    ! to make sure I'm not making an indexing error with vertical
+    ! and horizontal faces.
+
+    ! Computing the gradients along vertical faces
+    do j=1,this%grid%nelemj
+      do i=1,this%grid%imax
+
+        ! Computing node coordinates of the new element
+        x(1) = 0.5d0*(this%grid%x(i-1,j)+this%grid%x(i,j))
+        y(1) = 0.5d0*(this%grid%y(i-1,j)+this%grid%y(i,j))
+        x(2) = 0.5d0*(this%grid%x(i,j)+this%grid%x(i+1,j))
+        y(2) = 0.5d0*(this%grid%y(i,j)+this%grid%y(i+1,j))
+        x(3) = 0.5d0*(this%grid%x(i,j+1)+this%grid%x(i+1,j+1))
+        y(3) = 0.5d0*(this%grid%y(i,j+1)+this%grid%y(i+1,j+1))
+        x(4) = 0.5d0*(this%grid%x(i,j+1)+this%grid%x(i-1,j+1))
+        y(4) = 0.5d0*(this%grid%y(i,j+1)+this%grid%y(i-1,j+1))
+
+        ! Computing the midpoints of the edges
+        !xm(1) =
+        ! NOT SURE THIS IS NECESSARY
 
         ! Computing the lengths of the edges
-        dS(1) = sqrt((this%grid%edges_v())**2 + ()**2)
-
+        dS(1) = sqrt((x(2)-x(1))**2+(y(2)-y(1))**2)
+        dS(2) = sqrt((x(3)-x(2))**2+(y(3)-y(2))**2)
+        dS(3) = sqrt((x(4)-x(3))**2+(y(4)-y(3))**2)
+        dS(4) = sqrt((x(1)-x(4))**2+(y(1)-y(4))**2)
 
         ! Finding face normals
+        n(:,1) = nvec(y(2)-y(1),x(1)-x(2))
+        n(:,2) = nvec(y(3)-y(2),x(2)-x(3))
+        n(:,3) = nvec(y(4)-y(3),x(3)-x(4))
+        n(:,4) = nvec(y(1)-y(4),x(4)-x(1))
+
+        ! Finding values at the midpoints of faces via averaging
+        ! Only need velocities and temperature
+        wtmp = u_to_w(this%grid%elem(i-1,j)%u,this%g)
+        f(1,1) = wtmp(2)
+        f(2,1) = wtmp(3)
+        f(3,1) = wtmp(4)/(wtmp(1)*this%R)
+
 
         ! Computing the face-centered gradient
 
@@ -156,7 +190,7 @@ module grad
     end do
 
     ! Computing gradients along horizontal faces
-    do j=2,this%grid%nelemj
+    do j=1,this%grid%imax
       do i=1,this%grid%nelemi
 
         ! Computing the lengths of the edges
