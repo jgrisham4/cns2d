@@ -19,6 +19,9 @@ module mesh_class
     double precision :: uL(4)   ! Left interface state
     double precision :: uR(4)   ! Right interface state
     double precision :: flux(4) ! value of the flux at the interface (i.e., f.n)
+    double precision :: gradu   ! Gradient of x-component of velocity at face
+    double precision :: gradv   ! Gradient of y-component of velocity at face
+    double precision :: gradT   ! Gradient of temperature at face
   end type edge
 
   !-----------------------------------------------------------------------------
