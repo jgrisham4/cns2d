@@ -10,10 +10,10 @@
 
 module grad
   use mesh_class, only : mesh
-  use utils,      only : nvec
+  use utils,      only : nvec,u_to_w
   implicit none
   private
-  public :: compute_gradient
+  public :: compute_gradient,compute_face_gradients
 
   contains
 
@@ -131,7 +131,7 @@ module grad
   !-----------------------------------------------------------------------------
   subroutine compute_face_gradients(grid,r,g)
     implicit none
-    type(mesh), intent(in)        :: grid
+    type(mesh), intent(inout)     :: grid
     double precision, intent(in)  :: r,g  ! Gas constant and ratio of specific heats
     double precision              :: dS(4),n(2,4),x(4),y(4),xm(4),ym(4)
     double precision              :: f(3,4),wtmp(4),T
@@ -197,9 +197,9 @@ module grad
         f(2,1) = 0.25d0*(fc(i-1,j-1,2) + fc(i,j-1,2) + fc(i,j,2) + fc(i-1,j,2))
         f(3,1) = 0.25d0*(fc(i-1,j-1,3) + fc(i,j-1,3) + fc(i,j,3) + fc(i-1,j,3))
         f(:,2) = fc(i,j,:)
-        f(1,3) = 0.25d0*(fc(i-1,j,1) + fc(i,j,1) + fc(i,j+1,1) + f(i-1,j+1,1))
-        f(2,3) = 0.25d0*(fc(i-1,j,2) + fc(i,j,2) + fc(i,j+1,2) + f(i-1,j+1,2))
-        f(3,3) = 0.25d0*(fc(i-1,j,3) + fc(i,j,3) + fc(i,j+1,3) + f(i-1,j+1,3))
+        f(1,3) = 0.25d0*(fc(i-1,j,1) + fc(i,j,1) + fc(i,j+1,1) + fc(i-1,j+1,1))
+        f(2,3) = 0.25d0*(fc(i-1,j,2) + fc(i,j,2) + fc(i,j+1,2) + fc(i-1,j+1,2))
+        f(3,3) = 0.25d0*(fc(i-1,j,3) + fc(i,j,3) + fc(i,j+1,3) + fc(i-1,j+1,3))
         f(:,4) = fc(i-1,j,:)
 
         ! Computing the face-centered gradient

@@ -9,7 +9,7 @@
 !===============================================================================
 
 module flux
-  use mesh_class,     only : element
+  use mesh_class,     only : element,edge
   use utils,          only : w_to_u,u_to_w
   use gas_properties, only : mu,k
   implicit none
@@ -88,11 +88,13 @@ module flux
     ! a face when the elements on either side of the
     ! interface are provided as inputs.
     !---------------------------------------------------------------------------
-    pure function flux_visc(elemL,elemR,n,g,R) result(f)
+    pure function flux_visc(elemL,elemR,face,n,g,R) result(f)
       implicit none
       type(element), intent(in)    :: elemL,elemR
+      type(edge), intent(in)       :: face            ! This is an edge object
       double precision, intent(in) :: n(2),g,R
-      double precision             :: f(4),rho
+      double precision             :: f(4),rho,m,kval,lambda
+      double precision             :: tauxx,tauxy,tauyy,thetax,thetay
       double precision             :: u,v,T,TL,TR,wL(4),wR(4)
       double precision             :: dudx,dudy,dvdx,dvdy,dTdx,dTdy
 
@@ -108,15 +110,34 @@ module flux
       u    = 0.5d0*(wL(2) + wR(2))
       v    = 0.5d0*(wL(3) + wR(3))
       T    = 0.5d0*(TL + TR)
-      dudx = 0.5d0*(elemL%dVdx(1) + elemR%dVdx(1))
-      dudy = 0.5d0*(elemL%dVdy(1) + elemR%dVdy(1))
-      dvdx = 0.5d0*(elemL%dVdx(2) + elemR%dVdx(2))
-      dvdy = 0.5d0*(elemL%dVdy(2) + elemR%dVdy(2))
-      dTdx = 0.5d0*(elemL%dTdx    + elemR%dTdx)
-      dTdy = 0.5d0*(elemL%dTdy    + elemR%dTdy)
 
-      ! Calling function to compute the viscous fluxes
-      f = flux_visc_state(u,v,T,dudx,dudy,dvdx,dvdy,dTdx,dTdy,n,g,R)
+      ! Extracting the gradients at the face
+      dudx = face%gradu(1)
+      dudy = face%gradu(2)
+      dvdx = face%gradv(1)
+      dvdy = face%gradv(2)
+      dTdx = face%gradT(1)
+      dTdy = face%gradT(2)
+
+      ! Using Stokes' hypothesis to compute lambda
+      m     = 0.5d0*(mu(TL) + mu(TR))
+      kval  = 0.5d0*(k(TL,g,R) + k(TR,g,R))
+      lambda = -2.0d0/3.0d0*m
+
+      ! Computing components of shear stress tensor
+      tauxx = lambda*(dudx + dvdy) + 2.0d0*m*dudx
+      tauyy = lambda*(dudx + dvdy) + 2.0d0*m*dvdy
+      tauxy = m*(dudy + dvdx)
+
+      ! Computing work done by shear in addition to heat transfer
+      thetax = u*tauxx + v*tauxy + kval*dTdx
+      thetay = u*tauxy + v*tauyy + kval*dTdy
+
+      ! Computing the flux
+      f(1) = 0.0d0
+      f(2) = n(1)*tauxx  + n(2)*tauxy
+      f(3) = n(1)*tauxy  + n(2)*tauyy
+      f(4) = n(1)*thetax + n(2)*thetay
 
     end function flux_visc
 

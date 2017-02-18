@@ -9,7 +9,7 @@ module navierstokes
   use solver_class, only : solver
   use utils,        only : u_to_w
   use flux,         only : flux_visc
-  use grad,         only : compute_gradient
+  use grad,         only : compute_gradient,compute_face_gradients
   use euler,        only : residual_inv,residual_inv_fo
   use mms,          only : s_continuity,s_xmom,s_ymom,s_energy
   implicit none
@@ -28,47 +28,14 @@ module navierstokes
       double precision                :: duL(4),duR(4),phi(4)
       double precision, dimension(4)  :: fx,fy,uextrap,wextrap,wtmp
       double precision, dimension(2)  :: rL,rR,r
-      double precision, allocatable   :: u(:,:,:),gradU(:,:,:),umax(:,:,:),umin(:,:,:)
       double precision                :: src(4),xtmp,ytmp  ! only used for MMS
       integer                         :: i,j,k,l,err
 
-      ! Allocating memory for gradient of state at cell centers
-      allocate(gradU(this%grid%nelemi,this%grid%nelemj,8),stat=err)
-      if (err.ne.0) then
-        print *, "Error: Can't allocate memory for gradU in residual_visc."
-        stop
-      end if
-      allocate(u(this%grid%nelemi,this%grid%nelemj,4),stat=err)
-      if (err.ne.0) then
-        print *, "Error: can't allocate memory for u in residual_visc."
-        stop
-      end if
+      ! Computing the face-centered gradients
+      call compute_face_gradients(this%grid,this%R,this%g)
 
       ! Finding inviscid part of the residual
       call residual_inv(this,resid)
-
-      ! Computing gradient of temperature and velocity
-      ! dT/dx_ij = gradU(i,j,1)
-      ! dT/dy_ij = gradU(i,j,5)
-      !do j=1,this%grid%nelemj
-      !  do i=1,this%grid%nelemi
-      !    this%grid%elem(i,j)%w = u_to_w(this%grid%elem(i,j)%u,this%g)
-      !    u(i,j,1) = this%grid%elem(i,j)%w(4)/(this%R*this%grid%elem(i,j)%w(1))
-      !    u(i,j,2) = this%grid%elem(i,j)%w(2)
-      !    u(i,j,3) = this%grid%elem(i,j)%w(3)
-      !    u(i,j,4) = 0.0d0
-      !  end do
-      !end do
-      !call compute_gradient(this%grid,u,gradU)
-      ! Copying gradients of temperature and velocity to element objects
-      !do j=1,this%grid%nelemj
-      !  do i=1,this%grid%nelemi
-      !    this%grid%elem(i,j)%dTdx = gradU(i,j,1)
-      !    this%grid%elem(i,j)%dTdy = gradU(i,j,5)
-      !    this%grid%elem(i,j)%dVdx = gradU(i,j,2:3)  ! Vector which holds {du/dx, dv/dx}
-      !    this%grid%elem(i,j)%dVdy = gradU(i,j,6:7)  ! Vector which holds {du/dy, dv/dy}
-      !  end do
-      !end do
 
       ! Computing viscous fluxes for vertical internal faces
       ! The flux for each edge has already been set by the residual_inv subroutine
@@ -77,7 +44,8 @@ module navierstokes
         do i=2,this%grid%nelemi
           this%grid%edges_v(i,j)%flux = this%grid%edges_v(i,j)%flux - &
             flux_visc(this%grid%elem(i-1,j),this%grid%elem(i,j), &
-                      this%grid%elem(i-1,j)%n(:,2),this%g,this%R)
+                      this%grid%edges_v(i,j),this%grid%elem(i-1,j)%n(:,2), &
+                      this%g,this%R)
         end do
       end do
 
@@ -86,7 +54,8 @@ module navierstokes
         do i=1,this%grid%nelemi
           this%grid%edges_h(i,j)%flux = this%grid%edges_h(i,j)%flux - &
             flux_visc(this%grid%elem(i,j-1),this%grid%elem(i,j), &
-                      this%grid%elem(i,j-1)%n(:,3),this%g,this%R)
+                      this%grid%edges_h(i,j),this%grid%elem(i,j-1)%n(:,3), &
+                      this%g,this%R)
         end do
       end do
 
@@ -187,6 +156,7 @@ module navierstokes
         do i=2,this%grid%nelemi
           this%grid%edges_v(i,j)%flux = this%grid%edges_v(i,j)%flux - &
             flux_visc(this%grid%elem(i-1,j),this%grid%elem(i,j), &
+                      this%grid%edges_v(i,j), &
                       this%grid%elem(i,j)%n(:,2),this%g,this%R)
         end do
       end do
@@ -196,6 +166,7 @@ module navierstokes
         do i=1,this%grid%nelemi
           this%grid%edges_h(i,j)%flux = this%grid%edges_h(i,j)%flux - &
             flux_visc(this%grid%elem(i,j-1),this%grid%elem(i,j), &
+                      this%grid%edges_h(i,j), &
                       this%grid%elem(i,j)%n(:,3),this%g,this%R)
         end do
       end do

@@ -8,20 +8,20 @@ module mesh_class
   use gas_properties, only : mu, k
   implicit none
   private
-  public :: mesh,element,read_from_file,write_to_tec,preprocess,compute_max_timesteps_inv,compute_max_timesteps_visc
+  public :: mesh,element,edge,read_from_file,write_to_tec,preprocess,compute_max_timesteps_inv,compute_max_timesteps_visc
 
   !-----------------------------------------------------------------------------
   ! Edge class definition
   !-----------------------------------------------------------------------------
   type edge
-    double precision :: length  ! length of interface
-    double precision :: xm,ym   ! x- and y-coordinates of midpoint
-    double precision :: uL(4)   ! Left interface state
-    double precision :: uR(4)   ! Right interface state
-    double precision :: flux(4) ! value of the flux at the interface (i.e., f.n)
-    double precision :: gradu   ! Gradient of x-component of velocity at face
-    double precision :: gradv   ! Gradient of y-component of velocity at face
-    double precision :: gradT   ! Gradient of temperature at face
+    double precision :: length    ! length of interface
+    double precision :: xm,ym     ! x- and y-coordinates of midpoint
+    double precision :: uL(4)     ! Left interface state
+    double precision :: uR(4)     ! Right interface state
+    double precision :: flux(4)   ! value of the flux at the interface (i.e., f.n)
+    double precision :: gradu(2)  ! Gradient of x-component of velocity at face
+    double precision :: gradv(2)  ! Gradient of y-component of velocity at face
+    double precision :: gradT(2)  ! Gradient of temperature at face
   end type edge
 
   !-----------------------------------------------------------------------------

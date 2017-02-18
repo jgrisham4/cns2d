@@ -27,7 +27,7 @@ module bcs
   use mms,          only : s_continuity,s_xmom,s_ymom,s_energy,rho_e,u_e,v_e,et_e,dudx_e,dudy_e,dvdx_e,dvdy_e,dTdx_e,dTdy_e
   use flux,         only : flux_adv,flux_visc_state
   use riemann,      only : roe
-  use utils,        only : u_to_w,nvec
+  use utils,        only : u_to_w,w_to_u,nvec
   implicit none
   public :: apply_bcs
 
