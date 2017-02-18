@@ -134,7 +134,7 @@ module grad
     type(mesh), intent(inout)     :: grid
     double precision, intent(in)  :: r,g  ! Gas constant and ratio of specific heats
     double precision              :: dS(4),n(2,4),x(4),y(4),xm(4),ym(4)
-    double precision              :: f(3,4),wtmp(4),T
+    double precision              :: f(3,4),wtmp(4),T,area
     double precision, allocatable :: fc(:,:,:)
     integer                       :: astat,i,j,k
 
@@ -179,6 +179,9 @@ module grad
         x(4) = 0.5d0*(grid%x(i,j+1)+grid%x(i-1,j+1))
         y(4) = 0.5d0*(grid%y(i,j+1)+grid%y(i-1,j+1))
 
+        ! Computing the area
+        area = 0.5d0*((x(1)-x(3))*(y(2)-y(4)) + (x(4)-x(2))*(y(1)-y(3)))
+
         ! Computing the lengths of the edges
         dS(1) = sqrt((x(2)-x(1))**2+(y(2)-y(1))**2)
         dS(2) = sqrt((x(3)-x(2))**2+(y(3)-y(2))**2)
@@ -216,6 +219,11 @@ module grad
           grid%edges_v(i,j)%gradT = grid%edges_v(i,j)%gradT + f(3,k)*n(:,k)*dS(k)
         end do
 
+        ! Dividing by the area of the element
+        grid%edges_v(i,j)%gradu = grid%edges_v(i,j)%gradu/area
+        grid%edges_v(i,j)%gradv = grid%edges_v(i,j)%gradv/area
+        grid%edges_v(i,j)%gradT = grid%edges_v(i,j)%gradT/area
+
       end do
     end do
 
@@ -232,6 +240,9 @@ module grad
         y(3) = 0.5d0*(grid%y(i+1,j) + grid%y(i+1,j+1))
         x(4) = 0.5d0*(grid%x(i,j) + grid%x(i,j+1))
         y(4) = 0.5d0*(grid%y(i,j) + grid%y(i,j+1))
+
+        ! Computing the area
+        area = 0.5d0*((x(1)-x(3))*(y(2)-y(4)) + (x(4)-x(2))*(y(1)-y(3)))
 
         ! Computing the lengths of the edges
         dS(1) = sqrt((x(2)-x(1))**2+(y(2)-y(1))**2)
@@ -268,6 +279,11 @@ module grad
         do k=1,4
           grid%edges_h(i,j)%gradT = grid%edges_h(i,j)%gradT + f(3,k)*n(:,k)*dS(k)
         end do
+
+        ! Dividing by the area of the element
+        grid%edges_h(i,j)%gradu = grid%edges_h(i,j)%gradu/area
+        grid%edges_h(i,j)%gradv = grid%edges_h(i,j)%gradv/area
+        grid%edges_h(i,j)%gradT = grid%edges_h(i,j)%gradT/area
 
       end do
     end do

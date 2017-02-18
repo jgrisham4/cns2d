@@ -595,7 +595,7 @@ module mesh_class
       double precision             :: c                    ! Local speed of sound
       double precision             :: w(4)                 ! Vector of primitive variables
       !double precision             :: dt_u,dx,dy
-      double precision, parameter  :: floor_value = 0.01d0
+      double precision, parameter  :: floor_value = 0.001d0
       integer                      :: i,j
 
       ! Looping over elements
@@ -666,7 +666,7 @@ module mesh_class
       double precision             :: c                    ! Local speed of sound
       double precision             :: w(4)                 ! Vector of primitive variables
       double precision             :: cp,Pr,T,m,term1
-      double precision, parameter  :: floor_value = 0.01d0
+      double precision, parameter  :: floor_value = 0.001d0
       integer                      :: i,j
 
       ! Looping over elements
@@ -678,11 +678,11 @@ module mesh_class
 
           ! Computing the speed of sound for the element
           if (w(4)<floor_value*winfty(4)) then
-            print *, "Warning: pressure floored in compute_max_timesteps_inv."
+            print *, "Warning: pressure floored in compute_max_timesteps_visc."
             w(4) = floor_value*winfty(4)
           end if
           if (w(1)<(floor_value*winfty(1))) then
-            print *, "Warning: density floored in compute_max_timesteps_inv."
+            print *, "Warning: density floored in compute_max_timesteps_visc."
             w(1) = floor_value*winfty(1)
           end if
           c = sqrt(g*w(4)/w(1))

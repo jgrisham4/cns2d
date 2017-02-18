@@ -445,3 +445,9 @@ the ghost cells.  I'm doing this in the bcs.f90 file.
 02/17/2017 9:37 pm
 I added the Green-Gauss gradient computation, but something is still wrong.  I need to
 go back and check everything.  The solver doesn't converge on the MMS case.
+
+-------------------------
+
+02/18/2017 11:26 am
+There's still a bug somewhere in the viscous solver.  I can't find it.  I'm just going
+to have to drop this for now.

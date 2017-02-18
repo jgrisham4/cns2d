@@ -8,7 +8,7 @@ LIBS=-lcns2d -lcgns
 TST_FILES = $(wildcard *.f90)
 SRC_FILES = $(wildcard ../src/*.f90)
 OBJ_FILES = $(SRC_FILES:.f90=.o)
-TARGETS = test_mesh test_cgns test_reflection test_ghost square_grid isentropic_vortex
+TARGETS = test_mesh test_cgns test_reflection test_ghost square_grid test_gg_grad
 
 all : lib $(TARGETS)
 
@@ -33,7 +33,7 @@ test_ghost : test_ghost.o ../lib/$(LIBNAME)
 square_grid : square_grid.o
 	$(FC) $(FCFLAGS) -o $@ $< $(LFLAGS) $(LIBS)
 
-isentropic_vortex : isentropic_vortex.o
+test_gg_grad : test_gg_grad.o
 	$(FC) $(FCFLAGS) -o $@ $< $(LFLAGS) $(LIBS)
 
 clean :

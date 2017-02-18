@@ -59,39 +59,39 @@ module navierstokes
         end do
       end do
 
-      !! Computing residual
-      !do j=1,this%grid%nelemj
-      !  do i=1,this%grid%nelemi
-      !    resid(i,j,:) = -1.0d0/(this%grid%elem(i,j)%area)*                 &
-      !      (-this%grid%edges_h(i,j)%flux*this%grid%edges_h(i,j)%length +   &
-      !      this%grid%edges_h(i,j+1)%flux*this%grid%edges_h(i,j+1)%length - &
-      !      this%grid%edges_v(i,j)%flux*this%grid%edges_v(i,j)%length +     &
-      !      this%grid%edges_v(i+1,j)%flux*this%grid%edges_v(i+1,j)%length)
-      !  end do
-      !end do
-
-      ! Computing residual - METHOD OF MANUFACTURED SOLUTIONS
+      ! Computing residual
       do j=1,this%grid%nelemj
         do i=1,this%grid%nelemi
-
-          ! Computing source terms
-          xtmp   = this%grid%elem(i,j)%xc
-          ytmp   = this%grid%elem(i,j)%yc
-          src(1) = s_continuity(xtmp,ytmp)
-          src(2) = s_xmom(xtmp,ytmp)
-          src(3) = s_ymom(xtmp,ytmp)
-          src(4) = s_energy(xtmp,ytmp)
-
-          ! Forming residual
           resid(i,j,:) = -1.0d0/(this%grid%elem(i,j)%area)*                 &
             (-this%grid%edges_h(i,j)%flux*this%grid%edges_h(i,j)%length +   &
             this%grid%edges_h(i,j+1)%flux*this%grid%edges_h(i,j+1)%length - &
             this%grid%edges_v(i,j)%flux*this%grid%edges_v(i,j)%length +     &
-            this%grid%edges_v(i+1,j)%flux*this%grid%edges_v(i+1,j)%length - &
-            src*this%grid%elem(i,j)%area)
-
+            this%grid%edges_v(i+1,j)%flux*this%grid%edges_v(i+1,j)%length)
         end do
       end do
+
+      ! Computing residual - METHOD OF MANUFACTURED SOLUTIONS
+      !do j=1,this%grid%nelemj
+      !  do i=1,this%grid%nelemi
+
+      !    ! Computing source terms
+      !    xtmp   = this%grid%elem(i,j)%xc
+      !    ytmp   = this%grid%elem(i,j)%yc
+      !    src(1) = s_continuity(xtmp,ytmp)
+      !    src(2) = s_xmom(xtmp,ytmp)
+      !    src(3) = s_ymom(xtmp,ytmp)
+      !    src(4) = s_energy(xtmp,ytmp)
+
+      !    ! Forming residual
+      !    resid(i,j,:) = -1.0d0/(this%grid%elem(i,j)%area)*                 &
+      !      (-this%grid%edges_h(i,j)%flux*this%grid%edges_h(i,j)%length +   &
+      !      this%grid%edges_h(i,j+1)%flux*this%grid%edges_h(i,j+1)%length - &
+      !      this%grid%edges_v(i,j)%flux*this%grid%edges_v(i,j)%length +     &
+      !      this%grid%edges_v(i+1,j)%flux*this%grid%edges_v(i+1,j)%length - &
+      !      src*this%grid%elem(i,j)%area)
+
+      !  end do
+      !end do
 
     end subroutine residual_visc
 
@@ -171,39 +171,39 @@ module navierstokes
         end do
       end do
 
-      !! Computing residual
-      !do j=1,this%grid%nelemj
-      !  do i=1,this%grid%nelemi
-      !    resid(i,j,:) = -1.0d0/(this%grid%elem(i,j)%area)*                 &
-      !      (-this%grid%edges_h(i,j)%flux*this%grid%edges_h(i,j)%length +   &
-      !      this%grid%edges_h(i,j+1)%flux*this%grid%edges_h(i,j+1)%length - &
-      !      this%grid%edges_v(i,j)%flux*this%grid%edges_v(i,j)%length +     &
-      !      this%grid%edges_v(i+1,j)%flux*this%grid%edges_v(i+1,j)%length)
-      !  end do
-      !end do
-
-      ! Computing residual - METHOD OF MANUFACTURED SOLUTIONS
+      ! Computing residual
       do j=1,this%grid%nelemj
         do i=1,this%grid%nelemi
-
-          ! Computing source terms
-          xtmp   = this%grid%elem(i,j)%xc
-          ytmp   = this%grid%elem(i,j)%yc
-          src(1) = s_continuity(xtmp,ytmp)
-          src(2) = s_xmom(xtmp,ytmp)
-          src(3) = s_ymom(xtmp,ytmp)
-          src(4) = s_energy(xtmp,ytmp)
-
-          ! Forming residual
           resid(i,j,:) = -1.0d0/(this%grid%elem(i,j)%area)*                 &
             (-this%grid%edges_h(i,j)%flux*this%grid%edges_h(i,j)%length +   &
             this%grid%edges_h(i,j+1)%flux*this%grid%edges_h(i,j+1)%length - &
             this%grid%edges_v(i,j)%flux*this%grid%edges_v(i,j)%length +     &
-            this%grid%edges_v(i+1,j)%flux*this%grid%edges_v(i+1,j)%length - &
-            src*this%grid%elem(i,j)%area)
-
+            this%grid%edges_v(i+1,j)%flux*this%grid%edges_v(i+1,j)%length)
         end do
       end do
+
+      !! Computing residual - METHOD OF MANUFACTURED SOLUTIONS
+      !do j=1,this%grid%nelemj
+      !  do i=1,this%grid%nelemi
+
+      !    ! Computing source terms
+      !    xtmp   = this%grid%elem(i,j)%xc
+      !    ytmp   = this%grid%elem(i,j)%yc
+      !    src(1) = s_continuity(xtmp,ytmp)
+      !    src(2) = s_xmom(xtmp,ytmp)
+      !    src(3) = s_ymom(xtmp,ytmp)
+      !    src(4) = s_energy(xtmp,ytmp)
+
+      !    ! Forming residual
+      !    resid(i,j,:) = -1.0d0/(this%grid%elem(i,j)%area)*                 &
+      !      (-this%grid%edges_h(i,j)%flux*this%grid%edges_h(i,j)%length +   &
+      !      this%grid%edges_h(i,j+1)%flux*this%grid%edges_h(i,j+1)%length - &
+      !      this%grid%edges_v(i,j)%flux*this%grid%edges_v(i,j)%length +     &
+      !      this%grid%edges_v(i+1,j)%flux*this%grid%edges_v(i+1,j)%length - &
+      !      src*this%grid%elem(i,j)%area)
+
+      !  end do
+      !end do
 
     end subroutine residual_visc_fo
 

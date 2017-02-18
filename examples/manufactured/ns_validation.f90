@@ -121,7 +121,7 @@ program ns_validation
   ! Computing the error in each solution (only looking at density for now)
   !call compute_error( 41,21,0.001d0,err(1),dx(1))
   !call compute_error( 81,41, 0.01d0,err(2),dx(2))
-  call compute_error(101,101,0.01d0,err(3),dx(3))
+  call compute_error(101,101,0.1d0,err(3),dx(3))
   !nelem(1) = 1.0d0/sqrt(40.0d0*20.0d0)
   !nelem(2) = 1.0d0/sqrt(80.0d0*40.0d0)
   !nelem(3) = 1.0d0/sqrt(160.0d0*80.0d0)

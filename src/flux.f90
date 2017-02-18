@@ -61,7 +61,7 @@ module flux
       double precision             :: tauxx,tauxy,tauyy
       double precision             :: thetax,thetay
 
-      ! Using Stokes' Theorem to compute lambda
+      ! Using Stokes' hypothesis to compute lambda
       m     = mu(T)
       kval  = k(T,g,R)
       lambda = -2.0d0/3.0d0*m

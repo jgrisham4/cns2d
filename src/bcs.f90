@@ -277,6 +277,7 @@ module bcs
               end do
 
               ! Finding average T at the face
+              ! PROBLEM HERE.  The average temperature shouldn't be used, I believe.
               T = w3(4)/(w3(1)*this%R)
 
               ! Now have the velocity gradient at the boundary
@@ -589,6 +590,7 @@ module bcs
       else if (this%bcids(3).eq.2000) then
 
         ! Method of manufactured solution BC
+        j = this%grid%nelemj
         do i=1,this%grid%nelemi
 
           ! Computing the exact solution at the midpoint of the face
@@ -728,6 +730,7 @@ module bcs
       else if (this%bcids(4).eq.2000) then
 
         ! Method of manufactured solution BC
+        i = 1
         do j=1,this%grid%nelemj
 
           ! Computing the exact solution at the midpoint of face
